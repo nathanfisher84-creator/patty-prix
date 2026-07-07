@@ -19,7 +19,14 @@ jobs:
           const m = await import('./scripts/telegram-scoreboard.mjs');
           const all = [m.CONFIG.challenger, ...m.CONFIG.rivals];
           const pairs = await (await fetch('https://api.dexscreener.com/tokens/v1/solana/' + all.join(','))).json();
-          console.log(m.buildMessage(m.bestPairs(pairs, all)).replace(/<[^>]+>/g, ''));
+          const byAddr = m.bestPairs(pairs, all);
+          console.log(m.buildMessage(byAddr).replace(/<[^>]+>/g, ''));
+          console.log('--- address map ---');
+          for (const a of all) {
+            const p = byAddr[a.toLowerCase()];
+            const mc = p && (p.marketCap ?? p.fdv);
+            console.log(a.slice(0, 8) + '… = ' + (p ? p.baseToken.name + ' (' + p.baseToken.symbol + ') mcap ' + m.fmtUsd(mc) : 'NOT FOUND'));
+          }
           "
 
       - name: Check stats API endpoints
