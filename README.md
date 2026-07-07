@@ -66,8 +66,8 @@ Keep the token addresses in `scripts/telegram-scoreboard.mjs` in sync with the `
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
-- The DexScreener endpoint used is `GET https://api.dexscreener.com/tokens/v1/solana/{addr1},{addr2},...` (up to 30 addresses per call, all tokens fetched in a single request).
-- Market cap uses `pair.marketCap` with `pair.fdv` as fallback; the most liquid pair per token is selected.
+- The DexScreener endpoint used is `GET https://api.dexscreener.com/token-pairs/v1/solana/{address}` (one request per token, fetched in parallel — it returns ALL of a token's pools; the batch `/tokens/v1/` endpoint returns a single pair per token and can pick a stale graduated bonding-curve listing).
+- Market cap uses `pair.marketCap` with `pair.fdv` as fallback; PumpSwap pools are preferred (most liquid one if several), otherwise the most liquid pool on any DEX.
 
 ## Hosting
 

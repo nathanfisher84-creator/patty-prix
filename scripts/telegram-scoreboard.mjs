@@ -28,7 +28,18 @@ export const CONFIG = {
   siteUrl: "https://nathanfisher84-creator.github.io/patty-prix/"
 };
 
-const API = "https://api.dexscreener.com/tokens/v1/solana/";
+// token-pairs returns ALL pools of a token; the batch /tokens/v1
+// endpoint returns a single pair per token and can pick a stale
+// graduated bonding-curve listing over the live PumpSwap pool.
+const API = "https://api.dexscreener.com/token-pairs/v1/solana/";
+
+export async function fetchAllPairs(fetchFn = fetch) {
+  const all = [CONFIG.challenger, ...CONFIG.rivals];
+  const results = await Promise.all(all.map(a =>
+    fetchFn(API + a).then(r => (r && r.ok === false ? [] : r.json())).catch(() => [])
+  ));
+  return results.flat();
+}
 
 // PumpSwap pools take priority (most liquid one if several); most
 // liquid pool on any DEX is the fallback for tokens without one.
@@ -128,9 +139,9 @@ export async function main(env = process.env, fetchFn = fetch) {
   };
 
   const all = [CONFIG.challenger, ...CONFIG.rivals];
-  const dexRes = await fetchFn(API + all.join(","));
-  if (!dexRes.ok) throw new Error("DexScreener " + dexRes.status);
-  const byAddr = bestPairs(await dexRes.json(), all);
+  const pairs = await fetchAllPairs(fetchFn);
+  if (!pairs.length) throw new Error("DexScreener returned no pairs");
+  const byAddr = bestPairs(pairs, all);
   const text = buildMessage(byAddr);
   const opts = { chat_id: chatId, text, parse_mode: "HTML", disable_web_page_preview: true };
 
