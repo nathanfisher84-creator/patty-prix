@@ -19,7 +19,11 @@ export const CONFIG = {
     "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
     "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
     "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
-    "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump"
+    "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+    "4U4U8oXwDyVXGeTffMXds4NAgBgLFwq3wNvTCRTSpump",
+    "9E2Q4KKxLS5Y4bu6RKvjg5wQ2kzaLkiVsMt7zwMZpump",
+    "a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump",
+    "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
   ],
   siteUrl: "https://nathanfisher84-creator.github.io/patty-prix/"
 };
