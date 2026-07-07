@@ -44,6 +44,25 @@ https://<your-username>.github.io/patty-prix/
 
 You can also trigger a deploy manually from the **Actions** tab (workflow_dispatch). If the first run fails with a Pages permission error, set **Settings → Pages → Source** to "GitHub Actions" once and re-run it.
 
+## Telegram live scoreboard
+
+`.github/workflows/telegram-scoreboard.yml` keeps a pinned message in your Telegram group updated with live race standings (every ~10 minutes). Setup:
+
+1. Create a bot with [@BotFather](https://t.me/BotFather) (`/newbot`) and copy the token.
+2. Add the bot to your group and promote it to **admin** with the **Pin messages** right.
+3. Get the group's chat ID: send any message in the group, then open
+   `https://api.telegram.org/bot<TOKEN>/getUpdates` and read `chat.id`
+   (group IDs are negative, e.g. `-1001234567890`).
+4. In this repo: **Settings → Secrets and variables → Actions** → add
+   `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+5. Trigger **Telegram Scoreboard** manually from the Actions tab to test.
+
+The bot edits its own pinned message in place; if the pin is missing it posts and pins a fresh one. Without the secrets the workflow exits quietly.
+
+Note: GitHub disables scheduled workflows after ~60 days without repo activity — any commit re-arms them.
+
+Keep the token addresses in `scripts/telegram-scoreboard.mjs` in sync with the `CONFIG` block in `index.html`.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
