@@ -10,6 +10,18 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Race standings
+        run: |
+          node --input-type=module -e "
+          const m = await import('./scripts/telegram-scoreboard.mjs');
+          const all = [m.CONFIG.challenger, ...m.CONFIG.rivals];
+          const pairs = await (await fetch('https://api.dexscreener.com/tokens/v1/solana/' + all.join(','))).json();
+          console.log(m.buildMessage(m.bestPairs(pairs, all)).replace(/<[^>]+>/g, ''));
+          "
+
       - name: Check stats API endpoints
         run: |
           for q in supply ath; do
