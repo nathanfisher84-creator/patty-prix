@@ -23,6 +23,8 @@
     va.defer = true;
     va.src = "/_vercel/insights/script.js";
     document.head.appendChild(va);
+    // self-owned visit counter (api/track.mjs) — fire and forget
+    fetch("/api/track", { method: "POST", keepalive: true }).catch(function () {});
   }
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
