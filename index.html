@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patty Prix 🏁 — the bag worker races the field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:ital,wght@0,600;0,700;0,800;1,600;1,700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5C8DE;
+    --card: #FAF3E6;
+    --card-stripe: #F1E7D2;
+    --ink: #17130E;
+    --sub: #6E675C;
+    --pill: #5F4BE0;
+    --fill: #7ED3F0;
+    --fill-deep: #4FBBE6;
+    --gold: #FFC93C;
+    --radius: 26px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 16px 80px;
+  }
+
+  .wrap { max-width: 760px; margin: 0 auto; }
+
+  /* ---------- header ---------- */
+  .title-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    padding: 14px 26px;
+    box-shadow: 7px 7px 0 var(--ink);
+    margin-bottom: 14px;
+  }
+  .title-tag h1 {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 5vw, 32px);
+    letter-spacing: 0.2px;
+  }
+
+  .tagline {
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(14px, 3.6vw, 18px);
+    color: var(--sub);
+    margin: 2px 4px 0;
+  }
+  .tagline b { color: var(--ink); }
+
+  .challenger-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 18px 2px 30px;
+    flex-wrap: wrap;
+  }
+  .challenger-bar img {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    border: 3px solid var(--ink);
+    background: #fff;
+    object-fit: cover;
+  }
+  .challenger-meta { display: flex; flex-direction: column; }
+  .challenger-meta .name {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+  }
+  .challenger-meta .mcap {
+    font-weight: 800;
+    font-size: 15px;
+    color: var(--sub);
+  }
+  .live-dot {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 800;
+    font-size: 13px;
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 7px 16px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .live-dot::before {
+    content: "";
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #E4405F;
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- race cards ---------- */
+  .race-card {
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: var(--radius);
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 26px 26px 22px;
+    margin-bottom: 34px;
+    transition: transform 0.6s cubic-bezier(.2,1.4,.4,1);
+  }
+  .race-card.flipped { background: #FFF4CC; }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .card-top .flag { font-size: 22px; }
+  .card-top .rival-name {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(18px, 4vw, 24px);
+  }
+  .card-top .rival-symbol {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 500;
+    font-size: clamp(14px, 3.4vw, 19px);
+    color: var(--sub);
+    letter-spacing: 0.5px;
+  }
+  .multiplier {
+    margin-left: auto;
+    background: var(--pill);
+    color: #fff;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: clamp(14px, 3.4vw, 18px);
+    padding: 8px 20px;
+    border-radius: 999px;
+    box-shadow: 4px 4px 0 var(--ink);
+    white-space: nowrap;
+    transition: transform 0.25s ease;
+  }
+  .multiplier.bump { transform: scale(1.12); }
+  .multiplier.done { background: var(--gold); color: var(--ink); }
+
+  /* track */
+  .track {
+    position: relative;
+    height: 74px;
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    background:
+      repeating-linear-gradient(90deg,
+        var(--card) 0 46px,
+        var(--card-stripe) 46px 92px);
+    overflow: visible;
+  }
+  .track-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(180deg, var(--fill), var(--fill-deep));
+    border-radius: 999px 0 0 999px;
+    border-right: 3px solid var(--ink);
+    min-width: 30px;
+    transition: width 1.6s cubic-bezier(.3,.9,.3,1);
+  }
+  .car {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 62px; height: 62px;
+    border-radius: 50%;
+    border: 3px solid var(--ink);
+    background: #FDE9F2;
+    object-fit: cover;
+    z-index: 2;
+    transition: left 1.6s cubic-bezier(.3,.9,.3,1);
+    box-shadow: 3px 3px 0 rgba(23,19,14,0.35);
+  }
+  .car.vroom { animation: vroom 0.7s ease; }
+  @keyframes vroom {
+    0%   { transform: translate(-50%, -50%) rotate(0deg); }
+    30%  { transform: translate(-50%, -54%) rotate(-6deg); }
+    60%  { transform: translate(-50%, -47%) rotate(4deg); }
+    100% { transform: translate(-50%, -50%) rotate(0deg); }
+  }
+
+  .finish {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+  }
+  .finish img {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: #fff;
+    object-fit: cover;
+  }
+  .finish .target {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(15px, 3.6vw, 20px);
+    white-space: nowrap;
+  }
+
+  .status {
+    margin-top: 16px;
+    font-style: italic;
+    font-weight: 700;
+    font-size: clamp(14px, 3.6vw, 19px);
+    color: var(--sub);
+  }
+  .status b { color: var(--ink); }
+
+  /* skeleton + error */
+  .skeleton {
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: var(--radius);
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 40px;
+    text-align: center;
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 18px;
+    margin-bottom: 34px;
+  }
+  .updated {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    color: rgba(23,19,14,0.5);
+    margin-top: 6px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track-fill, .car, .multiplier, .race-card { transition: none; }
+    .car.vroom, .live-dot::before { animation: none; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="title-tag"><h1>Patty Prix 🏁</h1></div>
+  <p class="tagline">pattyice — <b>the bag worker</b> — races the field</p>
+
+  <div class="challenger-bar" id="challengerBar" hidden>
+    <img id="challengerIcon" alt="" />
+    <div class="challenger-meta">
+      <span class="name" id="challengerName">—</span>
+      <span class="mcap" id="challengerMcap">—</span>
+    </div>
+    <span class="live-dot">LIVE</span>
+  </div>
+
+  <div id="races">
+    <div class="skeleton">Warming up the engines… 🏎️</div>
+  </div>
+
+  <div class="updated" id="updated"></div>
+</div>
+
+<script>
+/* ================================================================
+   CONFIG — paste your token addresses here
+   ================================================================ */
+const CONFIG = {
+  // Your token (the racer / the car on every track)
+  challenger: "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+
+  // The tokens it's racing to flip (any number, in any order —
+  // the page auto-sorts by who's closest to being flipped)
+  rivals: [
+    "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+    "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+    "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
+    "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+    "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump"
+  ],
+
+  // How often to refresh prices (milliseconds). 10000 = every 10s.
+  pollIntervalMs: 10000
+};
+/* ================================================================ */
+
+const API = "https://api.dexscreener.com/tokens/v1/solana/";
+const racesEl = document.getElementById("races");
+const updatedEl = document.getElementById("updated");
+let firstLoad = true;
+let lastProgress = {}; // address -> pct, to trigger vroom animation
+
+function fmtUsd(n) {
+  if (n == null || isNaN(n)) return "—";
+  if (n >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+  if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
+  return "$" + n.toFixed(0);
+}
+
+function fmtMult(x) {
+  if (x >= 1000) return Math.round(x).toLocaleString() + "x";
+  if (x >= 100) return Math.round(x) + "x";
+  if (x >= 10) return x.toFixed(0) + "x";
+  return x.toFixed(1) + "x";
+}
+
+function statusLine(pct) {
+  if (pct >= 100) return "<b>FLIPPED.</b> New king in town 👑";
+  if (pct >= 75)  return pct.toFixed(2) + "% of the way — so close you can taste it 🏁";
+  if (pct >= 50)  return pct.toFixed(2) + "% of the way — past halfway, send it 🚀";
+  if (pct >= 25)  return pct.toFixed(2) + "% of the way — picking up speed 🏎️";
+  if (pct >= 10)  return pct.toFixed(2) + "% of the way — gonna need a training montage 🥊";
+  if (pct >= 1)   return pct.toFixed(2) + "% of the way — sir, this is a marathon, not a sprint";
+  return pct.toFixed(2) + "% of the way — generational patience required. WAGMI. 🧘";
+}
+
+// Pick the most liquid pair for each requested token address
+function bestPairs(pairs, addresses) {
+  const map = {};
+  const wanted = new Set(addresses.map(a => a.toLowerCase()));
+  for (const p of pairs || []) {
+    const addr = p.baseToken?.address?.toLowerCase();
+    if (!addr || !wanted.has(addr)) continue;
+    const liq = p.liquidity?.usd || 0;
+    if (!map[addr] || liq > (map[addr].liquidity?.usd || 0)) map[addr] = p;
+  }
+  return map;
+}
+
+function tokenData(pair) {
+  if (!pair) return null;
+  return {
+    name: pair.baseToken.name || pair.baseToken.symbol,
+    symbol: pair.baseToken.symbol,
+    mcap: pair.marketCap ?? pair.fdv ?? null,
+    icon: pair.info?.imageUrl || null
+  };
+}
+
+function buildCard(rivalAddr) {
+  const el = document.createElement("div");
+  el.className = "race-card";
+  el.dataset.addr = rivalAddr;
+  el.innerHTML = `
+    <div class="card-top">
+      <span class="flag">🏁</span>
+      <span class="rival-name">—</span>
+      <span class="rival-symbol"></span>
+      <span class="multiplier">—</span>
+    </div>
+    <div class="track">
+      <div class="track-fill" style="width:0%"></div>
+      <img class="car" alt="racer" style="left:0%" />
+      <div class="finish">
+        <img alt="" hidden />
+        <span class="target">—</span>
+      </div>
+    </div>
+    <div class="status">Loading…</div>`;
+  return el;
+}
+
+async function refresh() {
+  try {
+    const all = [CONFIG.challenger, ...CONFIG.rivals];
+    // API allows up to 30 addresses per call
+    const res = await fetch(API + all.join(","));
+    if (!res.ok) throw new Error("API " + res.status);
+    const pairs = await res.json();
+    const byAddr = bestPairs(pairs, all);
+
+    const me = tokenData(byAddr[CONFIG.challenger.toLowerCase()]);
+    if (!me || me.mcap == null) throw new Error("Challenger token not found — check the address in CONFIG.");
+
+    // header
+    const bar = document.getElementById("challengerBar");
+    bar.hidden = false;
+    document.getElementById("challengerName").textContent = me.name + " · $" + me.symbol;
+    document.getElementById("challengerMcap").textContent = "Market cap " + fmtUsd(me.mcap);
+    if (me.icon) document.getElementById("challengerIcon").src = me.icon;
+
+    // build cards once
+    if (firstLoad) {
+      racesEl.innerHTML = "";
+      CONFIG.rivals.forEach(a => racesEl.appendChild(buildCard(a)));
+      firstLoad = false;
+    }
+
+    // update each card
+    const rows = [];
+    for (const addr of CONFIG.rivals) {
+      const rival = tokenData(byAddr[addr.toLowerCase()]);
+      const card = racesEl.querySelector(`[data-addr="${addr}"]`);
+      if (!card) continue;
+
+      if (!rival || rival.mcap == null) {
+        card.querySelector(".status").textContent = "Token not found — check this address in CONFIG.";
+        continue;
+      }
+
+      const pct = Math.min((me.mcap / rival.mcap) * 100, 100);
+      const mult = rival.mcap / me.mcap;
+      rows.push({ card, pct });
+
+      card.querySelector(".rival-name").textContent = rival.name;
+      card.querySelector(".rival-symbol").textContent = "$" + rival.symbol;
+      card.querySelector(".target").textContent = fmtUsd(rival.mcap);
+
+      const finishImg = card.querySelector(".finish img");
+      if (rival.icon) { finishImg.src = rival.icon; finishImg.hidden = false; }
+
+      const car = card.querySelector(".car");
+      if (me.icon && car.src !== me.icon) car.src = me.icon;
+
+      // keep the car visible: clamp visual position between 5% and 92%
+      const visual = Math.max(5, Math.min(pct, 92));
+      card.querySelector(".track-fill").style.width = visual + "%";
+      car.style.left = visual + "%";
+
+      const multEl = card.querySelector(".multiplier");
+      if (pct >= 100) {
+        multEl.textContent = "FLIPPED 👑";
+        multEl.classList.add("done");
+        card.classList.add("flipped");
+      } else {
+        multEl.textContent = fmtMult(mult) + " to go";
+      }
+
+      card.querySelector(".status").innerHTML = statusLine(pct);
+
+      // little vroom when progress moves
+      const prev = lastProgress[addr];
+      if (prev != null && Math.abs(pct - prev) > 0.001) {
+        car.classList.remove("vroom"); void car.offsetWidth; car.classList.add("vroom");
+        multEl.classList.add("bump");
+        setTimeout(() => multEl.classList.remove("bump"), 300);
+      }
+      lastProgress[addr] = pct;
+    }
+
+    // sort: closest to the flip on top
+    rows.sort((a, b) => b.pct - a.pct).forEach(r => racesEl.appendChild(r.card));
+
+    updatedEl.textContent = "Live via DexScreener · updated " + new Date().toLocaleTimeString();
+  } catch (err) {
+    if (firstLoad) {
+      racesEl.innerHTML = `<div class="skeleton">Couldn't load race data 😵<br><small style="font-family:Nunito;font-weight:700">${err.message}</small></div>`;
+    }
+    updatedEl.textContent = "Last update failed — retrying…";
+  }
+}
+
+refresh();
+setInterval(refresh, CONFIG.pollIntervalMs);
+</script>
+</body>
+</html>
