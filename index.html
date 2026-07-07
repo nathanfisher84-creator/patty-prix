@@ -1001,7 +1001,10 @@ async function refresh() {
         multEl.classList.add("done");
         card.classList.add("flipped");
       } else {
+        // a rival can out-grow us again — drop the gold styling if so
         multEl.textContent = fmtMult(mult) + " to go";
+        multEl.classList.remove("done");
+        card.classList.remove("flipped");
       }
 
       card.querySelector(".status").innerHTML = statusLine(pct);
