@@ -68,3 +68,7 @@ Keep the token addresses in `scripts/telegram-scoreboard.mjs` in sync with the `
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
 - The DexScreener endpoint used is `GET https://api.dexscreener.com/tokens/v1/solana/{addr1},{addr2},...` (up to 30 addresses per call, all tokens fetched in a single request).
 - Market cap uses `pair.marketCap` with `pair.fdv` as fallback; the most liquid pair per token is selected.
+
+## Hosting
+
+The site deploys to GitHub Pages (workflow above) and is also connected to Vercel, which auto-deploys every push to `main` and creates preview deployments for pull requests.
