@@ -23,8 +23,7 @@ jobs:
           node --input-type=module -e "
           const m = await import('./scripts/telegram-scoreboard.mjs');
           const all = [m.CONFIG.challenger, ...m.CONFIG.rivals];
-          const pairs = await (await fetch('https://api.dexscreener.com/tokens/v1/solana/' + all.join(','))).json();
-          const byAddr = m.bestPairs(pairs, all);
+          const byAddr = m.bestPairs(await m.fetchAllPairs(), all);
           console.log(m.buildMessage(byAddr).replace(/<[^>]+>/g, ''));
           console.log('--- address map ---');
           for (const a of all) {
@@ -39,7 +38,7 @@ jobs:
         env:
           TOKEN: ${{ inputs.token }}
         run: |
-          curl -sS "https://api.dexscreener.com/tokens/v1/solana/$TOKEN" | node --input-type=module -e "
+          curl -sS "https://api.dexscreener.com/token-pairs/v1/solana/$TOKEN" | node --input-type=module -e "
           const chunks = []; for await (const c of process.stdin) chunks.push(c);
           const pairs = JSON.parse(Buffer.concat(chunks).toString());
           for (const p of pairs || []) {

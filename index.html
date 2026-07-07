@@ -609,7 +609,10 @@ const CONFIG = {
 };
 /* ================================================================ */
 
-const API = "https://api.dexscreener.com/tokens/v1/solana/";
+// token-pairs returns ALL pools of a token; the batch /tokens/v1
+// endpoint returns a single pair per token and can pick a stale
+// graduated bonding-curve listing over the live PumpSwap pool.
+const API = "https://api.dexscreener.com/token-pairs/v1/solana/";
 const racesEl = document.getElementById("races");
 const updatedEl = document.getElementById("updated");
 let firstLoad = true;
@@ -938,10 +941,12 @@ function buildCard(rivalAddr) {
 async function refresh() {
   try {
     const all = [CONFIG.challenger, ...CONFIG.rivals];
-    // API allows up to 30 addresses per call
-    const res = await fetch(API + all.join(","));
-    if (!res.ok) throw new Error("API " + res.status);
-    const pairs = await res.json();
+    // one pools request per token, in parallel
+    const results = await Promise.all(all.map(a =>
+      fetch(API + a).then(r => (r.ok ? r.json() : [])).catch(() => [])
+    ));
+    const pairs = results.flat();
+    if (!pairs.length) throw new Error("DexScreener unavailable");
     const byAddr = bestPairs(pairs, all);
 
     const me = tokenData(byAddr[CONFIG.challenger.toLowerCase()]);
