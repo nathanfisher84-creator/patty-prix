@@ -2,6 +2,11 @@ name: Stats API Healthcheck
 
 on:
   workflow_dispatch:
+    inputs:
+      token:
+        description: "Optional token address — dump all of its DexScreener pools"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -26,6 +31,19 @@ jobs:
             const p = byAddr[a.toLowerCase()];
             const mc = p && (p.marketCap ?? p.fdv);
             console.log(a.slice(0, 8) + '… = ' + (p ? p.baseToken.name + ' (' + p.baseToken.symbol + ') mcap ' + m.fmtUsd(mc) : 'NOT FOUND'));
+          }
+          "
+
+      - name: Token pools dump
+        if: ${{ inputs.token != '' }}
+        env:
+          TOKEN: ${{ inputs.token }}
+        run: |
+          curl -sS "https://api.dexscreener.com/tokens/v1/solana/$TOKEN" | node --input-type=module -e "
+          const chunks = []; for await (const c of process.stdin) chunks.push(c);
+          const pairs = JSON.parse(Buffer.concat(chunks).toString());
+          for (const p of pairs || []) {
+            console.log([p.dexId, p.pairAddress, 'price ' + p.priceUsd, 'mcap ' + p.marketCap, 'fdv ' + p.fdv, 'liq ' + (p.liquidity?.usd ?? 0), 'vol24 ' + (p.volume?.h24 ?? 0)].join(' | '));
           }
           "
 
