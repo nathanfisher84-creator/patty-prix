@@ -630,8 +630,8 @@ function fmtMult(x) {
   return x.toFixed(1) + "x";
 }
 
-function statusLine(pct) {
-  if (pct >= 100) return "<b>FLIPPED.</b> New king in town 👑";
+function statusLine(pct, timesBigger) {
+  if (pct >= 100) return "<b>FLIPPED.</b> $PATTYICE is now " + fmtMult(timesBigger) + " their size 👑";
   if (pct >= 75)  return pct.toFixed(2) + "% of the way — so close you can taste it 🏁";
   if (pct >= 50)  return pct.toFixed(2) + "% of the way — past halfway, send it 🚀";
   if (pct >= 25)  return pct.toFixed(2) + "% of the way — picking up speed 🏎️";
@@ -1011,7 +1011,7 @@ async function refresh() {
         card.classList.remove("flipped");
       }
 
-      card.querySelector(".status").innerHTML = statusLine(pct);
+      card.querySelector(".status").innerHTML = statusLine(pct, me.mcap / rival.mcap);
 
       // little vroom when progress moves
       const prev = lastProgress[addr];
