@@ -30,14 +30,18 @@ export const CONFIG = {
 
 const API = "https://api.dexscreener.com/tokens/v1/solana/";
 
+// PumpSwap pools take priority (most liquid one if several); most
+// liquid pool on any DEX is the fallback for tokens without one.
+function pairScore(p) {
+  return (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
+}
 export function bestPairs(pairs, addresses) {
   const map = {};
   const wanted = new Set(addresses.map(a => a.toLowerCase()));
   for (const p of pairs || []) {
     const addr = p.baseToken?.address?.toLowerCase();
     if (!addr || !wanted.has(addr)) continue;
-    const liq = p.liquidity?.usd || 0;
-    if (!map[addr] || liq > (map[addr].liquidity?.usd || 0)) map[addr] = p;
+    if (!map[addr] || pairScore(p) > pairScore(map[addr])) map[addr] = p;
   }
   return map;
 }

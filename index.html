@@ -640,15 +640,19 @@ function statusLine(pct) {
   return pct.toFixed(2) + "% of the way — generational patience required. WAGMI. 🧘";
 }
 
-// Pick the most liquid pair for each requested token address
+// Pick each token's PumpSwap pool (most liquid one if several);
+// fall back to the most liquid pool on any DEX only when a token
+// has no PumpSwap pool at all.
+function pairScore(p) {
+  return (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
+}
 function bestPairs(pairs, addresses) {
   const map = {};
   const wanted = new Set(addresses.map(a => a.toLowerCase()));
   for (const p of pairs || []) {
     const addr = p.baseToken?.address?.toLowerCase();
     if (!addr || !wanted.has(addr)) continue;
-    const liq = p.liquidity?.usd || 0;
-    if (!map[addr] || liq > (map[addr].liquidity?.usd || 0)) map[addr] = p;
+    if (!map[addr] || pairScore(p) > pairScore(map[addr])) map[addr] = p;
   }
   return map;
 }
