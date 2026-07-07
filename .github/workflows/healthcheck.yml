@@ -46,6 +46,14 @@ jobs:
           }
           "
 
+      - name: Check visit tracking
+        run: |
+          echo "=== POST /api/track"
+          curl -sS -o /dev/null -w "%{http_code}\n" -X POST -m 20 "https://patty-prix.vercel.app/api/track"
+          echo "=== GET /api/visits"
+          curl -sS -m 20 "https://patty-prix.vercel.app/api/visits" | head -c 400
+          echo
+
       - name: Check stats API endpoints
         run: |
           for q in supply ath; do
