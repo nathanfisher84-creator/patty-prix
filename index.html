@@ -33,6 +33,133 @@
 
   .wrap { max-width: 760px; margin: 0 auto; }
 
+  /* ---------- ticker ---------- */
+  .ticker {
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    box-shadow: 5px 5px 0 var(--ink);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 10px 0;
+    margin-bottom: 26px;
+  }
+  .ticker-track {
+    display: inline-block;
+    animation: ticker-scroll 30s linear infinite;
+  }
+  @keyframes ticker-scroll { to { transform: translateX(-50%); } }
+  .ticker .ti {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    padding: 0 10px;
+  }
+  .ticker .sep { color: #E570CD; padding: 0 6px; }
+  .up { color: #1B9E4B; }
+  .down { color: #E4373F; }
+
+  /* ---------- token hero ---------- */
+  .hero {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    margin: 6px 2px 30px;
+  }
+  .hero-icon {
+    width: 88px; height: 88px;
+    border-radius: 50%;
+    border: 3px solid var(--ink);
+    background: #fff;
+    object-fit: cover;
+    box-shadow: 4px 4px 0 var(--ink);
+    flex-shrink: 0;
+  }
+  .hero-name {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(26px, 6vw, 38px);
+    text-shadow: 3px 3px 0 rgba(23,19,14,0.18);
+  }
+  .hero-ca {
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--sub);
+    word-break: break-all;
+    margin: 2px 0 12px;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    background: var(--fill);
+    color: var(--ink);
+    border: 3px solid var(--ink);
+    border-radius: 999px;
+    padding: 8px 18px;
+    box-shadow: 4px 4px 0 var(--ink);
+    cursor: pointer;
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .hero-updated {
+    margin-top: 10px;
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--sub);
+  }
+
+  /* ---------- stash tiles ---------- */
+  .section-tag {
+    display: inline-block;
+    background: var(--card);
+    border: 3px solid var(--ink);
+    border-radius: 18px;
+    padding: 10px 22px;
+    box-shadow: 5px 5px 0 var(--ink);
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  .stash {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 18px;
+    margin-bottom: 40px;
+  }
+  .tile {
+    border: 3px solid var(--ink);
+    border-radius: 20px;
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 18px 20px;
+  }
+  .tile .t-label {
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    opacity: 0.85;
+  }
+  .tile .t-value {
+    font-family: 'Fredoka', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 5vw, 30px);
+  }
+  .tile .t-sub { font-weight: 800; font-size: 14px; margin-top: 6px; }
+  .t-blue   { background: #7ED3F0; }
+  .t-red    { background: #F0908C; }
+  .t-pink   { background: #E570CD; }
+  .t-purple { background: var(--pill); color: #fff; }
+  .t-cream  { background: var(--card); grid-column: 1 / -1; }
+
   /* ---------- header ---------- */
   .title-tag {
     display: inline-flex;
@@ -45,7 +172,7 @@
     box-shadow: 7px 7px 0 var(--ink);
     margin-bottom: 14px;
   }
-  .title-tag h1 {
+  .title-tag h2 {
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: clamp(22px, 5vw, 32px);
@@ -61,33 +188,7 @@
   }
   .tagline b { color: var(--ink); }
 
-  .challenger-bar {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin: 18px 2px 30px;
-    flex-wrap: wrap;
-  }
-  .challenger-bar img {
-    width: 52px; height: 52px;
-    border-radius: 50%;
-    border: 3px solid var(--ink);
-    background: #fff;
-    object-fit: cover;
-  }
-  .challenger-meta { display: flex; flex-direction: column; }
-  .challenger-meta .name {
-    font-family: 'Fredoka', sans-serif;
-    font-weight: 600;
-    font-size: 20px;
-  }
-  .challenger-meta .mcap {
-    font-weight: 800;
-    font-size: 15px;
-    color: var(--sub);
-  }
   .live-dot {
-    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -254,23 +355,58 @@
   @media (prefers-reduced-motion: reduce) {
     .track-fill, .car, .multiplier, .race-card { transition: none; }
     .car.vroom, .live-dot::before { animation: none; }
+    .ticker-track { animation: none; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <div class="title-tag"><h1>Patty Prix 🏁</h1></div>
-  <p class="tagline">pattyice — <b>the bag worker</b> — races the field</p>
-
-  <div class="challenger-bar" id="challengerBar" hidden>
-    <img id="challengerIcon" alt="" />
-    <div class="challenger-meta">
-      <span class="name" id="challengerName">—</span>
-      <span class="mcap" id="challengerMcap">—</span>
-    </div>
-    <span class="live-dot">LIVE</span>
+  <div class="ticker" id="ticker" hidden>
+    <div class="ticker-track" id="tickerTrack"></div>
   </div>
+
+  <div class="hero" id="hero" hidden>
+    <img class="hero-icon" id="heroIcon" alt="" />
+    <div class="hero-main">
+      <h1 class="hero-name" id="heroName">—</h1>
+      <div class="hero-ca" id="heroCa"></div>
+      <div class="hero-actions">
+        <button class="btn" id="copyBtn" type="button">COPY CA 📋</button>
+        <button class="btn" id="refreshBtn" type="button">REFRESH 🔄</button>
+        <span class="live-dot">LIVE</span>
+      </div>
+      <div class="hero-updated" id="heroUpdated"></div>
+    </div>
+  </div>
+
+  <div class="section-tag" id="stashTag" hidden>The Stash 💰</div>
+  <div class="stash" id="stash" hidden>
+    <div class="tile t-blue">
+      <div class="t-label">Price</div>
+      <div class="t-value" id="tPrice">—</div>
+      <div class="t-sub" id="tChange"></div>
+    </div>
+    <div class="tile t-red">
+      <div class="t-label">Market Cap</div>
+      <div class="t-value" id="tMcap">—</div>
+    </div>
+    <div class="tile t-pink">
+      <div class="t-label">24h Volume</div>
+      <div class="t-value" id="tVol">—</div>
+    </div>
+    <div class="tile t-purple">
+      <div class="t-label">Liquidity</div>
+      <div class="t-value" id="tLiq">—</div>
+    </div>
+    <div class="tile t-cream" id="tileWhale" hidden>
+      <div class="t-label">Whale Share (Top 10)</div>
+      <div class="t-value" id="tWhale">—</div>
+    </div>
+  </div>
+
+  <div class="title-tag"><h2>Patty Prix 🏁</h2></div>
+  <p class="tagline">pattyice — <b>the bag worker</b> — races the field</p>
 
   <div id="races">
     <div class="skeleton">Warming up the engines… 🏎️</div>
@@ -352,8 +488,98 @@ function tokenData(pair) {
     name: pair.baseToken.name || pair.baseToken.symbol,
     symbol: pair.baseToken.symbol,
     mcap: pair.marketCap ?? pair.fdv ?? null,
-    icon: pair.info?.imageUrl || null
+    icon: pair.info?.imageUrl || null,
+    price: pair.priceUsd != null ? Number(pair.priceUsd) : null,
+    change24: pair.priceChange?.h24 ?? null,
+    vol24: pair.volume?.h24 ?? null,
+    liq: pair.liquidity?.usd ?? null
   };
+}
+
+function fmtPrice(p) {
+  if (p == null || isNaN(p)) return "—";
+  if (p >= 1) return "$" + p.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const s = p.toPrecision(4);
+  return "$" + (s.includes("e") ? Number(s).toFixed(10).replace(/0+$/, "") : s);
+}
+
+function deltaHtml(chg) {
+  if (chg == null || isNaN(chg)) return "";
+  const dir = chg >= 0 ? "▲" : "▼";
+  const cls = chg >= 0 ? "up" : "down";
+  return `<span class="${cls}">${dir} ${Math.abs(chg).toFixed(1)}% 24h</span>`;
+}
+
+let lastTicker = "";
+function updateHero(me) {
+  // scrolling ticker (two identical halves for a seamless loop)
+  const dir = (me.change24 ?? 0) >= 0 ? "▲" : "▼";
+  const cls = (me.change24 ?? 0) >= 0 ? "up" : "down";
+  const unit =
+    `<span class="ti">$${me.symbol.toUpperCase()} ${fmtPrice(me.price)}</span><span class="sep">✦</span>` +
+    (me.change24 != null ? `<span class="ti ${cls}">24h ${dir} ${Math.abs(me.change24).toFixed(1)}%</span><span class="sep">✦</span>` : "") +
+    `<span class="ti">MCAP ${fmtUsd(me.mcap)}</span><span class="sep">✦</span>` +
+    (me.vol24 != null ? `<span class="ti">VOL ${fmtUsd(me.vol24)}</span><span class="sep">✦</span>` : "");
+  const half = unit.repeat(3);
+  if (half !== lastTicker) {
+    lastTicker = half;
+    document.getElementById("tickerTrack").innerHTML = half + half;
+  }
+  document.getElementById("ticker").hidden = false;
+
+  // hero header
+  document.getElementById("hero").hidden = false;
+  document.getElementById("heroName").textContent = me.name;
+  document.getElementById("heroCa").textContent = CONFIG.challenger;
+  if (me.icon) document.getElementById("heroIcon").src = me.icon;
+  document.getElementById("heroUpdated").textContent =
+    "stats updated " + new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  // stash tiles
+  document.getElementById("stashTag").hidden = false;
+  document.getElementById("stash").hidden = false;
+  document.getElementById("tPrice").textContent = fmtPrice(me.price);
+  document.getElementById("tChange").innerHTML = deltaHtml(me.change24);
+  document.getElementById("tMcap").textContent = fmtUsd(me.mcap);
+  document.getElementById("tVol").textContent = me.vol24 != null ? fmtUsd(me.vol24) : "—";
+  document.getElementById("tLiq").textContent = me.liq != null ? fmtUsd(me.liq) : "—";
+}
+
+document.getElementById("copyBtn").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(CONFIG.challenger);
+    btn.textContent = "COPIED ✓";
+  } catch {
+    btn.textContent = "COPY FAILED";
+  }
+  setTimeout(() => { btn.textContent = "COPY CA 📋"; }, 1500);
+});
+document.getElementById("refreshBtn").addEventListener("click", () => refresh());
+
+// Top-10 holder share straight from Solana public RPC (approximate:
+// the largest token accounts include liquidity pools). Tile stays
+// hidden if the RPC is unreachable or rate-limits us.
+async function refreshWhale() {
+  try {
+    const rpc = (method, params) =>
+      fetch("https://api.mainnet-beta.solana.com", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+      }).then(r => r.json());
+    const [largest, supply] = await Promise.all([
+      rpc("getTokenLargestAccounts", [CONFIG.challenger]),
+      rpc("getTokenSupply", [CONFIG.challenger])
+    ]);
+    const total = Number(supply?.result?.value?.amount);
+    const top10 = (largest?.result?.value || [])
+      .slice(0, 10)
+      .reduce((s, a) => s + Number(a.amount), 0);
+    if (!total || !top10) return;
+    document.getElementById("tWhale").textContent = (top10 / total * 100).toFixed(1) + "%";
+    document.getElementById("tileWhale").hidden = false;
+  } catch { /* keep the tile hidden */ }
 }
 
 function buildCard(rivalAddr) {
@@ -391,12 +617,8 @@ async function refresh() {
     const me = tokenData(byAddr[CONFIG.challenger.toLowerCase()]);
     if (!me || me.mcap == null) throw new Error("Challenger token not found — check the address in CONFIG.");
 
-    // header
-    const bar = document.getElementById("challengerBar");
-    bar.hidden = false;
-    document.getElementById("challengerName").textContent = me.name + " · $" + me.symbol;
-    document.getElementById("challengerMcap").textContent = "Market cap " + fmtUsd(me.mcap);
-    if (me.icon) document.getElementById("challengerIcon").src = me.icon;
+    // ticker + hero + stash tiles
+    updateHero(me);
 
     // build cards once
     if (firstLoad) {
@@ -472,6 +694,8 @@ async function refresh() {
 
 refresh();
 setInterval(refresh, CONFIG.pollIntervalMs);
+refreshWhale();
+setInterval(refreshWhale, 5 * 60 * 1000);
 </script>
 </body>
 </html>
