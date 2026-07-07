@@ -78,6 +78,7 @@ export function buildMessage(byAddr, now = new Date()) {
     if (!mcap) continue;
     rows.push({
       name: p.baseToken.name || p.baseToken.symbol,
+      symbol: p.baseToken.symbol,
       mcap,
       pct: Math.min(myMcap / mcap * 100, 100),
       mult: mcap / myMcap
@@ -92,10 +93,10 @@ export function buildMessage(byAddr, now = new Date()) {
   ];
   for (const r of rows) {
     if (r.pct >= 100) {
-      lines.push(`👑 <b>${esc(r.name)}</b> — FLIPPED!`);
+      lines.push(`👑 <b>${esc(r.name)}</b> ($${esc(r.symbol)}) — FLIPPED!`);
     } else {
       lines.push(`${bar(r.pct)} ${r.pct.toFixed(1)}%`);
-      lines.push(`<b>${esc(r.name)}</b> · ${fmtUsd(r.mcap)} · ${fmtMult(r.mult)} to go`);
+      lines.push(`<b>${esc(r.name)}</b> ($${esc(r.symbol)}) · ${fmtUsd(r.mcap)} · ${fmtMult(r.mult)} to go`);
     }
     lines.push("");
   }
