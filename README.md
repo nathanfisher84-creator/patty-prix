@@ -77,4 +77,4 @@ The site deploys to GitHub Pages (workflow above) and is also connected to Verce
 
 `api/stats.mjs` is a Vercel serverless function that proxies Helius for the HOLDERS tile and The Airdrop Fam section, keeping the API key out of the public page. It is locked to this project's mint and airdrop wallet.
 
-Setup: Vercel project → **Settings → Environment Variables** → add `HELIUS_API_KEY` (all environments) → redeploy. Both the Vercel and GitHub Pages deployments call the same `https://patty-prix.vercel.app/api/stats` endpoint (`CONFIG.statsApi` in `index.html`). Responses are edge-cached (2–10 min) to stay inside Helius free-tier limits.
+Setup: Vercel project → **Settings → Environment Variables** → add `HELIUS_API_KEY` and `BIRDEYE_API_KEY` (all environments) → redeploy. Helius powers holders + airdrop data; Birdeye powers the true token-level all-time high (`?q=ath`), with GeckoTerminal pool history as the client-side fallback. Both the Vercel and GitHub Pages deployments call the same `https://patty-prix.vercel.app/api/stats` endpoint (`CONFIG.statsApi` in `index.html`). Responses are edge-cached (2–10 min) to stay inside Helius free-tier limits.
