@@ -4,6 +4,16 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Patty Prix 🏁 — the bag worker races the field</title>
+<meta name="description" content="Live flip-race: $PATTYICE's market cap vs the field, plus holder stats and The Airdrop Fam. Updated every 10 seconds." />
+<meta name="theme-color" content="#F5C8DE" />
+<meta name="color-scheme" content="light" />
+<meta property="og:title" content="Patty Prix 🏁" />
+<meta property="og:description" content="pattyice — the bag worker — races the field. Live flip-race, live stash, live airdrop fam." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="Patty Prix 🏁" />
+<meta name="twitter:description" content="pattyice — the bag worker — races the field. Live flip-race, live stash, live airdrop fam." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%81%3C/text%3E%3C/svg%3E" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:ital,wght@0,600;0,700;0,800;1,600;1,700&display=swap" rel="stylesheet">
@@ -24,17 +34,51 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
 
   body {
-    background: var(--bg);
     font-family: 'Nunito', sans-serif;
     color: var(--ink);
     min-height: 100vh;
-    padding: 28px 16px 80px;
+    padding: 24px 16px 70px;
+    background:
+      radial-gradient(1000px 520px at 85% -120px, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(800px 480px at -120px 30%, rgba(126,211,240,0.28), transparent 60%),
+      radial-gradient(700px 420px at 110% 75%, rgba(95,75,224,0.13), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image: radial-gradient(rgba(23,19,14,0.055) 1.6px, transparent 1.6px);
+    background-size: 26px 26px;
   }
 
-  .wrap { max-width: 760px; margin: 0 auto; }
+  ::selection { background: var(--ink); color: var(--card); }
+  button:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+
+  .wrap { max-width: 760px; margin: 0 auto; position: relative; z-index: 1; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px) scale(0.985); }
+    to   { opacity: 1; transform: none; }
+  }
+  .ticker, .hero, .section-tag, .stash, .title-tag, .tagline, .skeleton {
+    animation: rise 0.5s cubic-bezier(.22,.9,.32,1.1) both;
+  }
+  .stash .tile:nth-child(2) { animation: rise 0.5s 0.06s cubic-bezier(.22,.9,.32,1.1) both; }
+  .stash .tile:nth-child(3) { animation: rise 0.5s 0.12s cubic-bezier(.22,.9,.32,1.1) both; }
+  .stash .tile:nth-child(4) { animation: rise 0.5s 0.18s cubic-bezier(.22,.9,.32,1.1) both; }
+  .stash .tile:nth-child(5) { animation: rise 0.5s 0.24s cubic-bezier(.22,.9,.32,1.1) both; }
+  .stash .tile:nth-child(6) { animation: rise 0.5s 0.30s cubic-bezier(.22,.9,.32,1.1) both; }
+  .race-card.pop { animation: rise 0.5s cubic-bezier(.22,.9,.32,1.1) both; }
 
   /* ---------- ticker ---------- */
   .ticker {
+    position: sticky;
+    top: 10px;
+    z-index: 40;
     background: var(--card);
     border: 3px solid var(--ink);
     border-radius: 999px;
@@ -42,12 +86,23 @@
     overflow: hidden;
     white-space: nowrap;
     padding: 10px 0;
-    margin-bottom: 26px;
+    margin-bottom: 28px;
   }
+  .ticker::before, .ticker::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 38px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .ticker::before { left: 0;  background: linear-gradient(90deg, var(--card) 30%, transparent); }
+  .ticker::after  { right: 0; background: linear-gradient(270deg, var(--card) 30%, transparent); }
   .ticker-track {
     display: inline-block;
     animation: ticker-scroll 30s linear infinite;
   }
+  .ticker:hover .ticker-track { animation-play-state: paused; }
   @keyframes ticker-scroll { to { transform: translateX(-50%); } }
   .ticker .ti {
     font-family: 'Fredoka', sans-serif;
@@ -62,31 +117,41 @@
   /* ---------- token hero ---------- */
   .hero {
     display: flex;
-    gap: 18px;
+    gap: 20px;
     align-items: flex-start;
-    margin: 6px 2px 30px;
+    margin: 10px 2px 34px;
   }
   .hero-icon {
-    width: 88px; height: 88px;
+    width: 96px; height: 96px;
     border-radius: 50%;
     border: 3px solid var(--ink);
     background: #fff;
     object-fit: cover;
-    box-shadow: 4px 4px 0 var(--ink);
+    box-shadow: 5px 5px 0 var(--ink);
     flex-shrink: 0;
+    transform: rotate(-3deg);
+    transition: transform 0.25s cubic-bezier(.3,1.6,.4,1);
   }
+  .hero:hover .hero-icon { transform: rotate(2deg) scale(1.04); }
   .hero-name {
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
-    font-size: clamp(26px, 6vw, 38px);
-    text-shadow: 3px 3px 0 rgba(23,19,14,0.18);
+    font-size: clamp(30px, 7vw, 44px);
+    line-height: 1.05;
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.75), 5px 5px 0 rgba(23,19,14,0.16);
   }
   .hero-ca {
+    display: inline-block;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     font-weight: 700;
     font-size: 12.5px;
-    color: var(--sub);
-    word-break: break-all;
-    margin: 2px 0 12px;
+    letter-spacing: 0.4px;
+    background: var(--card);
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    padding: 5px 13px;
+    box-shadow: 3px 3px 0 var(--ink);
+    margin: 8px 0 12px;
   }
   .hero-actions {
     display: flex;
@@ -105,8 +170,9 @@
     padding: 8px 18px;
     box-shadow: 4px 4px 0 var(--ink);
     cursor: pointer;
-    transition: transform 0.1s ease, box-shadow 0.1s ease;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   }
+  .btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); background: #93DCF4; }
   .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
   .hero-updated {
     margin-top: 10px;
@@ -126,20 +192,23 @@
     font-family: 'Fredoka', sans-serif;
     font-weight: 700;
     font-size: 20px;
-    margin-bottom: 20px;
+    margin-bottom: 22px;
+    transform: rotate(-1.2deg);
   }
   .stash {
     display: grid;
     grid-template-columns: 1fr 1fr;
     gap: 18px;
-    margin-bottom: 40px;
+    margin-bottom: 44px;
   }
   .tile {
     border: 3px solid var(--ink);
     border-radius: 20px;
     box-shadow: 6px 6px 0 var(--ink);
     padding: 18px 20px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
+  .tile:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0 var(--ink); }
   .tile .t-label {
     font-weight: 800;
     font-size: 13px;
@@ -172,6 +241,7 @@
     padding: 14px 26px;
     box-shadow: 7px 7px 0 var(--ink);
     margin-bottom: 14px;
+    transform: rotate(-1deg);
   }
   .title-tag h2 {
     font-family: 'Fredoka', sans-serif;
@@ -218,9 +288,10 @@
     box-shadow: 8px 8px 0 var(--ink);
     padding: 26px 26px 22px;
     margin-bottom: 34px;
-    transition: transform 0.6s cubic-bezier(.2,1.4,.4,1);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
   }
-  .race-card.flipped { background: #FFF4CC; }
+  .race-card:hover { transform: translate(-2px, -2px); box-shadow: 10px 10px 0 var(--ink); }
+  .race-card.flipped { background: linear-gradient(160deg, #FFF6D6, #FFE9A6); }
 
   .card-top {
     display: flex;
@@ -268,15 +339,33 @@
         var(--card) 0 46px,
         var(--card-stripe) 46px 92px);
     overflow: visible;
+    box-shadow: inset 0 4px 0 rgba(23,19,14,0.05);
+  }
+  .track::before {
+    content: "";
+    position: absolute;
+    left: 26px; right: 26px; top: 50%;
+    border-top: 3px dashed rgba(23,19,14,0.14);
+    transform: translateY(-50%);
+    pointer-events: none;
   }
   .track-fill {
     position: absolute;
     left: 0; top: 0; bottom: 0;
-    background: linear-gradient(180deg, var(--fill), var(--fill-deep));
+    background-image:
+      repeating-linear-gradient(-55deg, rgba(255,255,255,0.22) 0 12px, rgba(255,255,255,0) 12px 24px),
+      linear-gradient(180deg, var(--fill), var(--fill-deep));
     border-radius: 999px 0 0 999px;
     border-right: 3px solid var(--ink);
     min-width: 30px;
     transition: width 1.6s cubic-bezier(.3,.9,.3,1);
+    animation: chug 1.4s linear infinite;
+  }
+  @keyframes chug { to { background-position: 34px 0, 0 0; } }
+  .race-card.flipped .track-fill {
+    background-image:
+      repeating-linear-gradient(-55deg, rgba(255,255,255,0.28) 0 12px, rgba(255,255,255,0) 12px 24px),
+      linear-gradient(180deg, #FFD968, #FFC93C);
   }
   .car {
     position: absolute;
@@ -334,6 +423,8 @@
 
   /* skeleton + error */
   .skeleton {
+    position: relative;
+    overflow: hidden;
     background: var(--card);
     border: 3px solid var(--ink);
     border-radius: var(--radius);
@@ -345,18 +436,38 @@
     font-size: 18px;
     margin-bottom: 34px;
   }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.65), transparent);
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer { to { transform: translateX(100%); } }
   .updated {
     text-align: center;
     font-size: 13px;
     font-weight: 700;
+    letter-spacing: 0.3px;
     color: rgba(23,19,14,0.5);
-    margin-top: 6px;
+    margin-top: 10px;
+  }
+
+  @media (max-width: 540px) {
+    body { padding: 16px 10px 56px; }
+    .hero { gap: 14px; }
+    .hero-icon { width: 76px; height: 76px; }
+    .stash { gap: 13px; }
+    .tile { padding: 15px 16px; }
+    .ticker .ti { font-size: 14px; }
+    .race-card { padding: 20px 18px 18px; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    .track-fill, .car, .multiplier, .race-card { transition: none; }
-    .car.vroom, .live-dot::before { animation: none; }
-    .ticker-track { animation: none; }
+    .track-fill, .car, .multiplier, .race-card, .tile, .btn, .hero-icon { transition: none; }
+    .car.vroom, .live-dot::before, .ticker-track, .track-fill, .skeleton::after { animation: none; }
+    .ticker, .hero, .section-tag, .stash, .stash .tile, .title-tag, .tagline, .skeleton, .race-card.pop { animation: none; }
   }
 </style>
 </head>
@@ -373,8 +484,8 @@
       <h1 class="hero-name" id="heroName">—</h1>
       <div class="hero-ca" id="heroCa"></div>
       <div class="hero-actions">
-        <button class="btn" id="copyBtn" type="button">COPY CA 📋</button>
-        <button class="btn" id="refreshBtn" type="button">REFRESH 🔄</button>
+        <button class="btn" id="copyBtn" type="button" aria-label="Copy contract address">COPY CA 📋</button>
+        <button class="btn" id="refreshBtn" type="button" aria-label="Refresh stats">REFRESH 🔄</button>
         <span class="live-dot">LIVE</span>
       </div>
       <div class="hero-updated" id="heroUpdated"></div>
@@ -587,7 +698,9 @@ function updateHero(me) {
   // hero header
   document.getElementById("hero").hidden = false;
   document.getElementById("heroName").textContent = me.name;
-  document.getElementById("heroCa").textContent = CONFIG.challenger;
+  const caEl = document.getElementById("heroCa");
+  caEl.textContent = CONFIG.challenger.slice(0, 6) + "…" + CONFIG.challenger.slice(-6);
+  caEl.title = CONFIG.challenger;
   if (me.icon) document.getElementById("heroIcon").src = me.icon;
   document.getElementById("heroUpdated").textContent =
     "stats updated " + new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
@@ -823,10 +936,19 @@ async function refresh() {
     // ticker + hero + stash tiles
     updateHero(me);
 
-    // build cards once
+    // build cards once, entering with a small stagger
     if (firstLoad) {
       racesEl.innerHTML = "";
-      CONFIG.rivals.forEach(a => racesEl.appendChild(buildCard(a)));
+      CONFIG.rivals.forEach((a, i) => {
+        const card = buildCard(a);
+        card.classList.add("pop");
+        card.style.animationDelay = (i * 70) + "ms";
+        card.addEventListener("animationend", () => {
+          card.classList.remove("pop");
+          card.style.animationDelay = "";
+        }, { once: true });
+        racesEl.appendChild(card);
+      });
       firstLoad = false;
     }
 
