@@ -597,11 +597,10 @@ const CONFIG = {
   // How often to refresh prices (milliseconds). 10000 = every 10s.
   pollIntervalMs: 10000,
 
-  // Helius API key — powers the HOLDERS tile and The Airdrop Fam.
-  // This key is visible to anyone viewing the page, so restrict it to
-  // your site's domain in the Helius dashboard (Access Control Rules).
-  // Leave "" to hide those tiles.
-  heliusApiKey: "24d48141-f611-48f9-b36e-c6c1d2471713",
+  // Stats API — Vercel serverless proxy (api/stats.mjs) that holds the
+  // Helius key server-side. Powers the HOLDERS tile and The Airdrop Fam.
+  // Leave "" to hide those sections.
+  statsApi: "https://patty-prix.vercel.app/api/stats",
 
   // Wallet the airdrops are sent from — powers "The Airdrop Fam"
   // section below the races. Leave "" to hide the section.
@@ -758,22 +757,20 @@ async function refreshWhale() {
   } catch { /* keep the tile hidden */ }
 }
 
-function heliusRpc(method, params) {
-  return fetch("https://mainnet.helius-rpc.com/?api-key=" + CONFIG.heliusApiKey, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
-  }).then(r => r.json());
+async function statsFetch(params) {
+  const res = await fetch(CONFIG.statsApi + "?" + new URLSearchParams(params));
+  if (!res.ok) throw new Error("stats API " + res.status);
+  return res.json();
 }
 
-// One sweep over the mint's token accounts (Helius getTokenAccounts,
-// paginated 1000/page) → raw balance per owner. Shared by the HOLDERS
-// tile and The Airdrop Fam analysis.
+// One sweep over the mint's token accounts (Helius getTokenAccounts via
+// the stats proxy, paginated 1000/page) → raw balance per owner. Shared
+// by the HOLDERS tile and The Airdrop Fam analysis.
 async function scanHolders() {
   const balances = new Map();
   let page = 1, maybeMore = false;
   while (page <= 20) {
-    const data = await heliusRpc("getTokenAccounts", { mint: CONFIG.challenger, limit: 1000, page });
+    const data = await statsFetch({ q: "holders", page });
     const accs = data?.result?.token_accounts || [];
     for (const a of accs) {
       const amt = Number(a.amount);
@@ -821,16 +818,13 @@ function setText(id, text) { document.getElementById(id).textContent = text; }
 async function refreshAirdrops(scan) {
   if (!CONFIG.airdropWallet) return;
   try {
-    const supply = await heliusRpc("getTokenSupply", [CONFIG.challenger]);
+    const supply = await statsFetch({ q: "supply" });
     const decimals = supply?.result?.value?.decimals ?? 6;
 
     const recip = {};
     let before = "";
     for (let i = 0; i < 10; i++) {
-      const url = "https://api.helius.xyz/v0/addresses/" + CONFIG.airdropWallet +
-        "/transactions?api-key=" + CONFIG.heliusApiKey + "&limit=100" +
-        (before ? "&before=" + before : "");
-      const batch = await (await fetch(url)).json();
+      const batch = await statsFetch(before ? { q: "airdrop", before } : { q: "airdrop" });
       if (!Array.isArray(batch) || !batch.length) break;
       for (const tx of batch) {
         for (const t of tx.tokenTransfers || []) {
@@ -1028,7 +1022,7 @@ async function refresh() {
 async function refreshExtras() {
   refreshWhale();
   refreshAth();
-  if (!CONFIG.heliusApiKey) return;
+  if (!CONFIG.statsApi) return;
   try {
     const scan = await scanHolders();
     updateHoldersTile(scan);
