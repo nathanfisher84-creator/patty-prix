@@ -1,0 +1,25 @@
+name: Stats API Healthcheck
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check stats API endpoints
+        run: |
+          for q in supply ath; do
+            echo "=== q=$q"
+            curl -sS -m 20 "https://patty-prix.vercel.app/api/stats?q=$q" | head -c 400
+            echo; echo
+          done
+          echo "=== q=holders (truncated)"
+          curl -sS -m 30 "https://patty-prix.vercel.app/api/stats?q=holders&page=1" | head -c 250
+          echo; echo
+          echo "=== q=airdrop (truncated)"
+          curl -sS -m 30 "https://patty-prix.vercel.app/api/stats?q=airdrop" | head -c 300
+          echo
