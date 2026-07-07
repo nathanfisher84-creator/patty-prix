@@ -873,9 +873,24 @@ async function refreshAirdrops(scan) {
   } catch { /* keep the section hidden */ }
 }
 
-// All-time high from GeckoTerminal's free daily OHLCV for the most
-// liquid pool (no API key needed). Covers the current pool's history.
+function renderAth(athPrice, athTime) {
+  document.getElementById("tAth").textContent = fmtPrice(athPrice);
+  const when = new Date(athTime * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const pctOf = lastPrice != null ? Math.round(lastPrice / athPrice * 100) : null;
+  document.getElementById("tAthSub").textContent =
+    (pctOf != null ? "now at " + pctOf + "% of ATH · " : "") + when;
+  document.getElementById("tileAth").hidden = false;
+}
+
+// All-time high: token-level history via the stats proxy (Birdeye),
+// falling back to GeckoTerminal's free pool OHLCV if the proxy errors.
 async function refreshAth() {
+  if (CONFIG.statsApi) {
+    try {
+      const d = await statsFetch({ q: "ath" });
+      if (d?.athPrice) { renderAth(d.athPrice, d.athTime); return; }
+    } catch { /* fall through to GeckoTerminal */ }
+  }
   if (!challengerPairAddr) return;
   try {
     const res = await fetch("https://api.geckoterminal.com/api/v2/networks/solana/pools/" +
@@ -889,12 +904,7 @@ async function refreshAth() {
       if (high > athPrice) { athPrice = high; athTime = c[0]; }
     }
     if (!athPrice) return;
-    document.getElementById("tAth").textContent = fmtPrice(athPrice);
-    const when = new Date(athTime * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
-    const pctOf = lastPrice != null ? Math.round(lastPrice / athPrice * 100) : null;
-    document.getElementById("tAthSub").textContent =
-      (pctOf != null ? "now at " + pctOf + "% of ATH · " : "") + when;
-    document.getElementById("tileAth").hidden = false;
+    renderAth(athPrice, athTime);
   } catch { /* keep the tile hidden */ }
 }
 
