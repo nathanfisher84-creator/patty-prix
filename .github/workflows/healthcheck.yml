@@ -29,7 +29,7 @@ jobs:
           for (const a of all) {
             const p = byAddr[a.toLowerCase()];
             const mc = p && (p.marketCap ?? p.fdv);
-            console.log(a.slice(0, 8) + '… = ' + (p ? p.baseToken.name + ' (' + p.baseToken.symbol + ') mcap ' + m.fmtUsd(mc) : 'NOT FOUND'));
+            console.log(a.slice(0, 8) + '… = ' + (p ? p.baseToken.name + ' (' + p.baseToken.symbol + ') mcap ' + m.fmtUsd(mc) + ' · pool ' + p.dexId + ' liq ' + m.fmtUsd(p.liquidity?.usd ?? 0) : 'NOT FOUND'));
           }
           "
 
