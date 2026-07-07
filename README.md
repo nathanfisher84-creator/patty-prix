@@ -34,6 +34,16 @@ python3 -m http.server
 
 Deploys anywhere static files work: Vercel, Netlify, GitHub Pages, Cloudflare Pages.
 
+## Deploying (GitHub Pages)
+
+This repo ships with a workflow (`.github/workflows/deploy.yml`) that publishes the site to GitHub Pages on every push to `main` — no configuration needed. The first run enables Pages automatically; after it finishes, the site is live at:
+
+```
+https://<your-username>.github.io/patty-prix/
+```
+
+You can also trigger a deploy manually from the **Actions** tab (workflow_dispatch). If the first run fails with a Pages permission error, set **Settings → Pages → Source** to "GitHub Actions" once and re-run it.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.

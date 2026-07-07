@@ -414,6 +414,7 @@ async function refresh() {
 
       if (!rival || rival.mcap == null) {
         card.querySelector(".status").textContent = "Token not found — check this address in CONFIG.";
+        rows.push({ card, pct: -1 }); // sink unknown tokens below live races
         continue;
       }
 
