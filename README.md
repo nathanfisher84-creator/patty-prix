@@ -71,7 +71,7 @@ Keep the token addresses in `scripts/telegram-scoreboard.mjs` in sync with the `
 
 ## Hosting
 
-The site deploys to GitHub Pages (workflow above) and is also connected to Vercel, which auto-deploys every push to `main` and creates preview deployments for pull requests.
+The site deploys to GitHub Pages (workflow above) and is also connected to Vercel, which auto-deploys every push to `main` and creates preview deployments for pull requests. The canonical home is **https://pattyprix.xyz** (custom domain on the Vercel project; DNS at Namecheap — A `@` → `76.76.21.21`, CNAME `www` → `cname.vercel-dns.com`).
 
 ## Stats API (Helius proxy)
 
