@@ -46,6 +46,18 @@ jobs:
           }
           "
 
+      - name: Check custom domain
+        run: |
+          for u in "https://pattyprix.xyz" "https://www.pattyprix.xyz"; do
+            echo "=== $u"
+            curl -sS -o /dev/null -m 20 -w "status %{http_code} · redirect to: %{redirect_url}\n" "$u" || true
+          done
+          echo "=== title served at pattyprix.xyz"
+          curl -sSL -m 20 "https://pattyprix.xyz" | grep -o "<title>[^<]*</title>" || echo "(no title found)"
+          echo "=== api via custom domain"
+          curl -sS -m 20 "https://pattyprix.xyz/api/stats?q=ath" || true
+          echo
+
       - name: Check visit tracking
         run: |
           echo "=== POST /api/track"
