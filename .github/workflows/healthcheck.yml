@@ -48,6 +48,14 @@ jobs:
 
       - name: Check custom domain
         run: |
+          echo "=== NS delegation seen by public DNS"
+          dig +short NS pattyprix.xyz || true
+          echo "=== NS records at the .xyz registry"
+          dig +short NS pattyprix.xyz @x.nic.xyz || true
+          echo "=== A record on Namecheap's own nameservers"
+          dig +short pattyprix.xyz @dns1.registrar-servers.com || true
+          echo "=== A record via public DNS (1.1.1.1)"
+          dig +short pattyprix.xyz @1.1.1.1 || true
           for u in "https://pattyprix.xyz" "https://www.pattyprix.xyz"; do
             echo "=== $u"
             curl -sS -o /dev/null -m 20 -w "status %{http_code} · redirect to: %{redirect_url}\n" "$u" || true
