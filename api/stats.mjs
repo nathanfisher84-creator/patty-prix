@@ -10,6 +10,20 @@
 
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 const AIRDROP_WALLET = "8CFVLmzq8Uo6N859y2qFUumrzP291VceztiEperzv941";
+// Keep in sync with CONFIG.rivals in index.html — the holderCount
+// endpoint only answers for these tokens.
+const RIVALS = [
+  "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+  "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+  "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
+  "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+  "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+  "4U4U8oXwDyVXGeTffMXds4NAgBgLFwq3wNvTCRTSpump",
+  "9E2Q4KKxLS5Y4bu6RKvjg5wQ2kzaLkiVsMt7zwMZpump",
+  "a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump",
+  "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
+];
+const TRACKED = new Set([MINT, ...RIVALS]);
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{20,100}$/;
 
 export default async function handler(req, res) {
@@ -50,6 +64,21 @@ export default async function handler(req, res) {
       const r = await fetch(url);
       res.setHeader("cache-control", "s-maxage=300, stale-while-revalidate=1800");
       return res.status(200).json(await r.json());
+    }
+    if (q === "holderCount") {
+      // holder count for any tracked token, via Birdeye token_overview
+      const birdeyeKey = process.env.BIRDEYE_API_KEY;
+      if (!birdeyeKey) return res.status(500).json({ error: "BIRDEYE_API_KEY not configured" });
+      const t = req.query.token;
+      if (!TRACKED.has(t)) return res.status(400).json({ error: "untracked token" });
+      const r = await fetch("https://public-api.birdeye.so/defi/token_overview?address=" + t, {
+        headers: { "X-API-KEY": birdeyeKey, "x-chain": "solana", accept: "application/json" }
+      });
+      const data = await r.json();
+      const holders = data?.data?.holder ?? data?.data?.holders ?? null;
+      if (holders == null) return res.status(502).json({ error: "no holder data" });
+      res.setHeader("cache-control", "s-maxage=600, stale-while-revalidate=3600");
+      return res.status(200).json({ holders: Number(holders) });
     }
     if (q === "ath") {
       // True token-level all-time high via Birdeye (daily candles across

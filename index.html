@@ -431,6 +431,32 @@
     white-space: nowrap;
   }
 
+  /* holder race — slim second track in each card */
+  .hrace { margin-top: 14px; }
+  .htrack {
+    position: relative;
+    height: 18px;
+    border: 2px solid var(--ink);
+    border-radius: 999px;
+    background: repeating-linear-gradient(90deg, var(--card) 0 30px, var(--card-stripe) 30px 60px);
+    overflow: hidden;
+  }
+  .htrack-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(180deg, #FFE18A, var(--gold));
+    border-right: 2px solid var(--ink);
+    min-width: 6px;
+    transition: width 1.2s cubic-bezier(.3,.9,.3,1);
+  }
+  .hstat {
+    margin-top: 6px;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--sub);
+  }
+  .hstat b { color: var(--ink); }
+
   .status {
     margin-top: 16px;
     font-style: italic;
@@ -951,7 +977,11 @@ function buildCard(rivalAddr) {
         <span class="target">—</span>
       </div>
     </div>
-    <div class="status">Loading…</div>`;
+    <div class="status">Loading…</div>
+    <div class="hrace" hidden>
+      <div class="htrack"><div class="htrack-fill" style="width:0%"></div></div>
+      <div class="hstat"></div>
+    </div>`;
   return el;
 }
 
@@ -1057,11 +1087,42 @@ async function refresh() {
   }
 }
 
+// The holder race: PATTYICE's holder count vs each rival's (Birdeye
+// token_overview via the stats proxy). Fills the slim gold track in
+// each race card; a card's strip hides itself if its count is missing.
+async function refreshHolderRace() {
+  if (!CONFIG.statsApi) return;
+  const all = [CONFIG.challenger, ...CONFIG.rivals];
+  const counts = {};
+  await Promise.all(all.map(async a => {
+    try {
+      const d = await statsFetch({ q: "holderCount", token: a });
+      if (d?.holders > 0) counts[a] = d.holders;
+    } catch { /* leave missing */ }
+  }));
+  const mine = counts[CONFIG.challenger];
+  if (!mine) return;
+  for (const addr of CONFIG.rivals) {
+    const card = racesEl.querySelector(`[data-addr="${addr}"]`);
+    const el = card && card.querySelector(".hrace");
+    if (!el) continue;
+    const theirs = counts[addr];
+    if (!theirs) { el.hidden = true; continue; }
+    const pct = Math.min(mine / theirs * 100, 100);
+    el.querySelector(".htrack-fill").style.width = Math.max(3, pct) + "%";
+    el.querySelector(".hstat").innerHTML = pct >= 100
+      ? `🤝 holder race: <b>FLIPPED 👑</b> — ${mine.toLocaleString()} vs ${theirs.toLocaleString()}`
+      : `🤝 holder race: <b>${mine.toLocaleString()}</b> vs ${theirs.toLocaleString()} · ${pct.toFixed(1)}% there`;
+    el.hidden = false;
+  }
+}
+
 // The slow-moving tiles (whale share, holders, ATH, airdrops) poll every
 // 5 minutes. ATH waits for the first refresh() to learn the pool address.
 async function refreshExtras() {
   refreshWhale();
   refreshAth();
+  refreshHolderRace();
   if (!CONFIG.statsApi) return;
   try {
     const scan = await scanHolders();
