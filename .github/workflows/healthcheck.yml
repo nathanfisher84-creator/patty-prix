@@ -72,21 +72,21 @@ jobs:
       - name: Check visit tracking
         run: |
           echo "=== POST /api/track"
-          curl -sS -o /dev/null -w "%{http_code}\n" -X POST -m 20 "https://patty-prix.vercel.app/api/track"
+          curl -sS -o /dev/null -w "%{http_code}\n" -X POST -m 20 "https://pattyprix.xyz/api/track"
           echo "=== GET /api/visits"
-          curl -sS -m 20 "https://patty-prix.vercel.app/api/visits" | head -c 400
+          curl -sS -m 20 "https://pattyprix.xyz/api/visits" | head -c 400
           echo
 
       - name: Check stats API endpoints
         run: |
           for q in supply ath; do
             echo "=== q=$q"
-            curl -sS -m 20 "https://patty-prix.vercel.app/api/stats?q=$q" | head -c 400
+            curl -sS -m 20 "https://pattyprix.xyz/api/stats?q=$q" | head -c 400
             echo; echo
           done
           echo "=== q=holders (truncated)"
-          curl -sS -m 30 "https://patty-prix.vercel.app/api/stats?q=holders&page=1" | head -c 250
+          curl -sS -m 30 "https://pattyprix.xyz/api/stats?q=holders&page=1" | head -c 250
           echo; echo
           echo "=== q=airdrop (truncated)"
-          curl -sS -m 30 "https://patty-prix.vercel.app/api/stats?q=airdrop" | head -c 300
+          curl -sS -m 30 "https://pattyprix.xyz/api/stats?q=airdrop" | head -c 300
           echo
