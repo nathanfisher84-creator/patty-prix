@@ -438,13 +438,13 @@
     height: 18px;
     border: 2px solid var(--ink);
     border-radius: 999px;
-    background: repeating-linear-gradient(90deg, var(--card) 0 30px, var(--card-stripe) 30px 60px);
+    background: repeating-linear-gradient(90deg, #F6BDB8 0 30px, #F0A9A3 30px 60px); /* their side: red */
     overflow: hidden;
   }
   .htrack-fill {
     position: absolute;
     left: 0; top: 0; bottom: 0;
-    background: linear-gradient(180deg, #FFE18A, var(--gold));
+    background: linear-gradient(180deg, #8FE3AE, #3EBF6E); /* our side: green */
     border-right: 2px solid var(--ink);
     min-width: 6px;
     transition: width 1.2s cubic-bezier(.3,.9,.3,1);
@@ -1094,12 +1094,15 @@ async function refreshHolderRace() {
   if (!CONFIG.statsApi) return;
   const all = [CONFIG.challenger, ...CONFIG.rivals];
   const counts = {};
-  await Promise.all(all.map(async a => {
+  // sequential on purpose: Birdeye's free tier rate-limits ~1 req/s,
+  // so parallel cold-cache lookups get 429s for most tokens
+  for (const a of all) {
     try {
       const d = await statsFetch({ q: "holderCount", token: a });
       if (d?.holders > 0) counts[a] = d.holders;
     } catch { /* leave missing */ }
-  }));
+    await new Promise(r => setTimeout(r, 350));
+  }
   const mine = counts[CONFIG.challenger];
   if (!mine) return;
   for (const addr of CONFIG.rivals) {
