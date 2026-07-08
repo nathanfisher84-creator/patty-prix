@@ -90,3 +90,14 @@ jobs:
           echo "=== q=airdrop (truncated)"
           curl -sS -m 30 "https://pattyprix.xyz/api/stats?q=airdrop" | head -c 300
           echo
+
+      - name: Check holder counts per token
+        run: |
+          node --input-type=module -e "
+          const m = await import('./scripts/telegram-scoreboard.mjs');
+          for (const a of [m.CONFIG.challenger, ...m.CONFIG.rivals]) {
+            const r = await fetch('https://pattyprix.xyz/api/stats?q=holderCount&token=' + a);
+            console.log(a.slice(0, 8) + '… → ' + r.status + ' ' + (await r.text()).slice(0, 120));
+            await new Promise(res => setTimeout(res, 1100));
+          }
+          "
