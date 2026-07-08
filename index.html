@@ -244,7 +244,10 @@
   .t-pink   { background: #E570CD; }
   .t-purple { background: var(--pill); color: #fff; }
   .t-cream  { background: var(--card); }
+  .t-gold   { background: linear-gradient(160deg, #FFD968, var(--gold)); }
   .t-wide   { grid-column: 1 / -1; }
+  .tile-big .t-value { font-size: clamp(26px, 6vw, 36px); }
+  .tile-big .t-sub { font-size: 13px; }
 
   /* ---------- header ---------- */
   .title-tag {
@@ -533,14 +536,14 @@
       <div class="t-value" id="tAth">—</div>
       <div class="t-sub" id="tAthSub"></div>
     </div>
-    <div class="tile t-blue" id="tileHolders" hidden>
-      <div class="t-label">Holders</div>
-      <div class="t-value" id="tHolders">—</div>
-      <div class="t-sub up" id="tHoldersSub"></div>
-    </div>
     <div class="tile t-red t-wide" id="tileWhale" hidden>
       <div class="t-label">Whale Share (Top 10)</div>
       <div class="t-value" id="tWhale">—</div>
+    </div>
+    <div class="tile t-gold t-wide tile-big" id="tileHolders" hidden>
+      <div class="t-label">Holder Count 🤝</div>
+      <div class="t-value" id="tHolders">—</div>
+      <div class="t-sub up" id="tHoldersSub"></div>
     </div>
   </div>
 
