@@ -95,14 +95,14 @@
   .lb .row + .row { border-top: 2px dashed rgba(23,19,14,0.1); }
   .lb .row.head { font-family: 'Fredoka', sans-serif; font-weight: 600; }
   .lb .row.me { color: var(--pill); }
-  #walletInput {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
+  #nameInput {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
     border: 3px solid var(--ink); border-radius: 999px; background: #fff;
-    padding: 10px 16px; width: min(300px, 88%); box-shadow: 3px 3px 0 var(--ink);
+    padding: 10px 16px; width: min(280px, 88%); box-shadow: 3px 3px 0 var(--ink);
     outline: none; color: var(--ink); text-align: center;
   }
-  .wallet-note { font-weight: 800; font-size: 12.5px; color: var(--sub); max-width: 300px; }
-  #walletErr { font-weight: 800; font-size: 13px; color: var(--red); max-width: 300px; }
+  .name-note { font-weight: 800; font-size: 12.5px; color: var(--sub); max-width: 300px; }
+  #nameErr { font-weight: 800; font-size: 13px; color: var(--red); max-width: 300px; }
   #lbMsg { font-weight: 800; font-size: 13.5px; color: var(--sub); max-width: 300px; }
   .overlay { overflow-y: auto; }
   a.btn { text-decoration: none; color: var(--ink); }
@@ -120,10 +120,10 @@
     <h1>PATTY DASH 🏁</h1>
     <p>Tap <b>left / right</b> to change lanes.<br>
        Dodge 🕯 candles &amp; 🧻 paper hands · grab 💰 bags · 👑 boost.</p>
-    <input id="walletInput" placeholder="paste your Solana wallet to race" autocomplete="off" spellcheck="false" />
-    <p class="wallet-note">your wallet is your racer ID on the weekly leaderboard —
-      if rewards go live, this is the address they'd be sent to</p>
-    <p id="walletErr" hidden></p>
+    <input id="nameInput" maxlength="30" placeholder="pick your racer name" autocomplete="off" spellcheck="false" />
+    <p class="name-note">3-30 characters · names are first come, first served —
+      your weekly best posts under it</p>
+    <p id="nameErr" hidden></p>
     <button class="btn" id="startBtn">START ENGINE 🏎️</button>
     <p id="menuBest"></p>
     <div class="lb" id="menuLb" hidden></div>
@@ -141,7 +141,7 @@
     <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
   </div>
 </div>
-<div class="beta-note">BETA — race under your wallet · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">pattyprix.xyz</a></div>
+<div class="beta-note">BETA — pick a racer name · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">pattyprix.xyz</a></div>
 
 <script>
 "use strict";
@@ -156,22 +156,32 @@ const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostn
 if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
 const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
 
-// weekly leaderboard — racers enter as their Solana wallet address
-// (their racer ID; also where any future rewards would be sent).
-// The GitHub Pages mirror talks to the live API cross-origin.
+// weekly leaderboard — racers pick a username, first come, first
+// served. A random claim token lives in this browser; the server keeps
+// its hash so nobody else can post under the same name. The GitHub
+// Pages mirror talks to the live API cross-origin.
 const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://pattyprix.xyz/api/leaderboard";
-const WALLET_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
-const getWallet = () => {
-  const w = localStorage.getItem("dash_wallet") || "";
-  return WALLET_RE.test(w) ? w : "";
+const NAME_RE = /^[A-Za-z0-9 _.\-]{3,30}$/;
+const getName = () => {
+  const n = localStorage.getItem("dash_name") || "";
+  return NAME_RE.test(n) ? n : "";
 };
-const shortAddr = (a) => a.length > 12 ? a.slice(0, 4) + "…" + a.slice(-4) : a;
+const getToken = () => {
+  let t = localStorage.getItem("dash_token");
+  if (!t) {
+    t = crypto.randomUUID ? crypto.randomUUID()
+      : Array.from(crypto.getRandomValues(new Uint8Array(16)), b => b.toString(16).padStart(2, "0")).join("");
+    localStorage.setItem("dash_token", t);
+  }
+  return t;
+};
+const shortName = (n) => n.length > 18 ? n.slice(0, 16) + "…" : n;
 let lbWeek = "", lbTop = [];
 
 function renderLb(el) {
   el.textContent = "";
   if (!lbTop.length) { el.hidden = true; return; }
-  const me = getWallet();
+  const me = getName();
   const head = document.createElement("div");
   head.className = "row head";
   const hl = document.createElement("span"); hl.textContent = "🏆 WEEK " + lbWeek.split("-W")[1] + " TOP " + Math.min(lbTop.length, 10);
@@ -182,7 +192,7 @@ function renderLb(el) {
     const row = document.createElement("div");
     row.className = "row" + (r.name === me ? " me" : "");
     const l = document.createElement("span");
-    l.textContent = (i + 1) + ". " + shortAddr(r.name);
+    l.textContent = (i + 1) + ". " + shortName(r.name);
     l.title = r.name;
     const s = document.createElement("span"); s.textContent = r.score.toLocaleString();
     row.append(l, s);
@@ -204,20 +214,20 @@ async function loadLb() {
   } catch { /* leaderboard offline — game still playable */ }
 }
 
-async function submitScore(wallet, score, t) {
+async function submitScore(name, score, t) {
   const msg = document.getElementById("lbMsg");
   msg.hidden = false; msg.textContent = "posting score…";
   try {
     const r = await fetch(LB_API, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name: wallet, score, t })
+      body: JSON.stringify({ name, score, t, token: getToken() })
     });
     const j = await r.json();
     if (!r.ok) { msg.textContent = j.error || "score rejected"; return false; }
     lbWeek = j.week || lbWeek;
     if (Array.isArray(j.top)) lbTop = j.top;
-    msg.textContent = shortAddr(wallet) + " — #" + j.rank + " this week · best " + Number(j.best).toLocaleString();
+    msg.textContent = shortName(name) + " — #" + j.rank + " this week · best " + Number(j.best).toLocaleString();
     renderLbAll();
     return true;
   } catch {
@@ -322,9 +332,9 @@ function crash() {
   blip(120, 0.3, "sawtooth");
   setTimeout(() => {
     document.getElementById("over").hidden = false;
-    // every racer entered with a wallet, so scores post automatically
-    const wallet = getWallet();
-    if (S.finalScore >= 1 && wallet) submitScore(wallet, S.finalScore, S.finalT);
+    // every racer entered with a name, so scores post automatically
+    const racer = getName();
+    if (S.finalScore >= 1 && racer) submitScore(racer, S.finalScore, S.finalT);
   }, 520);
 }
 
@@ -578,25 +588,40 @@ function start() {
   document.getElementById("lbMsg").hidden = true;
 }
 
-// the wallet gate: no valid Solana address, no race
-function tryStart() {
-  const input = document.getElementById("walletInput");
-  const err = document.getElementById("walletErr");
-  const w = input.value.trim();
-  if (!WALLET_RE.test(w)) {
+// the name gate: pick a valid racer name (and claim it) before racing
+async function tryStart() {
+  const input = document.getElementById("nameInput");
+  const err = document.getElementById("nameErr");
+  const name = input.value.trim();
+  if (!NAME_RE.test(name)) {
     err.hidden = false;
-    err.textContent = "that's not a Solana address — paste a valid wallet to race";
+    err.textContent = "3-30 characters — letters, numbers, spaces or _ . -";
     input.focus();
     return;
   }
-  localStorage.setItem("dash_wallet", w);
   err.hidden = true;
+  // reserve the name before the race; if the API is unreachable
+  // (offline, mirror without a backend) just race — posting can wait
+  try {
+    const r = await fetch(LB_API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ name, token: getToken(), claim: true })
+    });
+    if (r.status === 409) {
+      err.hidden = false;
+      err.textContent = "that name's taken — pick another";
+      input.focus();
+      return;
+    }
+  } catch { /* race on */ }
+  localStorage.setItem("dash_name", name);
   start();
 }
 
 document.getElementById("startBtn").addEventListener("click", tryStart);
 document.getElementById("retryBtn").addEventListener("click", start);
-document.getElementById("walletInput").value = getWallet();
+document.getElementById("nameInput").value = getName();
 document.getElementById("menuBest").innerHTML = S.best > 0 ? "personal best: <b>" + S.best.toLocaleString() + "</b>" : "";
 
 stage.addEventListener("pointerdown", (e) => {
