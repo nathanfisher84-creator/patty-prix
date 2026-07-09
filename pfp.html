@@ -84,10 +84,10 @@
     <button class="btn small" id="rotR">⟳</button>
     <button class="btn small" id="flip">↔️ flip</button>
     <label class="btn small" for="file">new pic</label>
-    <button class="btn blue" id="download">DOWNLOAD ⬇️</button>
+    <button class="btn blue" id="download">SAVE PIC ⬇️</button>
   </div>
   <div class="hint" id="hint" hidden>drag the shades into place · pinch to resize &amp; tilt ·
-    if download opens a new tab, long-press the image and Save</div>
+    on iPhone pick <b>Save Image</b> from the share sheet</div>
   <div class="hint"><a href="index.html" style="color:var(--pill)">← back to pattyprix.xyz</a></div>
 
 <script>
@@ -257,10 +257,22 @@ document.getElementById("flip").addEventListener("click", () => { G.flip *= -1; 
 document.getElementById("download").addEventListener("click", () => {
   render();
   trackDl();
-  const a = document.createElement("a");
-  a.download = "patty-pfp.png";
-  a.href = cv.toDataURL("image/png");
-  document.body.appendChild(a); a.click(); a.remove();
+  cv.toBlob(async (blob) => {
+    if (!blob) return;
+    const file = new File([blob], "patty-pfp.png", { type: "image/png" });
+    // phones: native share sheet → "Save Image" puts it in Photos
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Patty PFP" }); return; }
+      catch (err) { if (err && err.name === "AbortError") return; /* else fall through */ }
+    }
+    // desktop and everything else: blob download (no data: URL quirks)
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.download = "patty-pfp.png";
+    a.href = url;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }, "image/png");
 });
 
 // preview shades on the empty card so the page never looks blank
