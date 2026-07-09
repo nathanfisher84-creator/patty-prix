@@ -168,13 +168,13 @@ const S = {
 
 function reset() {
   S.t = 0; S.score = 0; S.lane = 1; S.carX = laneX(1);
-  S.speed = 330; S.mult = 1; S.multT = 0;
+  S.speed = speedAt(0); S.mult = 1; S.multT = 0;
   S.rows = []; S.spawnIn = 0.4; S.lastOpen = 1;
   S.shake = 0; S.spin = 0; S.parts = []; S.pops = [];
 }
 
-const speedAt = (t) => Math.min(330 + t * 6.5, 1120);
-const gapAt = (t) => Math.max(0.92 - t * 0.0013, 0.5);
+const speedAt = (t) => Math.min(410 + t * 6.5, 1120);
+const gapAt = (t) => Math.max(0.76 - t * 0.0011, 0.5);
 
 function spawnRow() {
   const drift = [-1, 0, 1][Math.floor(Math.random() * 3)];
