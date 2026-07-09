@@ -87,13 +87,14 @@
     <button class="btn small" id="rotR">⟳</button>
     <button class="btn small" id="flip">↔️ flip</button>
     <button class="btn small" id="arm">✂️ arm</button>
+    <button class="btn small" id="removePair" disabled>🕶️−</button>
     <button class="btn small" id="addPair">🕶️＋ more shades</button>
     <label class="btn small" for="file">new pic</label>
     <button class="btn blue" id="download">SAVE PIC ⬇️</button>
   </div>
   <div class="hint" id="hint" hidden>drag the shades into place · pinch to resize &amp; tilt ·
     🖼️ zooms your photo · − ＋ resize the shades · ✂️ trims the arm off ·
-    🕶️＋ stacks up to 4 pairs (tap a pair to pick it up) ·
+    🕶️＋/− stacks up to 4 pairs or removes one (tap a pair to pick it up) ·
     on iPhone pick <b>Save Image</b> from the share sheet</div>
   <div class="hint"><a href="index.html" style="color:var(--pill)">← back to pattyprix.xyz</a></div>
 
@@ -238,7 +239,7 @@ document.getElementById("file").addEventListener("change", (e) => {
     img = im;
     pairs = [newPair()];
     setActive(0);
-    addBtn.disabled = false;
+    syncPairBtns();
     P.zoom = 1;
     document.getElementById("drop").hidden = true;
     document.getElementById("controls").hidden = false;
@@ -310,11 +311,23 @@ armBtn.addEventListener("click", () => {
   render();
 });
 const addBtn = document.getElementById("addPair");
+const removeBtn = document.getElementById("removePair");
+const syncPairBtns = () => {
+  addBtn.disabled = pairs.length >= MAX_PAIRS;
+  removeBtn.disabled = pairs.length <= 1;
+};
 addBtn.addEventListener("click", () => {
   if (pairs.length >= MAX_PAIRS) return;
   pairs.push(newPair(pairs.length));
   setActive(pairs.length - 1);
-  addBtn.disabled = pairs.length >= MAX_PAIRS;
+  syncPairBtns();
+  render();
+});
+removeBtn.addEventListener("click", () => {
+  if (pairs.length <= 1) return;
+  pairs.splice(active, 1); // drops the pair touched last
+  setActive(Math.max(0, active - 1));
+  syncPairBtns();
   render();
 });
 
