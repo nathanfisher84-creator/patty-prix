@@ -74,7 +74,7 @@ jobs:
           echo "=== POST /api/track"
           curl -sS -o /dev/null -w "%{http_code}\n" -X POST -m 20 "https://pattyprix.xyz/api/track"
           echo "=== GET /api/visits"
-          curl -sS -m 20 "https://pattyprix.xyz/api/visits" | head -c 400
+          curl -sS -m 20 "https://pattyprix.xyz/api/visits"
           echo
 
       - name: Check game leaderboard
