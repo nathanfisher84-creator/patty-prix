@@ -37,6 +37,8 @@ export default async function handler(req, res) {
 
   // ?p=game        → game page view + unique player
   // ?p=game&e=run  → a run started (counted separately, no view)
+  // ?p=pfp         → PFP maker view + unique visitor
+  // ?p=pfp&e=dl    → a PFP downloaded (counted separately, no view)
   // (no params)    → main site view
   let cmds;
   if (req.query.p === "game") {
@@ -52,6 +54,20 @@ export default async function handler(req, res) {
           ["EXPIRE", "gv:" + day, DAY_TTL],
           ["PFADD", "guv:" + day, visitor],
           ["EXPIRE", "guv:" + day, DAY_TTL]
+        ];
+  } else if (req.query.p === "pfp") {
+    cmds = req.query.e === "dl"
+      ? [
+          ["INCR", "pfd:total"],
+          ["INCR", "pfd:" + day],
+          ["EXPIRE", "pfd:" + day, DAY_TTL]
+        ]
+      : [
+          ["INCR", "pfv:total"],
+          ["INCR", "pfv:" + day],
+          ["EXPIRE", "pfv:" + day, DAY_TTL],
+          ["PFADD", "pfuv:" + day, visitor],
+          ["EXPIRE", "pfuv:" + day, DAY_TTL]
         ];
   } else {
     cmds = [

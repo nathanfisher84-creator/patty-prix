@@ -25,9 +25,15 @@ export default async function handler(req, res) {
       ["GET", "gv:" + today],
       ["PFCOUNT", "guv:" + today],
       ["GET", "gr:total"],
-      ["GET", "gr:" + today]
+      ["GET", "gr:" + today],
+      ["GET", "pfv:total"],
+      ["GET", "pfv:" + today],
+      ["PFCOUNT", "pfuv:" + today],
+      ["GET", "pfd:total"],
+      ["GET", "pfd:" + today]
     ], kv);
-    const [total, series, uniques, gvTotal, gvToday, guvToday, grTotal, grToday] =
+    const [total, series, uniques, gvTotal, gvToday, guvToday, grTotal, grToday,
+           pfvTotal, pfvToday, pfuvToday, pfdTotal, pfdToday] =
       out.map(o => o && o.result);
     res.setHeader("cache-control", "s-maxage=30");
     return res.status(200).json({
@@ -38,6 +44,11 @@ export default async function handler(req, res) {
         total: Number(gvTotal) || 0,
         runsTotal: Number(grTotal) || 0,
         today: { views: Number(gvToday) || 0, uniques: Number(guvToday) || 0, runs: Number(grToday) || 0 }
+      },
+      pfp: {
+        total: Number(pfvTotal) || 0,
+        dlTotal: Number(pfdTotal) || 0,
+        today: { views: Number(pfvToday) || 0, uniques: Number(pfuvToday) || 0, downloads: Number(pfdToday) || 0 }
       }
     });
   } catch (err) {

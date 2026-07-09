@@ -64,6 +64,9 @@
     <div class="tile"><div class="l">🎮 Game views today</div><div class="v" id="gToday">—</div><div class="s" id="gUnique"></div></div>
     <div class="tile"><div class="l">🎮 Runs today</div><div class="v" id="gRuns">—</div></div>
     <div class="tile"><div class="l">🎮 Game all-time</div><div class="v" id="gTotal">—</div><div class="s" id="gRunsTotal"></div></div>
+    <div class="tile"><div class="l">🕶️ PFP views today</div><div class="v" id="pToday">—</div><div class="s" id="pUnique"></div></div>
+    <div class="tile"><div class="l">🕶️ Downloads today</div><div class="v" id="pDls">—</div></div>
+    <div class="tile"><div class="l">🕶️ PFP all-time</div><div class="v" id="pTotal">—</div><div class="s" id="pDlsTotal"></div></div>
   </div>
   <div class="note" id="visitNote" hidden>
     Visit tracking isn't wired up yet — in Vercel: project → <b>Storage</b> → create a free
@@ -219,6 +222,13 @@ async function refreshVisits() {
       $("gRuns").textContent = v.game.today.runs.toLocaleString();
       $("gTotal").textContent = v.game.total.toLocaleString();
       $("gRunsTotal").textContent = v.game.runsTotal.toLocaleString() + " runs total";
+    }
+    if (v.pfp) {
+      $("pToday").textContent = v.pfp.today.views.toLocaleString();
+      $("pUnique").textContent = "~" + v.pfp.today.uniques.toLocaleString() + " visitors";
+      $("pDls").textContent = v.pfp.today.downloads.toLocaleString();
+      $("pTotal").textContent = v.pfp.total.toLocaleString();
+      $("pDlsTotal").textContent = v.pfp.dlTotal.toLocaleString() + " downloads total";
     }
     $("visitTiles").hidden = false;
     const max = Math.max(1, ...v.days.map(d => d.views));
