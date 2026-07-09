@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PATTY DASH Leaderboard 🏆</title>
+<meta name="description" content="This week's PATTY DASH standings — top wallets win a $PATTYICE airdrop." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%86%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C;
+    --pill: #5F4BE0; --gold: #FFC93C; --fill: #7ED3F0; --green: #3EBF6E;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background:
+      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 14px 50px;
+  }
+  h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(26px, 7vw, 40px);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    text-align: center;
+  }
+  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 4px; text-align: center; }
+  .prize {
+    margin: 14px 0 20px; max-width: 380px; text-align: center;
+    background: linear-gradient(160deg, #FFE18A, var(--gold));
+    border: 3px solid var(--ink); border-radius: 16px;
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 12px 18px; font-weight: 800; font-size: 13.5px;
+  }
+  .board {
+    width: min(440px, 100%);
+    background: var(--card);
+    border: 3px solid var(--ink); border-radius: 22px;
+    box-shadow: 8px 8px 0 var(--ink);
+    padding: 16px 18px;
+  }
+  .board .head {
+    display: flex; justify-content: space-between;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px;
+    padding-bottom: 8px; border-bottom: 3px solid var(--ink); margin-bottom: 4px;
+  }
+  .row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 2px; font-weight: 800; font-size: 15px;
+  }
+  .row + .row { border-top: 2px dashed rgba(23,19,14,0.12); }
+  .row .rank { width: 34px; font-family: 'Fredoka', sans-serif; font-weight: 700; }
+  .row .addr { flex: 1; font-size: 14px; cursor: pointer; }
+  .row .addr small { display: block; color: var(--sub); font-size: 10.5px; font-weight: 800; }
+  .row .score { font-family: 'Fredoka', sans-serif; font-weight: 700; }
+  .row.podium { background: rgba(255,201,60,0.16); border-radius: 12px; padding-left: 8px; padding-right: 8px; }
+  .empty { text-align: center; font-weight: 800; color: var(--sub); padding: 26px 10px; }
+  .meta { margin-top: 12px; font-weight: 800; font-size: 12px; color: var(--sub); text-align: center; }
+  .links { display: flex; gap: 12px; margin-top: 20px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
+    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 11px 22px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+    text-decoration: none; display: inline-block;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn.plain { background: var(--card); font-size: 14px; }
+</style>
+</head>
+<body>
+  <h1>PATTY DASH 🏆</h1>
+  <div class="sub" id="weekLabel">weekly leaderboard</div>
+  <div class="prize">🎁 top racers win a <b>$PATTYICE airdrop</b> sent straight to the wallet
+    they raced under — board resets every Monday (UTC)</div>
+
+  <div class="board">
+    <div class="head"><span>RACER (wallet)</span><span>BEST SCORE</span></div>
+    <div id="rows"></div>
+    <div class="empty" id="empty" hidden>no scores yet this week —<br>be the first on the board 🏎️</div>
+    <div class="meta" id="meta"></div>
+  </div>
+
+  <div class="links">
+    <a class="btn" href="game.html">🎮 RACE NOW</a>
+    <a class="btn plain" href="index.html">← back to pattyprix.xyz</a>
+  </div>
+
+<script>
+"use strict";
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
+const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://pattyprix.xyz/api/leaderboard";
+const MEDALS = ["🥇", "🥈", "🥉"];
+const shortAddr = (a) => a.length > 12 ? a.slice(0, 4) + "…" + a.slice(-4) : a;
+
+async function load() {
+  try {
+    const j = await (await fetch(LB_API)).json();
+    if (!Array.isArray(j.top)) throw new Error(j.error || "bad response");
+    document.getElementById("weekLabel").textContent =
+      "week " + (j.week || "").split("-W")[1] + " · " + j.week;
+    const rows = document.getElementById("rows");
+    rows.textContent = "";
+    document.getElementById("empty").hidden = j.top.length > 0;
+    j.top.forEach((r, i) => {
+      const row = document.createElement("div");
+      row.className = "row" + (i < 3 ? " podium" : "");
+      const rank = document.createElement("span");
+      rank.className = "rank"; rank.textContent = MEDALS[i] || "#" + (i + 1);
+      const addr = document.createElement("span");
+      addr.className = "addr"; addr.title = r.name + " (tap to copy)";
+      addr.textContent = shortAddr(r.name);
+      const hint = document.createElement("small");
+      hint.textContent = "tap to copy";
+      addr.appendChild(hint);
+      addr.addEventListener("click", () => {
+        navigator.clipboard?.writeText(r.name).then(() => {
+          hint.textContent = "copied ✓";
+          setTimeout(() => { hint.textContent = "tap to copy"; }, 1500);
+        }).catch(() => {});
+      });
+      const score = document.createElement("span");
+      score.className = "score"; score.textContent = r.score.toLocaleString();
+      row.append(rank, addr, score);
+      rows.appendChild(row);
+    });
+    document.getElementById("meta").textContent =
+      "updated " + new Date().toLocaleTimeString() + " · refreshes every 30s";
+  } catch {
+    document.getElementById("meta").textContent = "leaderboard unreachable — retrying…";
+  }
+}
+load();
+setInterval(load, 30000);
+
+window.__lb = { load };
+</script>
+</body>
+</html>
