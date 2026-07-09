@@ -20,14 +20,25 @@ export default async function handler(req, res) {
     const out = await kvPipeline([
       ["GET", "pv:total"],
       ["MGET", ...days.map(d => "pv:" + d)],
-      ["PFCOUNT", "uv:" + today]
+      ["PFCOUNT", "uv:" + today],
+      ["GET", "gv:total"],
+      ["GET", "gv:" + today],
+      ["PFCOUNT", "guv:" + today],
+      ["GET", "gr:total"],
+      ["GET", "gr:" + today]
     ], kv);
-    const [total, series, uniques] = out.map(o => o && o.result);
+    const [total, series, uniques, gvTotal, gvToday, guvToday, grTotal, grToday] =
+      out.map(o => o && o.result);
     res.setHeader("cache-control", "s-maxage=30");
     return res.status(200).json({
       total: Number(total) || 0,
       today: { views: Number(series?.[series.length - 1]) || 0, uniques: Number(uniques) || 0 },
-      days: days.map((d, i) => ({ day: d, views: Number(series?.[i]) || 0 }))
+      days: days.map((d, i) => ({ day: d, views: Number(series?.[i]) || 0 })),
+      game: {
+        total: Number(gvTotal) || 0,
+        runsTotal: Number(grTotal) || 0,
+        today: { views: Number(gvToday) || 0, uniques: Number(guvToday) || 0, runs: Number(grToday) || 0 }
+      }
     });
   } catch (err) {
     return res.status(502).json({ error: String(err) });

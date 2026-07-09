@@ -35,14 +35,36 @@ export default async function handler(req, res) {
   const ua = req.headers["user-agent"] || "";
   const visitor = createHash("sha256").update(day + ip + ua).digest("hex").slice(0, 16);
 
-  try {
-    await kvPipeline([
+  // ?p=game        → game page view + unique player
+  // ?p=game&e=run  → a run started (counted separately, no view)
+  // (no params)    → main site view
+  let cmds;
+  if (req.query.p === "game") {
+    cmds = req.query.e === "run"
+      ? [
+          ["INCR", "gr:total"],
+          ["INCR", "gr:" + day],
+          ["EXPIRE", "gr:" + day, DAY_TTL]
+        ]
+      : [
+          ["INCR", "gv:total"],
+          ["INCR", "gv:" + day],
+          ["EXPIRE", "gv:" + day, DAY_TTL],
+          ["PFADD", "guv:" + day, visitor],
+          ["EXPIRE", "guv:" + day, DAY_TTL]
+        ];
+  } else {
+    cmds = [
       ["INCR", "pv:total"],
       ["INCR", "pv:" + day],
       ["EXPIRE", "pv:" + day, DAY_TTL],
       ["PFADD", "uv:" + day, visitor],
       ["EXPIRE", "uv:" + day, DAY_TTL]
-    ], kv);
+    ];
+  }
+
+  try {
+    await kvPipeline(cmds, kv);
     return res.status(204).end();
   } catch (err) {
     return res.status(502).json({ error: String(err) });

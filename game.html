@@ -121,6 +121,11 @@ const stage = document.getElementById("stage");
 const LANES = 3;
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 
+// visit + run beacons (Vercel-served domains only; localhost/mirror skip)
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
+if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
+const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
+
 let W = 0, H = 0, DPR = 1;
 function resize() {
   DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -459,6 +464,7 @@ function loop(ts) {
 
 function start() {
   reset();
+  trackRun();
   S.state = "run";
   document.getElementById("menu").hidden = true;
   document.getElementById("over").hidden = true;

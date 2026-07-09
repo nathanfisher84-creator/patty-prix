@@ -61,6 +61,9 @@
     <div class="tile"><div class="l">Views today</div><div class="v" id="vToday">—</div></div>
     <div class="tile"><div class="l">Uniques today</div><div class="v" id="vUnique">—</div></div>
     <div class="tile"><div class="l">Views all-time</div><div class="v" id="vTotal">—</div></div>
+    <div class="tile"><div class="l">🎮 Game views today</div><div class="v" id="gToday">—</div><div class="s" id="gUnique"></div></div>
+    <div class="tile"><div class="l">🎮 Runs today</div><div class="v" id="gRuns">—</div></div>
+    <div class="tile"><div class="l">🎮 Game all-time</div><div class="v" id="gTotal">—</div><div class="s" id="gRunsTotal"></div></div>
   </div>
   <div class="note" id="visitNote" hidden>
     Visit tracking isn't wired up yet — in Vercel: project → <b>Storage</b> → create a free
@@ -210,6 +213,13 @@ async function refreshVisits() {
     $("vToday").textContent = v.today.views.toLocaleString();
     $("vUnique").textContent = "~" + v.today.uniques.toLocaleString();
     $("vTotal").textContent = v.total.toLocaleString();
+    if (v.game) {
+      $("gToday").textContent = v.game.today.views.toLocaleString();
+      $("gUnique").textContent = "~" + v.game.today.uniques.toLocaleString() + " players";
+      $("gRuns").textContent = v.game.today.runs.toLocaleString();
+      $("gTotal").textContent = v.game.total.toLocaleString();
+      $("gRunsTotal").textContent = v.game.runsTotal.toLocaleString() + " runs total";
+    }
     $("visitTiles").hidden = false;
     const max = Math.max(1, ...v.days.map(d => d.views));
     $("chart").innerHTML = v.days.map(d =>
