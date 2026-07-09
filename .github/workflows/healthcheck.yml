@@ -77,6 +77,21 @@ jobs:
           curl -sS -m 20 "https://pattyprix.xyz/api/visits" | head -c 400
           echo
 
+      - name: Check game leaderboard
+        run: |
+          echo "=== GET /api/leaderboard"
+          curl -sS -m 20 "https://pattyprix.xyz/api/leaderboard" | head -c 500
+          echo
+          echo "=== POST valid score"
+          curl -sS -m 20 -X POST -H "content-type: application/json" \
+            -d '{"name":"healthcheck","score":1200,"t":25}' \
+            "https://pattyprix.xyz/api/leaderboard" | head -c 500
+          echo
+          echo "=== POST implausible score (expect 400)"
+          curl -sS -o /dev/null -w "%{http_code}\n" -m 20 -X POST -H "content-type: application/json" \
+            -d '{"name":"healthcheck","score":900000,"t":10}' \
+            "https://pattyprix.xyz/api/leaderboard"
+
       - name: Check stats API endpoints
         run: |
           for q in supply ath; do
