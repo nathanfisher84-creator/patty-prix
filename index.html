@@ -190,6 +190,27 @@
   .btn:hover { transform: translate(-1px, -1px); box-shadow: 5px 5px 0 var(--ink); background: #93DCF4; }
   .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
   a.btn { display: inline-block; text-decoration: none; color: var(--ink); }
+  .play-cta {
+    display: block;
+    text-align: center;
+    font-size: clamp(18px, 4.6vw, 24px);
+    padding: 16px 20px;
+    background: linear-gradient(160deg, #FFE18A, var(--gold));
+    border-radius: 20px;
+    margin: -8px 2px 36px;
+    box-shadow: 6px 6px 0 var(--ink);
+  }
+  .play-cta:hover { background: linear-gradient(160deg, #FFE9A6, #FFD34F); }
+  .beta-pill {
+    font-size: 11px;
+    letter-spacing: 1px;
+    background: var(--ink);
+    color: var(--gold);
+    border-radius: 999px;
+    padding: 3px 10px;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
   .hero-updated {
     margin-top: 10px;
     font-weight: 700;
@@ -572,6 +593,8 @@
       <div class="t-sub up" id="tHoldersSub"></div>
     </div>
   </div>
+
+  <a class="btn play-cta" id="playLink" href="game.html">🎮 PLAY PATTY DASH <span class="beta-pill">BETA</span></a>
 
   <div class="title-tag"><h2>Patty Prix 🏁</h2></div>
   <p class="tagline">pattyice — <b>the bag worker</b> — races the field</p>

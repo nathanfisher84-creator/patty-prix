@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>PATTY DASH 🏁 — beta</title>
+<meta name="description" content="Dodge the paper hands. Stack the bags. PATTY DASH — the Patty Prix arcade game." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%8E%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5C8DE; --card: #FBF4E4; --stripe: #F2E8D3; --ink: #17130E;
+    --sub: #6E675C; --pill: #5F4BE0; --gold: #FFC93C; --green: #3EBF6E; --red: #E4373F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html, body { height: 100%; }
+  body {
+    background:
+      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px;
+    overscroll-behavior: none;
+  }
+  .stage {
+    position: relative;
+    width: min(440px, 100%);
+    flex: 1;
+    max-height: 800px;
+    border: 3px solid var(--ink);
+    border-radius: 22px;
+    box-shadow: 8px 8px 0 var(--ink);
+    overflow: hidden;
+    background: var(--card);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .overlay {
+    position: absolute; inset: 0; z-index: 5;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 14px; text-align: center; padding: 24px;
+    background: rgba(251,244,228,0.92);
+  }
+  .overlay h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(30px, 9vw, 44px);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+  }
+  .overlay p { font-weight: 800; font-size: 15px; color: var(--sub); max-width: 300px; }
+  .overlay .score-big { font-family: 'Fredoka', sans-serif; font-size: 42px; font-weight: 700; }
+  .btn {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px;
+    background: var(--gold); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 14px 34px; box-shadow: 5px 5px 0 var(--ink); cursor: pointer;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn.small { font-size: 15px; padding: 9px 20px; background: var(--card); }
+  .hud {
+    position: absolute; top: 10px; left: 10px; right: 10px; z-index: 4;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    pointer-events: none;
+  }
+  .chip {
+    background: var(--card); border: 2.5px solid var(--ink); border-radius: 999px;
+    padding: 5px 14px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
+    box-shadow: 3px 3px 0 var(--ink);
+  }
+  .chip.mult { background: var(--gold); }
+  .beta-note { margin-top: 10px; font-weight: 800; font-size: 12.5px; color: var(--sub); text-align: center; }
+  .beta-note a { color: var(--pill); }
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <canvas id="cv"></canvas>
+  <div class="hud" id="hud" hidden>
+    <span class="chip" id="hudScore">0</span>
+    <span class="chip mult" id="hudMult" hidden>x2</span>
+  </div>
+  <div class="overlay" id="menu">
+    <h1>PATTY DASH 🏁</h1>
+    <p>Tap <b>left / right</b> side of the track to change lanes.<br>
+       Dodge 🕯 red candles &amp; 🧻 paper hands.<br>
+       Grab 💰 bags · 👑 crowns boost your multiplier.</p>
+    <button class="btn" id="startBtn">START ENGINE 🏎️</button>
+    <p id="menuBest"></p>
+  </div>
+  <div class="overlay" id="over" hidden>
+    <h1>WRECKED 💥</h1>
+    <div class="score-big" id="overScore">0</div>
+    <p id="overBest"></p>
+    <button class="btn" id="retryBtn">RUN IT BACK 🔁</button>
+    <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
+  </div>
+</div>
+<div class="beta-note">BETA — scores are local for now. Leaderboard + weekly rewards coming soon. <a href="index.html">pattyprix.xyz</a></div>
+
+<script>
+"use strict";
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d");
+const stage = document.getElementById("stage");
+const LANES = 3;
+
+let W = 0, H = 0, DPR = 1;
+function resize() {
+  DPR = Math.min(window.devicePixelRatio || 1, 2);
+  W = stage.clientWidth; H = stage.clientHeight;
+  cv.width = W * DPR; cv.height = H * DPR;
+  ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener("resize", resize);
+resize();
+
+const laneX = (i) => W * (i + 0.5) / LANES;
+const CAR_W = () => Math.min(W / LANES * 0.62, 86);
+
+const S = {
+  state: "menu",       // menu | run | over
+  t: 0,                // run time (s)
+  score: 0,
+  best: Number(localStorage.getItem("dash_best") || 0),
+  lane: 1,
+  carX: 0,
+  speed: 0,
+  mult: 1,
+  multT: 0,
+  rows: [],            // { y, cells: [null|'candle'|'paper'|'bag'|'crown'] }
+  spawnIn: 0,
+  lastOpen: 1,
+  trackOff: 0,
+  shake: 0,
+};
+
+function reset() {
+  S.t = 0; S.score = 0; S.lane = 1; S.carX = laneX(1);
+  S.speed = 330; S.mult = 1; S.multT = 0;
+  S.rows = []; S.spawnIn = 0.4; S.lastOpen = 1; S.shake = 0;
+}
+
+// difficulty curve: speed ramps for ~2 min then plateaus; rows pack
+// tighter over ~6 min. Tuned so fresh players last ~1 min and strong
+// players can run 5-10.
+const speedAt = (t) => Math.min(330 + t * 6.5, 1120);
+const gapAt = (t) => Math.max(0.92 - t * 0.0013, 0.5); // seconds between rows
+
+function spawnRow() {
+  // keep the open lane reachable: drift at most one lane per row
+  const drift = [-1, 0, 1][Math.floor(Math.random() * 3)];
+  const open = Math.max(0, Math.min(LANES - 1, S.lastOpen + drift));
+  S.lastOpen = open;
+  const cells = [null, null, null];
+  const blockP = Math.min(0.55 + S.t * 0.0011, 0.88);
+  for (let i = 0; i < LANES; i++) {
+    if (i === open) continue;
+    if (Math.random() < blockP) cells[i] = Math.random() < 0.55 ? "candle" : "paper";
+  }
+  const roll = Math.random();
+  if (roll < 0.07) cells[open] = "crown";
+  else if (roll < 0.5) cells[open] = "bag";
+  S.rows.push({ y: -60, cells });
+}
+
+function crash() {
+  S.state = "over";
+  S.shake = 1;
+  if (S.score > S.best) { S.best = Math.round(S.score); localStorage.setItem("dash_best", S.best); }
+  document.getElementById("overScore").textContent = Math.round(S.score).toLocaleString();
+  document.getElementById("overBest").innerHTML = "personal best: <b>" + S.best.toLocaleString() + "</b>";
+  document.getElementById("hud").hidden = true;
+  if (navigator.vibrate) navigator.vibrate(120);
+  setTimeout(() => { document.getElementById("over").hidden = false; }, 420);
+}
+
+function update(dt) {
+  S.t += dt;
+  S.speed = speedAt(S.t);
+  S.score += S.speed * dt * 0.055 * S.mult;
+  if (S.multT > 0) { S.multT -= dt; if (S.multT <= 0) S.mult = 1; }
+
+  S.trackOff = (S.trackOff + S.speed * dt) % 80;
+  S.carX += (laneX(S.lane) - S.carX) * Math.min(1, dt * 14);
+
+  S.spawnIn -= dt;
+  if (S.spawnIn <= 0) { spawnRow(); S.spawnIn = gapAt(S.t); }
+
+  const carY = H - 110, carH = 74;
+  for (const row of S.rows) {
+    row.y += S.speed * dt;
+    const cell = row.cells[S.lane];
+    if (cell && row.y > carY - carH * 0.55 && row.y < carY + carH * 0.55) {
+      if (cell === "bag") { S.score += 250 * S.mult; row.cells[S.lane] = null; blip(880); }
+      else if (cell === "crown") { S.mult = Math.min(S.mult + 1, 5); S.multT = 8; row.cells[S.lane] = null; blip(1320); }
+      else { crash(); return; }
+    }
+  }
+  S.rows = S.rows.filter(r => r.y < H + 80);
+
+  document.getElementById("hudScore").textContent = Math.round(S.score).toLocaleString();
+  const hm = document.getElementById("hudMult");
+  hm.hidden = S.mult <= 1;
+  hm.textContent = "x" + S.mult + " 👑";
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  // track
+  ctx.fillStyle = "#FBF4E4";
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = "#F2E8D3";
+  for (let y = -80 + S.trackOff; y < H; y += 80) ctx.fillRect(0, y, W, 40);
+  // lane dashes
+  ctx.strokeStyle = "rgba(23,19,14,0.18)";
+  ctx.lineWidth = 4; ctx.setLineDash([22, 26]); ctx.lineDashOffset = -S.trackOff * 1.5;
+  for (let i = 1; i < LANES; i++) {
+    ctx.beginPath(); ctx.moveTo(W * i / LANES, 0); ctx.lineTo(W * i / LANES, H); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  let ox = 0, oy = 0;
+  if (S.shake > 0) { S.shake -= 0.06; ox = (Math.random() - 0.5) * 14 * S.shake; oy = (Math.random() - 0.5) * 14 * S.shake; }
+  ctx.save(); ctx.translate(ox, oy);
+
+  // rows
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const row of S.rows) {
+    for (let i = 0; i < LANES; i++) {
+      const c = row.cells[i]; if (!c) continue;
+      const x = laneX(i);
+      if (c === "candle") {
+        ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, row.y - 34); ctx.lineTo(x, row.y + 34); ctx.stroke();
+        ctx.fillStyle = "#E4373F";
+        rr(x - 14, row.y - 22, 28, 44, 7); ctx.fill(); ctx.stroke();
+      } else {
+        ctx.font = "34px serif";
+        ctx.fillText(c === "paper" ? "🧻" : c === "bag" ? "💰" : "👑", x, row.y);
+      }
+    }
+  }
+
+  // car
+  if (S.state !== "menu") {
+    const x = S.carX, y = H - 110, w = CAR_W(), h = 74;
+    ctx.fillStyle = "rgba(23,19,14,0.25)";
+    rr(x - w / 2 + 5, y - h / 2 + 6, w, h, 16); ctx.fill();
+    ctx.fillStyle = "#F5A8CB"; ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
+    rr(x - w / 2, y - h / 2, w, h, 16); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#7ED3F0";
+    rr(x - w / 2 + 10, y - h / 2 + 10, w - 20, 20, 8); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = "#17130E";
+    [-1, 1].forEach(s => { rr(x + s * (w / 2) - (s > 0 ? 4 : 2), y - 22, 6, 18, 3); ctx.fill(); rr(x + s * (w / 2) - (s > 0 ? 4 : 2), y + 6, 6, 18, 3); ctx.fill(); });
+    ctx.font = "26px serif"; ctx.fillText("🏎️", x, y + 2);
+  }
+  ctx.restore();
+}
+
+function rr(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+// tiny beeps, no assets
+let AC = null;
+function blip(freq) {
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain();
+    o.frequency.value = freq; o.type = "square";
+    g.gain.setValueAtTime(0.06, AC.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.12);
+    o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + 0.13);
+  } catch { /* muted */ }
+}
+
+let last = 0, raf = 0;
+function loop(ts) {
+  const dt = Math.min((ts - last) / 1000 || 0, 0.05);
+  last = ts;
+  if (S.state === "run") update(dt);
+  draw();
+  raf = requestAnimationFrame(loop);
+}
+
+function start() {
+  reset();
+  S.state = "run";
+  document.getElementById("menu").hidden = true;
+  document.getElementById("over").hidden = true;
+  document.getElementById("hud").hidden = false;
+}
+
+document.getElementById("startBtn").addEventListener("click", start);
+document.getElementById("retryBtn").addEventListener("click", start);
+document.getElementById("menuBest").innerHTML = S.best > 0 ? "personal best: <b>" + S.best.toLocaleString() + "</b>" : "";
+
+stage.addEventListener("pointerdown", (e) => {
+  if (S.state !== "run") return;
+  if (e.clientX - stage.getBoundingClientRect().left < W / 2) S.lane = Math.max(0, S.lane - 1);
+  else S.lane = Math.min(LANES - 1, S.lane + 1);
+});
+window.addEventListener("keydown", (e) => {
+  if (S.state !== "run") return;
+  if (e.key === "ArrowLeft" || e.key === "a") S.lane = Math.max(0, S.lane - 1);
+  if (e.key === "ArrowRight" || e.key === "d") S.lane = Math.min(LANES - 1, S.lane + 1);
+});
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden && S.state === "run") crash();
+});
+
+// test hook
+window.__dash = {
+  get state() { return S.state; },
+  get score() { return S.score; },
+  get lane() { return S.lane; },
+  start, crash,
+};
+
+requestAnimationFrame((ts) => { last = ts; raf = requestAnimationFrame(loop); });
+</script>
+</body>
+</html>
