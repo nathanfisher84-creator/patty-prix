@@ -1,12 +1,14 @@
-// PATTY DASH weekly leaderboard — trial run with usernames, no wallets.
-// Scores live in one Redis sorted set per ISO week (lb:2026-W28);
-// ZADD GT keeps each racer's best score. Reuses the Upstash setup
-// from api/track.mjs and responds 501 until that's configured.
+// PATTY DASH weekly leaderboard. Racers enter as their Solana wallet
+// address — the same address a winning airdrop is sent to. Scores live
+// in one Redis sorted set per ISO week (lb:2026-W28); ZADD GT keeps
+// each racer's best score. Reuses the Upstash setup from api/track.mjs
+// and responds 501 until that's configured.
 
 import { createHash } from "crypto";
 import { kvEnv, kvPipeline } from "./track.mjs";
 
-const NAME_RE = /^[A-Za-z0-9_]{3,16}$/;
+// base58 Solana address; "healthcheck" is reserved for the monitor probe
+const NAME_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const TOP_N = 20;
 const WEEK_TTL = 60 * 60 * 24 * 40; // keep past weeks around for payouts
 
@@ -47,8 +49,8 @@ export default async function handler(req, res) {
       const name = String(body?.name ?? "").trim();
       const score = Math.round(Number(body?.score));
       const t = Number(body?.t);
-      if (!NAME_RE.test(name)) {
-        return res.status(400).json({ error: "name must be 3-16 letters, numbers or _" });
+      if (!NAME_RE.test(name) && name !== "healthcheck") {
+        return res.status(400).json({ error: "racer name must be a valid Solana wallet address" });
       }
       if (!Number.isFinite(score) || score < 1 || score > 2_000_000 ||
           !Number.isFinite(t) || t < 1 || t > 3600 || !plausible(score, t)) {

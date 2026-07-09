@@ -95,15 +95,17 @@
   .lb .row + .row { border-top: 2px dashed rgba(23,19,14,0.1); }
   .lb .row.head { font-family: 'Fredoka', sans-serif; font-weight: 600; }
   .lb .row.me { color: var(--pill); }
-  #submitRow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: center; }
-  #nameInput {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
+  #walletInput {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
     border: 3px solid var(--ink); border-radius: 999px; background: #fff;
-    padding: 9px 16px; width: 180px; box-shadow: 3px 3px 0 var(--ink);
-    outline: none; color: var(--ink);
+    padding: 10px 16px; width: min(300px, 88%); box-shadow: 3px 3px 0 var(--ink);
+    outline: none; color: var(--ink); text-align: center;
   }
+  .wallet-note { font-weight: 800; font-size: 12.5px; color: var(--sub); max-width: 300px; }
+  #walletErr { font-weight: 800; font-size: 13px; color: var(--red); max-width: 300px; }
   #lbMsg { font-weight: 800; font-size: 13.5px; color: var(--sub); max-width: 300px; }
-  #lbMsg a { color: var(--pill); }
+  .overlay { overflow-y: auto; }
+  a.btn { text-decoration: none; color: var(--ink); }
 </style>
 </head>
 <body>
@@ -116,29 +118,30 @@
   <div class="overlay" id="menu">
     <img id="menuIcon" alt="" hidden />
     <h1>PATTY DASH 🏁</h1>
-    <p>Tap <b>left / right</b> side of the track to change lanes.<br>
-       Dodge 🕯 red candles &amp; 🧻 paper hands.<br>
-       Grab 💰 bags · 👑 crowns boost your multiplier.</p>
+    <p>Tap <b>left / right</b> to change lanes.<br>
+       Dodge 🕯 candles &amp; 🧻 paper hands · grab 💰 bags · 👑 boost.</p>
+    <input id="walletInput" placeholder="paste your Solana wallet to race" autocomplete="off" spellcheck="false" />
+    <p class="wallet-note">🎁 this address is where your <b>$PATTYICE airdrop</b> is sent
+      if you top the weekly leaderboard — double-check it!</p>
+    <p id="walletErr" hidden></p>
     <button class="btn" id="startBtn">START ENGINE 🏎️</button>
     <p id="menuBest"></p>
     <div class="lb" id="menuLb" hidden></div>
+    <a class="btn small" href="leaderboard.html">FULL LEADERBOARD 🏆</a>
     <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
   </div>
   <div class="overlay" id="over" hidden>
     <h1>WRECKED 💥</h1>
     <div class="score-big" id="overScore">0</div>
     <p id="overBest"></p>
-    <div id="submitRow" hidden>
-      <input id="nameInput" maxlength="16" placeholder="racer name" autocomplete="off" spellcheck="false" />
-      <button class="btn small" id="submitBtn">POST SCORE 🏆</button>
-    </div>
     <p id="lbMsg" hidden></p>
     <div class="lb" id="overLb" hidden></div>
     <button class="btn" id="retryBtn">RUN IT BACK 🔁</button>
+    <a class="btn small" href="leaderboard.html">FULL LEADERBOARD 🏆</a>
     <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
   </div>
 </div>
-<div class="beta-note">BETA — weekly username leaderboard is live. Wallet sign-in + rewards coming soon. <a href="index.html">pattyprix.xyz</a></div>
+<div class="beta-note">BETA — race under your wallet, weekly winners get a $PATTYICE airdrop. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">pattyprix.xyz</a></div>
 
 <script>
 "use strict";
@@ -153,17 +156,22 @@ const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostn
 if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
 const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
 
-// weekly leaderboard (usernames for the trial run — wallets come later);
-// the GitHub Pages mirror talks to the live API cross-origin
+// weekly leaderboard — racers enter as their Solana wallet address,
+// which is also where a winning airdrop lands. The GitHub Pages
+// mirror talks to the live API cross-origin.
 const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://pattyprix.xyz/api/leaderboard";
-const NAME_RE = /^[A-Za-z0-9_]{3,16}$/;
-const getName = () => localStorage.getItem("dash_name") || "";
+const WALLET_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const getWallet = () => {
+  const w = localStorage.getItem("dash_wallet") || "";
+  return WALLET_RE.test(w) ? w : "";
+};
+const shortAddr = (a) => a.length > 12 ? a.slice(0, 4) + "…" + a.slice(-4) : a;
 let lbWeek = "", lbTop = [];
 
 function renderLb(el) {
   el.textContent = "";
   if (!lbTop.length) { el.hidden = true; return; }
-  const me = getName();
+  const me = getWallet();
   const head = document.createElement("div");
   head.className = "row head";
   const hl = document.createElement("span"); hl.textContent = "🏆 WEEK " + lbWeek.split("-W")[1] + " TOP " + Math.min(lbTop.length, 10);
@@ -173,7 +181,9 @@ function renderLb(el) {
   lbTop.slice(0, 10).forEach((r, i) => {
     const row = document.createElement("div");
     row.className = "row" + (r.name === me ? " me" : "");
-    const l = document.createElement("span"); l.textContent = (i + 1) + ". " + r.name;
+    const l = document.createElement("span");
+    l.textContent = (i + 1) + ". " + shortAddr(r.name);
+    l.title = r.name;
     const s = document.createElement("span"); s.textContent = r.score.toLocaleString();
     row.append(l, s);
     el.appendChild(row);
@@ -194,31 +204,20 @@ async function loadLb() {
   } catch { /* leaderboard offline — game still playable */ }
 }
 
-async function submitScore(name, score, t) {
+async function submitScore(wallet, score, t) {
   const msg = document.getElementById("lbMsg");
   msg.hidden = false; msg.textContent = "posting score…";
   try {
     const r = await fetch(LB_API, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, score, t })
+      body: JSON.stringify({ name: wallet, score, t })
     });
     const j = await r.json();
     if (!r.ok) { msg.textContent = j.error || "score rejected"; return false; }
-    localStorage.setItem("dash_name", name);
     lbWeek = j.week || lbWeek;
     if (Array.isArray(j.top)) lbTop = j.top;
-    msg.textContent = name + " — #" + j.rank + " this week · best " + Number(j.best).toLocaleString() + " ";
-    const change = document.createElement("a");
-    change.href = "#"; change.textContent = "not you?";
-    change.addEventListener("click", (e) => {
-      e.preventDefault();
-      localStorage.removeItem("dash_name");
-      msg.hidden = true;
-      showSubmit();
-    });
-    msg.appendChild(change);
-    document.getElementById("submitRow").hidden = true;
+    msg.textContent = shortAddr(wallet) + " — #" + j.rank + " this week · best " + Number(j.best).toLocaleString();
     renderLbAll();
     return true;
   } catch {
@@ -226,23 +225,6 @@ async function submitScore(name, score, t) {
     return false;
   }
 }
-
-function showSubmit() {
-  const input = document.getElementById("nameInput");
-  input.value = getName();
-  document.getElementById("submitRow").hidden = false;
-}
-
-document.getElementById("submitBtn").addEventListener("click", () => {
-  const name = document.getElementById("nameInput").value.trim();
-  const msg = document.getElementById("lbMsg");
-  if (!NAME_RE.test(name)) {
-    msg.hidden = false;
-    msg.textContent = "3-16 characters — letters, numbers or _ only";
-    return;
-  }
-  submitScore(name, S.finalScore, S.finalT);
-});
 
 let W = 0, H = 0, DPR = 1;
 function resize() {
@@ -340,12 +322,9 @@ function crash() {
   blip(120, 0.3, "sawtooth");
   setTimeout(() => {
     document.getElementById("over").hidden = false;
-    // saved racers post automatically; first-timers pick a name
-    if (S.finalScore >= 1) {
-      const saved = getName();
-      if (NAME_RE.test(saved)) submitScore(saved, S.finalScore, S.finalT);
-      else showSubmit();
-    }
+    // every racer entered with a wallet, so scores post automatically
+    const wallet = getWallet();
+    if (S.finalScore >= 1 && wallet) submitScore(wallet, S.finalScore, S.finalT);
   }, 520);
 }
 
@@ -596,12 +575,28 @@ function start() {
   document.getElementById("menu").hidden = true;
   document.getElementById("over").hidden = true;
   document.getElementById("hud").hidden = false;
-  document.getElementById("submitRow").hidden = true;
   document.getElementById("lbMsg").hidden = true;
 }
 
-document.getElementById("startBtn").addEventListener("click", start);
+// the wallet gate: no valid Solana address, no race
+function tryStart() {
+  const input = document.getElementById("walletInput");
+  const err = document.getElementById("walletErr");
+  const w = input.value.trim();
+  if (!WALLET_RE.test(w)) {
+    err.hidden = false;
+    err.textContent = "that's not a Solana address — paste the wallet your airdrop should go to";
+    input.focus();
+    return;
+  }
+  localStorage.setItem("dash_wallet", w);
+  err.hidden = true;
+  start();
+}
+
+document.getElementById("startBtn").addEventListener("click", tryStart);
 document.getElementById("retryBtn").addEventListener("click", start);
+document.getElementById("walletInput").value = getWallet();
 document.getElementById("menuBest").innerHTML = S.best > 0 ? "personal best: <b>" + S.best.toLocaleString() + "</b>" : "";
 
 stage.addEventListener("pointerdown", (e) => {
