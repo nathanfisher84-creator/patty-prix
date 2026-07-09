@@ -91,6 +91,11 @@
 
 <script>
 "use strict";
+// visit + download beacons (Vercel-served domains only)
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
+if (TRACKED_HOST) fetch("/api/track?p=pfp", { method: "POST", keepalive: true }).catch(() => {});
+const trackDl = () => { if (TRACKED_HOST) fetch("/api/track?p=pfp&e=dl", { method: "POST", keepalive: true }).catch(() => {}); };
+
 const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const frame = document.getElementById("frame");
@@ -218,6 +223,7 @@ document.getElementById("rotR").addEventListener("click", () => { G.rot += 6; re
 
 document.getElementById("download").addEventListener("click", () => {
   render();
+  trackDl();
   const a = document.createElement("a");
   a.download = "patty-pfp.png";
   a.href = cv.toDataURL("image/png");
