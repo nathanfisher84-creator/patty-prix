@@ -46,7 +46,7 @@
     position: absolute; inset: 0; z-index: 5;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; text-align: center; padding: 24px;
-    background: rgba(251,244,228,0.92);
+    background: rgba(251,244,228,0.94);
   }
   .overlay h1 {
     font-family: 'Fredoka', sans-serif; font-weight: 700;
@@ -55,9 +55,16 @@
   }
   .overlay p { font-weight: 800; font-size: 15px; color: var(--sub); max-width: 300px; }
   .overlay .score-big { font-family: 'Fredoka', sans-serif; font-size: 42px; font-weight: 700; }
+  #menuIcon {
+    width: 92px; height: 92px; border-radius: 50%;
+    border: 3px solid var(--ink); background: #fff;
+    box-shadow: 5px 5px 0 var(--ink);
+    animation: bob 2.2s ease-in-out infinite;
+  }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(3deg); } }
   .btn {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px;
-    background: var(--gold); color: var(--ink);
+    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
     border: 3px solid var(--ink); border-radius: 999px;
     padding: 14px 34px; box-shadow: 5px 5px 0 var(--ink); cursor: pointer;
   }
@@ -73,7 +80,9 @@
     padding: 5px 14px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
     box-shadow: 3px 3px 0 var(--ink);
   }
-  .chip.mult { background: var(--gold); }
+  .chip.mult { background: linear-gradient(160deg, #FFE18A, var(--gold)); }
+  .chip.mult.pulse { animation: pulse 0.35s ease; }
+  @keyframes pulse { 50% { transform: scale(1.25) rotate(-4deg); } }
   .beta-note { margin-top: 10px; font-weight: 800; font-size: 12.5px; color: var(--sub); text-align: center; }
   .beta-note a { color: var(--pill); }
 </style>
@@ -86,6 +95,7 @@
     <span class="chip mult" id="hudMult" hidden>x2</span>
   </div>
   <div class="overlay" id="menu">
+    <img id="menuIcon" alt="" hidden />
     <h1>PATTY DASH 🏁</h1>
     <p>Tap <b>left / right</b> side of the track to change lanes.<br>
        Dodge 🕯 red candles &amp; 🧻 paper hands.<br>
@@ -109,6 +119,7 @@ const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const stage = document.getElementById("stage");
 const LANES = 3;
+const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 
 let W = 0, H = 0, DPR = 1;
 function resize() {
@@ -120,40 +131,52 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-const laneX = (i) => W * (i + 0.5) / LANES;
-const CAR_W = () => Math.min(W / LANES * 0.62, 86);
+// the Bagworker rides in the cockpit — his token icon from DexScreener
+let carImg = null;
+(async () => {
+  try {
+    const pairs = await (await fetch("https://api.dexscreener.com/token-pairs/v1/solana/" + MINT)).json();
+    const score = p => (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
+    const best = (pairs || []).sort((a, b) => score(b) - score(a))[0];
+    const url = best?.info?.imageUrl;
+    if (url) {
+      const img = new Image();
+      img.onload = () => { carImg = img; };
+      img.src = url;
+      const mi = document.getElementById("menuIcon");
+      mi.src = url; mi.hidden = false;
+    }
+  } catch { /* emoji driver fallback */ }
+})();
+
+// road geometry: shoulders + red/white curbs frame the racing surface
+const ROAD = () => ({ x0: W * 0.075, x1: W * 0.925 });
+const laneX = (i) => { const r = ROAD(); return r.x0 + (r.x1 - r.x0) * (i + 0.5) / LANES; };
+const CAR_W = () => Math.min((ROAD().x1 - ROAD().x0) / LANES * 0.6, 78);
 
 const S = {
-  state: "menu",       // menu | run | over
-  t: 0,                // run time (s)
-  score: 0,
+  state: "menu",
+  t: 0, score: 0,
   best: Number(localStorage.getItem("dash_best") || 0),
-  lane: 1,
-  carX: 0,
-  speed: 0,
-  mult: 1,
-  multT: 0,
-  rows: [],            // { y, cells: [null|'candle'|'paper'|'bag'|'crown'] }
-  spawnIn: 0,
-  lastOpen: 1,
-  trackOff: 0,
-  shake: 0,
+  lane: 1, carX: 0, speed: 0,
+  mult: 1, multT: 0,
+  rows: [], spawnIn: 0, lastOpen: 1,
+  trackOff: 0, shake: 0, spin: 0,
+  parts: [],   // particles {x,y,vx,vy,life,max,color,size}
+  pops: [],    // floating score text {x,y,txt,life}
 };
 
 function reset() {
   S.t = 0; S.score = 0; S.lane = 1; S.carX = laneX(1);
   S.speed = 330; S.mult = 1; S.multT = 0;
-  S.rows = []; S.spawnIn = 0.4; S.lastOpen = 1; S.shake = 0;
+  S.rows = []; S.spawnIn = 0.4; S.lastOpen = 1;
+  S.shake = 0; S.spin = 0; S.parts = []; S.pops = [];
 }
 
-// difficulty curve: speed ramps for ~2 min then plateaus; rows pack
-// tighter over ~6 min. Tuned so fresh players last ~1 min and strong
-// players can run 5-10.
 const speedAt = (t) => Math.min(330 + t * 6.5, 1120);
-const gapAt = (t) => Math.max(0.92 - t * 0.0013, 0.5); // seconds between rows
+const gapAt = (t) => Math.max(0.92 - t * 0.0013, 0.5);
 
 function spawnRow() {
-  // keep the open lane reachable: drift at most one lane per row
   const drift = [-1, 0, 1][Math.floor(Math.random() * 3)];
   const open = Math.max(0, Math.min(LANES - 1, S.lastOpen + drift));
   S.lastOpen = open;
@@ -166,18 +189,32 @@ function spawnRow() {
   const roll = Math.random();
   if (roll < 0.07) cells[open] = "crown";
   else if (roll < 0.5) cells[open] = "bag";
-  S.rows.push({ y: -60, cells });
+  S.rows.push({ y: -60, cells, seed: Math.random() * 6.28 });
+}
+
+function burst(x, y, colors, n, power) {
+  for (let i = 0; i < n; i++) {
+    const a = Math.random() * 6.28, v = (0.3 + Math.random() * 0.7) * power;
+    S.parts.push({
+      x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - power * 0.35,
+      life: 0.7 + Math.random() * 0.5, max: 1,
+      color: colors[Math.floor(Math.random() * colors.length)],
+      size: 3 + Math.random() * 5,
+    });
+  }
 }
 
 function crash() {
   S.state = "over";
-  S.shake = 1;
+  S.shake = 1; S.spin = 0.001;
+  burst(S.carX, H - 110, ["#E4373F", "#FFC93C", "#17130E", "#F5A8CB"], 34, 320);
   if (S.score > S.best) { S.best = Math.round(S.score); localStorage.setItem("dash_best", S.best); }
   document.getElementById("overScore").textContent = Math.round(S.score).toLocaleString();
   document.getElementById("overBest").innerHTML = "personal best: <b>" + S.best.toLocaleString() + "</b>";
   document.getElementById("hud").hidden = true;
   if (navigator.vibrate) navigator.vibrate(120);
-  setTimeout(() => { document.getElementById("over").hidden = false; }, 420);
+  blip(120, 0.3, "sawtooth");
+  setTimeout(() => { document.getElementById("over").hidden = false; }, 520);
 }
 
 function update(dt) {
@@ -197,9 +234,19 @@ function update(dt) {
     row.y += S.speed * dt;
     const cell = row.cells[S.lane];
     if (cell && row.y > carY - carH * 0.55 && row.y < carY + carH * 0.55) {
-      if (cell === "bag") { S.score += 250 * S.mult; row.cells[S.lane] = null; blip(880); }
-      else if (cell === "crown") { S.mult = Math.min(S.mult + 1, 5); S.multT = 8; row.cells[S.lane] = null; blip(1320); }
-      else { crash(); return; }
+      if (cell === "bag") {
+        S.score += 250 * S.mult; row.cells[S.lane] = null;
+        burst(S.carX, carY - 30, ["#FFC93C", "#FFE18A", "#fff"], 12, 180);
+        S.pops.push({ x: S.carX, y: carY - 46, txt: "+" + (250 * S.mult), life: 0.9 });
+        blip(880, 0.12, "square");
+      } else if (cell === "crown") {
+        S.mult = Math.min(S.mult + 1, 5); S.multT = 8; row.cells[S.lane] = null;
+        burst(S.carX, carY - 30, ["#FFC93C", "#fff", "#5F4BE0"], 18, 220);
+        S.pops.push({ x: S.carX, y: carY - 46, txt: "x" + S.mult + " 👑", life: 1.1 });
+        const hm = document.getElementById("hudMult");
+        hm.classList.remove("pulse"); void hm.offsetWidth; hm.classList.add("pulse");
+        blip(1320, 0.14, "square");
+      } else { crash(); return; }
     }
   }
   S.rows = S.rows.filter(r => r.y < H + 80);
@@ -210,55 +257,172 @@ function update(dt) {
   hm.textContent = "x" + S.mult + " 👑";
 }
 
+function updateFx(dt) {
+  for (const p of S.parts) {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 500 * dt; p.life -= dt;
+  }
+  S.parts = S.parts.filter(p => p.life > 0);
+  for (const p of S.pops) { p.y -= 55 * dt; p.life -= dt; }
+  S.pops = S.pops.filter(p => p.life > 0);
+  if (S.spin > 0) S.spin += dt * 9;
+}
+
 function draw() {
   ctx.clearRect(0, 0, W, H);
-  // track
-  ctx.fillStyle = "#FBF4E4";
+  const r = ROAD();
+
+  // shoulders
+  ctx.fillStyle = "#F3CFE0";
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "#F2E8D3";
-  for (let y = -80 + S.trackOff; y < H; y += 80) ctx.fillRect(0, y, W, 40);
+  ctx.fillStyle = "rgba(23,19,14,0.05)";
+  for (let y = -26 + (S.trackOff % 26); y < H; y += 26) {
+    ctx.fillRect(0, y, r.x0 - 12, 2);
+    ctx.fillRect(r.x1 + 12, y, W - r.x1 - 12, 2);
+  }
+  // racing surface
+  ctx.fillStyle = "#F7EED9";
+  ctx.fillRect(r.x0, 0, r.x1 - r.x0, H);
+  ctx.fillStyle = "rgba(23,19,14,0.035)";
+  for (let y = -80 + S.trackOff; y < H; y += 80) ctx.fillRect(r.x0, y, r.x1 - r.x0, 40);
+  // red/white curbs
+  for (const cx of [r.x0 - 12, r.x1]) {
+    for (let y = -40 + (S.trackOff % 40); y < H; y += 40) {
+      ctx.fillStyle = "#E4373F"; ctx.fillRect(cx, y, 12, 20);
+      ctx.fillStyle = "#FFFDF6"; ctx.fillRect(cx, y + 20, 12, 20);
+    }
+    ctx.strokeStyle = "#17130E"; ctx.lineWidth = 2.5;
+    ctx.strokeRect(cx, -2, 12, H + 4);
+  }
   // lane dashes
-  ctx.strokeStyle = "rgba(23,19,14,0.18)";
-  ctx.lineWidth = 4; ctx.setLineDash([22, 26]); ctx.lineDashOffset = -S.trackOff * 1.5;
+  ctx.strokeStyle = "rgba(23,19,14,0.16)";
+  ctx.lineWidth = 4; ctx.setLineDash([24, 28]); ctx.lineDashOffset = -S.trackOff * 1.5;
   for (let i = 1; i < LANES; i++) {
-    ctx.beginPath(); ctx.moveTo(W * i / LANES, 0); ctx.lineTo(W * i / LANES, H); ctx.stroke();
+    const x = r.x0 + (r.x1 - r.x0) * i / LANES;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
   }
   ctx.setLineDash([]);
+  // speed streaks
+  if (S.state === "run" && S.speed > 640) {
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    const n = Math.floor((S.speed - 640) / 90);
+    for (let i = 0; i < n; i++) {
+      const x = r.x0 + Math.random() * (r.x1 - r.x0);
+      const y = (Math.random() * H + S.trackOff * 3) % H;
+      ctx.fillRect(x, y, 2.5, 30 + (S.speed - 640) * 0.06);
+    }
+  }
 
   let ox = 0, oy = 0;
-  if (S.shake > 0) { S.shake -= 0.06; ox = (Math.random() - 0.5) * 14 * S.shake; oy = (Math.random() - 0.5) * 14 * S.shake; }
+  if (S.shake > 0) { S.shake -= 0.05; ox = (Math.random() - 0.5) * 16 * S.shake; oy = (Math.random() - 0.5) * 16 * S.shake; }
   ctx.save(); ctx.translate(ox, oy);
 
   // rows
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  const bob = (row) => Math.sin(performance.now() / 260 + row.seed) * 4;
   for (const row of S.rows) {
     for (let i = 0; i < LANES; i++) {
       const c = row.cells[i]; if (!c) continue;
       const x = laneX(i);
       if (c === "candle") {
+        ctx.fillStyle = "rgba(23,19,14,0.14)";
+        ctx.beginPath(); ctx.ellipse(x + 4, row.y + 30, 20, 7, 0, 0, 6.28); ctx.fill();
         ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(x, row.y - 34); ctx.lineTo(x, row.y + 34); ctx.stroke();
-        ctx.fillStyle = "#E4373F";
-        rr(x - 14, row.y - 22, 28, 44, 7); ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x, row.y - 36); ctx.lineTo(x, row.y + 36); ctx.stroke();
+        const g = ctx.createLinearGradient(x - 15, 0, x + 15, 0);
+        g.addColorStop(0, "#F06A66"); g.addColorStop(0.5, "#E4373F"); g.addColorStop(1, "#B7242B");
+        ctx.fillStyle = g;
+        rr(x - 15, row.y - 23, 30, 46, 8); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        rr(x - 10, row.y - 18, 7, 36, 3); ctx.fill();
       } else {
-        ctx.font = "34px serif";
-        ctx.fillText(c === "paper" ? "🧻" : c === "bag" ? "💰" : "👑", x, row.y);
+        const by = row.y + (c === "paper" ? 0 : bob(row));
+        ctx.fillStyle = "rgba(23,19,14,0.14)";
+        ctx.beginPath(); ctx.ellipse(x + 3, by + 26, 18, 6, 0, 0, 6.28); ctx.fill();
+        if (c !== "paper") {
+          ctx.fillStyle = c === "crown" ? "rgba(255,201,60,0.35)" : "rgba(255,255,255,0.75)";
+          ctx.beginPath(); ctx.arc(x, by, 26, 0, 6.28); ctx.fill();
+          ctx.strokeStyle = "#17130E"; ctx.lineWidth = 2.5; ctx.stroke();
+        }
+        ctx.font = "32px serif";
+        ctx.fillText(c === "paper" ? "🧻" : c === "bag" ? "💰" : "👑", x, by + 1);
       }
     }
   }
 
-  // car
-  if (S.state !== "menu") {
-    const x = S.carX, y = H - 110, w = CAR_W(), h = 74;
-    ctx.fillStyle = "rgba(23,19,14,0.25)";
-    rr(x - w / 2 + 5, y - h / 2 + 6, w, h, 16); ctx.fill();
-    ctx.fillStyle = "#F5A8CB"; ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
-    rr(x - w / 2, y - h / 2, w, h, 16); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#7ED3F0";
-    rr(x - w / 2 + 10, y - h / 2 + 10, w - 20, 20, 8); ctx.fill(); ctx.stroke();
-    ctx.fillStyle = "#17130E";
-    [-1, 1].forEach(s => { rr(x + s * (w / 2) - (s > 0 ? 4 : 2), y - 22, 6, 18, 3); ctx.fill(); rr(x + s * (w / 2) - (s > 0 ? 4 : 2), y + 6, 6, 18, 3); ctx.fill(); });
-    ctx.font = "26px serif"; ctx.fillText("🏎️", x, y + 2);
+  // car (drawn unless we're on the menu)
+  if (S.state !== "menu") drawCar(S.carX, H - 110);
+
+  // particles + score pops
+  for (const p of S.parts) {
+    ctx.globalAlpha = Math.max(p.life / p.max, 0);
+    ctx.fillStyle = p.color;
+    ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
+  }
+  ctx.globalAlpha = 1;
+  ctx.font = "700 20px Fredoka, sans-serif";
+  for (const p of S.pops) {
+    ctx.globalAlpha = Math.min(p.life * 2, 1);
+    ctx.strokeStyle = "#FBF4E4"; ctx.lineWidth = 5; ctx.strokeText(p.txt, p.x, p.y);
+    ctx.fillStyle = "#17130E"; ctx.fillText(p.txt, p.x, p.y);
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function drawCar(x, y) {
+  const w = CAR_W(), h = 86;
+  const tilt = Math.max(-0.22, Math.min(0.22, (laneX(S.lane) - x) * 0.004)) + (S.spin || 0);
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(tilt);
+
+  // shadow
+  ctx.fillStyle = "rgba(23,19,14,0.22)";
+  ctx.beginPath(); ctx.ellipse(4, 8, w * 0.55, h * 0.5, 0, 0, 6.28); ctx.fill();
+
+  ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
+  // wheels
+  ctx.fillStyle = "#17130E";
+  [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
+    rr(sx * w * 0.52 - 5, sy * h * 0.28 - 11, 10, 22, 4); ctx.fill();
+  });
+  // rear wing
+  ctx.fillStyle = "#5F4BE0";
+  rr(-w * 0.42, h * 0.34, w * 0.84, 12, 5); ctx.fill(); ctx.stroke();
+  // body
+  const bodyG = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
+  bodyG.addColorStop(0, "#F7B8D4"); bodyG.addColorStop(0.5, "#F5A8CB"); bodyG.addColorStop(1, "#E88BB5");
+  ctx.fillStyle = bodyG;
+  ctx.beginPath();
+  ctx.moveTo(0, -h * 0.52);                       // nose tip
+  ctx.quadraticCurveTo(w * 0.46, -h * 0.34, w * 0.36, h * 0.1);
+  ctx.quadraticCurveTo(w * 0.34, h * 0.42, 0, h * 0.44);
+  ctx.quadraticCurveTo(-w * 0.34, h * 0.42, -w * 0.36, h * 0.1);
+  ctx.quadraticCurveTo(-w * 0.46, -h * 0.34, 0, -h * 0.52);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+  // racing stripe
+  ctx.fillStyle = "#FBF4E4";
+  rr(-5, -h * 0.5, 10, h * 0.92, 5); ctx.fill();
+  // nose number
+  ctx.fillStyle = "#FFC93C";
+  ctx.beginPath(); ctx.arc(0, -h * 0.27, 11, 0, 6.28); ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "#17130E"; ctx.font = "700 13px Fredoka, sans-serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText("1", 0, -h * 0.26);
+
+  // the Bagworker in the cockpit
+  const hr = w * 0.26;
+  ctx.fillStyle = "#FBF4E4";
+  ctx.beginPath(); ctx.arc(0, h * 0.08, hr + 4, 0, 6.28); ctx.fill(); ctx.stroke();
+  if (carImg && carImg.complete && carImg.naturalWidth) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(0, h * 0.08, hr, 0, 6.28); ctx.clip();
+    ctx.drawImage(carImg, -hr, h * 0.08 - hr, hr * 2, hr * 2);
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(0, h * 0.08, hr, 0, 6.28); ctx.stroke();
+  } else {
+    ctx.font = Math.round(hr * 1.5) + "px serif";
+    ctx.fillText("😎", 0, h * 0.09);
   }
   ctx.restore();
 }
@@ -271,26 +435,26 @@ function rr(x, y, w, h, r) {
   ctx.closePath();
 }
 
-// tiny beeps, no assets
 let AC = null;
-function blip(freq) {
+function blip(freq, dur = 0.12, type = "square") {
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)();
     const o = AC.createOscillator(), g = AC.createGain();
-    o.frequency.value = freq; o.type = "square";
+    o.frequency.value = freq; o.type = type;
     g.gain.setValueAtTime(0.06, AC.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + 0.12);
-    o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + 0.13);
+    g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime + dur);
+    o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime + dur + 0.01);
   } catch { /* muted */ }
 }
 
-let last = 0, raf = 0;
+let last = 0;
 function loop(ts) {
   const dt = Math.min((ts - last) / 1000 || 0, 0.05);
   last = ts;
   if (S.state === "run") update(dt);
+  updateFx(dt);
   draw();
-  raf = requestAnimationFrame(loop);
+  requestAnimationFrame(loop);
 }
 
 function start() {
@@ -319,7 +483,6 @@ document.addEventListener("visibilitychange", () => {
   if (document.hidden && S.state === "run") crash();
 });
 
-// test hook
 window.__dash = {
   get state() { return S.state; },
   get score() { return S.score; },
@@ -327,7 +490,7 @@ window.__dash = {
   start, crash,
 };
 
-requestAnimationFrame((ts) => { last = ts; raf = requestAnimationFrame(loop); });
+requestAnimationFrame((ts) => { last = ts; requestAnimationFrame(loop); });
 </script>
 </body>
 </html>
