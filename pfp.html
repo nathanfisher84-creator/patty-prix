@@ -83,11 +83,12 @@
     <button class="btn small" id="rotL">⟲</button>
     <button class="btn small" id="rotR">⟳</button>
     <button class="btn small" id="flip">↔️ flip</button>
+    <button class="btn small" id="arm">✂️ arm</button>
     <label class="btn small" for="file">new pic</label>
     <button class="btn blue" id="download">SAVE PIC ⬇️</button>
   </div>
   <div class="hint" id="hint" hidden>drag the shades into place · pinch to resize &amp; tilt ·
-    on iPhone pick <b>Save Image</b> from the share sheet</div>
+    ✂️ trims the arm off · on iPhone pick <b>Save Image</b> from the share sheet</div>
   <div class="hint"><a href="index.html" style="color:var(--pill)">← back to pattyprix.xyz</a></div>
 
 <script>
@@ -103,29 +104,34 @@ const frame = document.getElementById("frame");
 const SIZE = 1024;
 
 let img = null;
-const G = { x: 0.5, y: 0.42, w: 0.74, rot: -4, flip: 1 }; // glasses, fractions of canvas
+const G = { x: 0.5, y: 0.42, w: 0.74, rot: -4, flip: 1, arm: 1 }; // glasses, fractions of canvas
 
 // If the original artwork exists as a transparent PNG at glasses.png,
 // use it for a 1:1 match; otherwise draw the vector recreation below.
-let glassesImg = null;
-(() => {
+// glasses-noarm.png is the same canvas with the temple arm erased, so
+// toggling the arm never shifts the shield.
+let glassesImg = null, glassesNoArmImg = null;
+const loadArt = (src, set) => {
   const im = new Image();
-  im.onload = () => { glassesImg = im; render(); };
+  im.onload = () => { set(im); render(); };
   im.onerror = () => {};
-  im.src = "glasses.png";
-})();
+  im.src = src;
+};
+loadArt("glasses.png", (im) => { glassesImg = im; });
+loadArt("glasses-noarm.png", (im) => { glassesNoArmImg = im; });
 
 // the PATTYICE glasses: a single wraparound shield with diagonal
 // white → pink → cyan → blue stripe bands and a pointed temple nub
-function drawGlasses(c, cx, cy, w, rotDeg, flip) {
+function drawGlasses(c, cx, cy, w, rotDeg, flip, arm = 1) {
   c.save();
   c.translate(cx, cy);
   c.rotate(rotDeg * Math.PI / 180);
   c.scale(flip || 1, 1);
 
-  if (glassesImg) {
-    const h = w * glassesImg.naturalHeight / glassesImg.naturalWidth;
-    c.drawImage(glassesImg, -w / 2, -h / 2, w, h);
+  const art = (!arm && glassesNoArmImg) ? glassesNoArmImg : glassesImg;
+  if (art) {
+    const h = w * art.naturalHeight / art.naturalWidth;
+    c.drawImage(art, -w / 2, -h / 2, w, h);
     c.restore();
     return;
   }
@@ -150,12 +156,14 @@ function drawGlasses(c, cx, cy, w, rotDeg, flip) {
   };
 
   // pointed temple nub (left side, like the artwork)
-  c.fillStyle = ink;
-  c.beginPath();
-  c.moveTo(-w * 0.48, -h * 0.34);
-  c.lineTo(-w * 0.62, -h * 0.46);
-  c.lineTo(-w * 0.48, -h * 0.06);
-  c.closePath(); c.fill();
+  if (arm) {
+    c.fillStyle = ink;
+    c.beginPath();
+    c.moveTo(-w * 0.48, -h * 0.34);
+    c.lineTo(-w * 0.62, -h * 0.46);
+    c.lineTo(-w * 0.48, -h * 0.06);
+    c.closePath(); c.fill();
+  }
 
   // diagonal stripe bands, sampled from the artwork
   c.save();
@@ -190,7 +198,7 @@ function render() {
     const s = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
     const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
     ctx.drawImage(img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
-    drawGlasses(ctx, G.x * SIZE, G.y * SIZE, G.w * SIZE, G.rot, G.flip);
+    drawGlasses(ctx, G.x * SIZE, G.y * SIZE, G.w * SIZE, G.rot, G.flip, G.arm);
   } else {
     drawGlasses(ctx, SIZE * 0.5, SIZE * 0.45, SIZE * 0.55, -4, 1);
   }
@@ -204,6 +212,7 @@ document.getElementById("file").addEventListener("change", (e) => {
   im.onload = () => {
     img = im;
     G.x = 0.5; G.y = 0.42; G.w = 0.74; G.rot = -4; G.flip = 1;
+    G.arm = 1; armBtn.textContent = "✂️ arm";
     document.getElementById("drop").hidden = true;
     document.getElementById("controls").hidden = false;
     document.getElementById("hint").hidden = false;
@@ -253,6 +262,12 @@ document.getElementById("smaller").addEventListener("click", () => { G.w = Math.
 document.getElementById("rotL").addEventListener("click", () => { G.rot -= 6; render(); });
 document.getElementById("rotR").addEventListener("click", () => { G.rot += 6; render(); });
 document.getElementById("flip").addEventListener("click", () => { G.flip *= -1; render(); });
+const armBtn = document.getElementById("arm");
+armBtn.addEventListener("click", () => {
+  G.arm = G.arm ? 0 : 1;
+  armBtn.textContent = G.arm ? "✂️ arm" : "➕ arm";
+  render();
+});
 
 document.getElementById("download").addEventListener("click", () => {
   render();
