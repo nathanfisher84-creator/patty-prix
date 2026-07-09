@@ -61,19 +61,26 @@ export default async function handler(req, res) {
       const gate = await kvPipeline([["INCR", rl], ["EXPIRE", rl, 60]], kv);
       if (Number(gate[0]?.result) > 30) return res.status(429).json({ error: "slow down, racer" });
 
+      // "healthcheck" is reserved for the monitoring probe: it exercises
+      // the same write path against a throwaway key and scrubs itself
+      // off the real board instead of appearing on it
+      const isProbe = name === "healthcheck";
+      const target = isProbe ? "lbtest:" + week : key;
       const out = await kvPipeline([
-        ["ZADD", key, "GT", score, name],
-        ["EXPIRE", key, WEEK_TTL],
-        ["ZSCORE", key, name],
-        ["ZREVRANK", key, name],
+        ...(isProbe ? [["ZREM", key, name]] : []),
+        ["ZADD", target, "GT", score, name],
+        ["EXPIRE", target, isProbe ? 3600 : WEEK_TTL],
+        ["ZSCORE", target, name],
+        ["ZREVRANK", target, name],
         ["ZRANGE", key, 0, TOP_N - 1, "REV", "WITHSCORES"]
       ], kv);
+      const o = isProbe ? 1 : 0;
       return res.status(200).json({
         ok: true,
         week,
-        best: Number(out[2]?.result) || score,
-        rank: (Number(out[3]?.result) || 0) + 1,
-        top: toRows(out[4]?.result)
+        best: Number(out[o + 2]?.result) || score,
+        rank: (Number(out[o + 3]?.result) || 0) + 1,
+        top: toRows(out[o + 4]?.result)
       });
     }
 
