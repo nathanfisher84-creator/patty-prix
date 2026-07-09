@@ -78,6 +78,8 @@
   <input type="file" id="file" accept="image/*" hidden />
 
   <div class="controls" id="controls" hidden>
+    <button class="btn small" id="zoomOut">🖼️−</button>
+    <button class="btn small" id="zoomIn">🖼️＋</button>
     <button class="btn small" id="smaller">−</button>
     <button class="btn small" id="bigger">＋</button>
     <button class="btn small" id="rotL">⟲</button>
@@ -88,7 +90,8 @@
     <button class="btn blue" id="download">SAVE PIC ⬇️</button>
   </div>
   <div class="hint" id="hint" hidden>drag the shades into place · pinch to resize &amp; tilt ·
-    ✂️ trims the arm off · on iPhone pick <b>Save Image</b> from the share sheet</div>
+    🖼️ zooms your photo · − ＋ resize the shades · ✂️ trims the arm off ·
+    on iPhone pick <b>Save Image</b> from the share sheet</div>
   <div class="hint"><a href="index.html" style="color:var(--pill)">← back to pattyprix.xyz</a></div>
 
 <script>
@@ -105,6 +108,7 @@ const SIZE = 1024;
 
 let img = null;
 const G = { x: 0.5, y: 0.42, w: 0.74, rot: -4, flip: 1, arm: 1 }; // glasses, fractions of canvas
+const P = { zoom: 1 }; // uploaded photo, on top of cover-fit
 
 // If the original artwork exists as a transparent PNG at glasses.png,
 // use it for a 1:1 match; otherwise draw the vector recreation below.
@@ -195,7 +199,10 @@ function drawGlasses(c, cx, cy, w, rotDeg, flip, arm = 1) {
 function render() {
   ctx.clearRect(0, 0, SIZE, SIZE);
   if (img) {
-    const s = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
+    // card-cream backdrop so zooming out never exports transparent edges
+    ctx.fillStyle = "#FBF4E4";
+    ctx.fillRect(0, 0, SIZE, SIZE);
+    const s = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight) * P.zoom;
     const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
     ctx.drawImage(img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
     drawGlasses(ctx, G.x * SIZE, G.y * SIZE, G.w * SIZE, G.rot, G.flip, G.arm);
@@ -213,6 +220,7 @@ document.getElementById("file").addEventListener("change", (e) => {
     img = im;
     G.x = 0.5; G.y = 0.42; G.w = 0.74; G.rot = -4; G.flip = 1;
     G.arm = 1; armBtn.textContent = "✂️ arm";
+    P.zoom = 1;
     document.getElementById("drop").hidden = true;
     document.getElementById("controls").hidden = false;
     document.getElementById("hint").hidden = false;
@@ -257,6 +265,8 @@ const lift = (e) => ptrs.delete(e.pointerId);
 frame.addEventListener("pointerup", lift);
 frame.addEventListener("pointercancel", lift);
 
+document.getElementById("zoomIn").addEventListener("click", () => { P.zoom = Math.min(5, P.zoom * 1.15); render(); });
+document.getElementById("zoomOut").addEventListener("click", () => { P.zoom = Math.max(0.4, P.zoom / 1.15); render(); });
 document.getElementById("bigger").addEventListener("click", () => { G.w = Math.min(2, G.w * 1.1); render(); });
 document.getElementById("smaller").addEventListener("click", () => { G.w = Math.max(0.15, G.w / 1.1); render(); });
 document.getElementById("rotL").addEventListener("click", () => { G.rot -= 6; render(); });
@@ -293,7 +303,7 @@ document.getElementById("download").addEventListener("click", () => {
 // preview shades on the empty card so the page never looks blank
 render();
 
-window.__pfp = { G, get hasImg() { return !!img; }, render };
+window.__pfp = { G, P, get hasImg() { return !!img; }, render };
 </script>
 </body>
 </html>
