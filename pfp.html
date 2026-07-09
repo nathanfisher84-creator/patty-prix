@@ -57,6 +57,7 @@
     text-decoration: none; display: inline-block;
   }
   .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: 2px 2px 0 var(--ink); }
   .btn.blue { background: var(--fill); }
   .btn.small { font-size: 14px; padding: 8px 16px; background: var(--card); }
   .controls { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; margin-top: 18px; }
@@ -86,11 +87,13 @@
     <button class="btn small" id="rotR">⟳</button>
     <button class="btn small" id="flip">↔️ flip</button>
     <button class="btn small" id="arm">✂️ arm</button>
+    <button class="btn small" id="addPair">🕶️＋ more shades</button>
     <label class="btn small" for="file">new pic</label>
     <button class="btn blue" id="download">SAVE PIC ⬇️</button>
   </div>
   <div class="hint" id="hint" hidden>drag the shades into place · pinch to resize &amp; tilt ·
     🖼️ zooms your photo · − ＋ resize the shades · ✂️ trims the arm off ·
+    🕶️＋ stacks up to 4 pairs (tap a pair to pick it up) ·
     on iPhone pick <b>Save Image</b> from the share sheet</div>
   <div class="hint"><a href="index.html" style="color:var(--pill)">← back to pattyprix.xyz</a></div>
 
@@ -107,7 +110,20 @@ const frame = document.getElementById("frame");
 const SIZE = 1024;
 
 let img = null;
-const G = { x: 0.5, y: 0.42, w: 0.74, rot: -4, flip: 1, arm: 1 }; // glasses, fractions of canvas
+// up to MAX_PAIRS pairs of shades; buttons and gestures act on the
+// "active" pair — tapping near a pair picks it up
+const MAX_PAIRS = 4;
+const newPair = (i = 0) => ({
+  x: 0.5, y: Math.min(0.42 + i * 0.17, 0.88),
+  w: 0.74, rot: -4, flip: 1, arm: 1
+});
+let pairs = [newPair()];
+let active = 0;
+const act = () => pairs[active];
+function setActive(i) {
+  active = i;
+  document.getElementById("arm").textContent = act().arm ? "✂️ arm" : "➕ arm";
+}
 const P = { zoom: 1 }; // uploaded photo, on top of cover-fit
 
 // If the original artwork exists as a transparent PNG at glasses.png,
@@ -205,7 +221,7 @@ function render() {
     const s = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight) * P.zoom;
     const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
     ctx.drawImage(img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
-    drawGlasses(ctx, G.x * SIZE, G.y * SIZE, G.w * SIZE, G.rot, G.flip, G.arm);
+    for (const g of pairs) drawGlasses(ctx, g.x * SIZE, g.y * SIZE, g.w * SIZE, g.rot, g.flip, g.arm);
   } else {
     drawGlasses(ctx, SIZE * 0.5, SIZE * 0.45, SIZE * 0.55, -4, 1);
   }
@@ -213,13 +229,16 @@ function render() {
 
 document.getElementById("file").addEventListener("change", (e) => {
   const f = e.target.files && e.target.files[0];
+  // clear the input so re-picking the same photo still fires change
+  e.target.value = "";
   if (!f) return;
   const url = URL.createObjectURL(f);
   const im = new Image();
   im.onload = () => {
     img = im;
-    G.x = 0.5; G.y = 0.42; G.w = 0.74; G.rot = -4; G.flip = 1;
-    G.arm = 1; armBtn.textContent = "✂️ arm";
+    pairs = [newPair()];
+    setActive(0);
+    addBtn.disabled = false;
     P.zoom = 1;
     document.getElementById("drop").hidden = true;
     document.getElementById("controls").hidden = false;
@@ -239,24 +258,35 @@ const rectPt = (e) => {
 frame.addEventListener("pointerdown", (e) => {
   if (!img) return;
   frame.setPointerCapture(e.pointerId);
-  ptrs.set(e.pointerId, rectPt(e));
+  const p = rectPt(e);
+  // first finger picks up the nearest pair of shades
+  if (ptrs.size === 0 && pairs.length > 1) {
+    let bi = 0, bd = Infinity;
+    pairs.forEach((g, i) => {
+      const d = Math.hypot(g.x - p.x, g.y - p.y);
+      if (d < bd) { bd = d; bi = i; }
+    });
+    setActive(bi);
+  }
+  ptrs.set(e.pointerId, p);
 });
 frame.addEventListener("pointermove", (e) => {
   if (!img || !ptrs.has(e.pointerId)) return;
   const now = rectPt(e);
+  const g = act();
   if (ptrs.size === 1) {
     const was = ptrs.get(e.pointerId);
-    G.x += now.x - was.x; G.y += now.y - was.y;
+    g.x += now.x - was.x; g.y += now.y - was.y;
   } else if (ptrs.size === 2) {
     const ids = [...ptrs.keys()];
     const other = ptrs.get(ids[0] === e.pointerId ? ids[1] : ids[0]);
     const was = ptrs.get(e.pointerId);
     const d0 = Math.hypot(was.x - other.x, was.y - other.y);
     const d1 = Math.hypot(now.x - other.x, now.y - other.y);
-    if (d0 > 0.001) G.w = Math.min(2, Math.max(0.15, G.w * d1 / d0));
+    if (d0 > 0.001) g.w = Math.min(2, Math.max(0.15, g.w * d1 / d0));
     const a0 = Math.atan2(was.y - other.y, was.x - other.x);
     const a1 = Math.atan2(now.y - other.y, now.x - other.x);
-    G.rot += (a1 - a0) * 180 / Math.PI;
+    g.rot += (a1 - a0) * 180 / Math.PI;
   }
   ptrs.set(e.pointerId, now);
   render();
@@ -267,15 +297,24 @@ frame.addEventListener("pointercancel", lift);
 
 document.getElementById("zoomIn").addEventListener("click", () => { P.zoom = Math.min(5, P.zoom * 1.15); render(); });
 document.getElementById("zoomOut").addEventListener("click", () => { P.zoom = Math.max(0.4, P.zoom / 1.15); render(); });
-document.getElementById("bigger").addEventListener("click", () => { G.w = Math.min(2, G.w * 1.1); render(); });
-document.getElementById("smaller").addEventListener("click", () => { G.w = Math.max(0.15, G.w / 1.1); render(); });
-document.getElementById("rotL").addEventListener("click", () => { G.rot -= 6; render(); });
-document.getElementById("rotR").addEventListener("click", () => { G.rot += 6; render(); });
-document.getElementById("flip").addEventListener("click", () => { G.flip *= -1; render(); });
+document.getElementById("bigger").addEventListener("click", () => { const g = act(); g.w = Math.min(2, g.w * 1.1); render(); });
+document.getElementById("smaller").addEventListener("click", () => { const g = act(); g.w = Math.max(0.15, g.w / 1.1); render(); });
+document.getElementById("rotL").addEventListener("click", () => { act().rot -= 6; render(); });
+document.getElementById("rotR").addEventListener("click", () => { act().rot += 6; render(); });
+document.getElementById("flip").addEventListener("click", () => { act().flip *= -1; render(); });
 const armBtn = document.getElementById("arm");
 armBtn.addEventListener("click", () => {
-  G.arm = G.arm ? 0 : 1;
-  armBtn.textContent = G.arm ? "✂️ arm" : "➕ arm";
+  const g = act();
+  g.arm = g.arm ? 0 : 1;
+  armBtn.textContent = g.arm ? "✂️ arm" : "➕ arm";
+  render();
+});
+const addBtn = document.getElementById("addPair");
+addBtn.addEventListener("click", () => {
+  if (pairs.length >= MAX_PAIRS) return;
+  pairs.push(newPair(pairs.length));
+  setActive(pairs.length - 1);
+  addBtn.disabled = pairs.length >= MAX_PAIRS;
   render();
 });
 
@@ -303,7 +342,14 @@ document.getElementById("download").addEventListener("click", () => {
 // preview shades on the empty card so the page never looks blank
 render();
 
-window.__pfp = { G, P, get hasImg() { return !!img; }, render };
+window.__pfp = {
+  get G() { return act(); },
+  get pairs() { return pairs; },
+  get active() { return active; },
+  P,
+  get hasImg() { return !!img; },
+  render
+};
 </script>
 </body>
 </html>
