@@ -87,14 +87,15 @@
     <button class="btn small" id="rotR">⟳</button>
     <button class="btn small" id="flip">↔️ flip</button>
     <button class="btn small" id="arm">✂️ arm</button>
-    <button class="btn small" id="removePair" disabled>🕶️−</button>
-    <button class="btn small" id="addPair">🕶️＋ more shades</button>
+    <button class="btn small" id="removePair" disabled>🗑️−</button>
+    <button class="btn small" id="addPair">🕶️＋ shades</button>
+    <button class="btn small" id="addWig">🦱＋ wig</button>
     <label class="btn small" for="file">new pic</label>
     <button class="btn blue" id="download">SAVE PIC ⬇️</button>
   </div>
   <div class="hint" id="hint" hidden>drag the shades into place · pinch to resize &amp; tilt ·
     🖼️ zooms your photo · − ＋ resize the shades · ✂️ trims the arm off ·
-    🕶️＋/− stacks up to 4 pairs or removes one (tap a pair to pick it up) ·
+    🕶️＋ / 🦱＋ stack shades &amp; wigs (4 of each max) · 🗑️− removes the one you tapped last ·
     on iPhone pick <b>Save Image</b> from the share sheet</div>
   <div class="hint"><a href="index.html" style="color:var(--pill)">← back to pattyprix.xyz</a></div>
 
@@ -111,19 +112,24 @@ const frame = document.getElementById("frame");
 const SIZE = 1024;
 
 let img = null;
-// up to MAX_PAIRS pairs of shades; buttons and gestures act on the
-// "active" pair — tapping near a pair picks it up
+// attachments: shades and wigs, up to MAX_PAIRS of each. Buttons and
+// gestures act on the "active" layer — tapping near one picks it up.
 const MAX_PAIRS = 4;
-const newPair = (i = 0) => ({
-  x: 0.5, y: Math.min(0.42 + i * 0.17, 0.88),
-  w: 0.74, rot: -4, flip: 1, arm: 1
+const newLayer = (kind = "shades", i = 0) => ({
+  kind,
+  x: 0.5,
+  y: Math.min((kind === "wig" ? 0.34 : 0.42) + i * 0.17, 0.88),
+  w: kind === "wig" ? 0.9 : 0.74,
+  rot: kind === "wig" ? 0 : -4,
+  flip: 1, arm: 1
 });
-let pairs = [newPair()];
+let pairs = [newLayer()];
 let active = 0;
 const act = () => pairs[active];
+const countKind = (k) => pairs.filter((p) => p.kind === k).length;
 function setActive(i) {
   active = i;
-  document.getElementById("arm").textContent = act().arm ? "✂️ arm" : "➕ arm";
+  syncBtns();
 }
 const P = { zoom: 1 }; // uploaded photo, on top of cover-fit
 
@@ -131,7 +137,7 @@ const P = { zoom: 1 }; // uploaded photo, on top of cover-fit
 // use it for a 1:1 match; otherwise draw the vector recreation below.
 // glasses-noarm.png is the same canvas with the temple arm erased, so
 // toggling the arm never shifts the shield.
-let glassesImg = null, glassesNoArmImg = null;
+let glassesImg = null, glassesNoArmImg = null, wigImg = null;
 const loadArt = (src, set) => {
   const im = new Image();
   im.onload = () => { set(im); render(); };
@@ -140,6 +146,7 @@ const loadArt = (src, set) => {
 };
 loadArt("glasses.png", (im) => { glassesImg = im; });
 loadArt("glasses-noarm.png", (im) => { glassesNoArmImg = im; });
+loadArt("wig.png", (im) => { wigImg = im; });
 
 // the PATTYICE glasses: a single wraparound shield with diagonal
 // white → pink → cyan → blue stripe bands and a pointed temple nub
@@ -213,6 +220,21 @@ function drawGlasses(c, cx, cy, w, rotDeg, flip, arm = 1) {
   c.restore();
 }
 
+function drawLayer(c, g) {
+  if (g.kind === "wig") {
+    if (!wigImg) return; // sticker still loading
+    c.save();
+    c.translate(g.x * SIZE, g.y * SIZE);
+    c.rotate(g.rot * Math.PI / 180);
+    c.scale(g.flip || 1, 1);
+    const w = g.w * SIZE, h = w * wigImg.naturalHeight / wigImg.naturalWidth;
+    c.drawImage(wigImg, -w / 2, -h / 2, w, h);
+    c.restore();
+    return;
+  }
+  drawGlasses(c, g.x * SIZE, g.y * SIZE, g.w * SIZE, g.rot, g.flip, g.arm);
+}
+
 function render() {
   ctx.clearRect(0, 0, SIZE, SIZE);
   if (img) {
@@ -222,7 +244,7 @@ function render() {
     const s = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight) * P.zoom;
     const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
     ctx.drawImage(img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
-    for (const g of pairs) drawGlasses(ctx, g.x * SIZE, g.y * SIZE, g.w * SIZE, g.rot, g.flip, g.arm);
+    for (const g of pairs) drawLayer(ctx, g);
   } else {
     drawGlasses(ctx, SIZE * 0.5, SIZE * 0.45, SIZE * 0.55, -4, 1);
   }
@@ -237,9 +259,8 @@ document.getElementById("file").addEventListener("change", (e) => {
   const im = new Image();
   im.onload = () => {
     img = im;
-    pairs = [newPair()];
+    pairs = [newLayer()];
     setActive(0);
-    syncPairBtns();
     P.zoom = 1;
     document.getElementById("drop").hidden = true;
     document.getElementById("controls").hidden = false;
@@ -304,30 +325,36 @@ document.getElementById("rotL").addEventListener("click", () => { act().rot -= 6
 document.getElementById("rotR").addEventListener("click", () => { act().rot += 6; render(); });
 document.getElementById("flip").addEventListener("click", () => { act().flip *= -1; render(); });
 const armBtn = document.getElementById("arm");
+const addBtn = document.getElementById("addPair");
+const wigBtn = document.getElementById("addWig");
+const removeBtn = document.getElementById("removePair");
+const syncBtns = () => {
+  addBtn.disabled = countKind("shades") >= MAX_PAIRS;
+  wigBtn.disabled = countKind("wig") >= MAX_PAIRS;
+  removeBtn.disabled = pairs.length <= 1;
+  const g = act();
+  armBtn.disabled = g.kind !== "shades"; // wigs have no arm
+  armBtn.textContent = g.arm ? "✂️ arm" : "➕ arm";
+};
 armBtn.addEventListener("click", () => {
   const g = act();
+  if (g.kind !== "shades") return;
   g.arm = g.arm ? 0 : 1;
-  armBtn.textContent = g.arm ? "✂️ arm" : "➕ arm";
+  syncBtns();
   render();
 });
-const addBtn = document.getElementById("addPair");
-const removeBtn = document.getElementById("removePair");
-const syncPairBtns = () => {
-  addBtn.disabled = pairs.length >= MAX_PAIRS;
-  removeBtn.disabled = pairs.length <= 1;
-};
-addBtn.addEventListener("click", () => {
-  if (pairs.length >= MAX_PAIRS) return;
-  pairs.push(newPair(pairs.length));
+const addLayer = (kind) => {
+  if (countKind(kind) >= MAX_PAIRS) return;
+  pairs.push(newLayer(kind, countKind(kind)));
   setActive(pairs.length - 1);
-  syncPairBtns();
   render();
-});
+};
+addBtn.addEventListener("click", () => addLayer("shades"));
+wigBtn.addEventListener("click", () => addLayer("wig"));
 removeBtn.addEventListener("click", () => {
   if (pairs.length <= 1) return;
-  pairs.splice(active, 1); // drops the pair touched last
+  pairs.splice(active, 1); // drops the attachment touched last
   setActive(Math.max(0, active - 1));
-  syncPairBtns();
   render();
 });
 
