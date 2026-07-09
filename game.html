@@ -121,8 +121,8 @@
     <p>Tap <b>left / right</b> to change lanes.<br>
        Dodge 🕯 candles &amp; 🧻 paper hands · grab 💰 bags · 👑 boost.</p>
     <input id="walletInput" placeholder="paste your Solana wallet to race" autocomplete="off" spellcheck="false" />
-    <p class="wallet-note">🎁 this address is where your <b>$PATTYICE airdrop</b> is sent
-      if you top the weekly leaderboard — double-check it!</p>
+    <p class="wallet-note">your wallet is your racer ID on the weekly leaderboard —
+      if rewards go live, this is the address they'd be sent to</p>
     <p id="walletErr" hidden></p>
     <button class="btn" id="startBtn">START ENGINE 🏎️</button>
     <p id="menuBest"></p>
@@ -141,7 +141,7 @@
     <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
   </div>
 </div>
-<div class="beta-note">BETA — race under your wallet, weekly winners get a $PATTYICE airdrop. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">pattyprix.xyz</a></div>
+<div class="beta-note">BETA — race under your wallet · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">pattyprix.xyz</a></div>
 
 <script>
 "use strict";
@@ -156,9 +156,9 @@ const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostn
 if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
 const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
 
-// weekly leaderboard — racers enter as their Solana wallet address,
-// which is also where a winning airdrop lands. The GitHub Pages
-// mirror talks to the live API cross-origin.
+// weekly leaderboard — racers enter as their Solana wallet address
+// (their racer ID; also where any future rewards would be sent).
+// The GitHub Pages mirror talks to the live API cross-origin.
 const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://pattyprix.xyz/api/leaderboard";
 const WALLET_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const getWallet = () => {
@@ -585,7 +585,7 @@ function tryStart() {
   const w = input.value.trim();
   if (!WALLET_RE.test(w)) {
     err.hidden = false;
-    err.textContent = "that's not a Solana address — paste the wallet your airdrop should go to";
+    err.textContent = "that's not a Solana address — paste a valid wallet to race";
     input.focus();
     return;
   }
