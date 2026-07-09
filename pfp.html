@@ -82,6 +82,7 @@
     <button class="btn small" id="bigger">＋</button>
     <button class="btn small" id="rotL">⟲</button>
     <button class="btn small" id="rotR">⟳</button>
+    <button class="btn small" id="flip">↔️ flip</button>
     <label class="btn small" for="file">new pic</label>
     <button class="btn blue" id="download">DOWNLOAD ⬇️</button>
   </div>
@@ -102,55 +103,84 @@ const frame = document.getElementById("frame");
 const SIZE = 1024;
 
 let img = null;
-const G = { x: 0.5, y: 0.42, w: 0.74, rot: -4 }; // glasses, fractions of canvas
+const G = { x: 0.5, y: 0.42, w: 0.74, rot: -4, flip: 1 }; // glasses, fractions of canvas
 
-function rrp(c, x, y, w, h, r) {
-  c.beginPath();
-  c.moveTo(x + r, y);
-  c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r);
-  c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r);
-  c.closePath();
-}
+// If the original artwork exists as a transparent PNG at glasses.png,
+// use it for a 1:1 match; otherwise draw the vector recreation below.
+let glassesImg = null;
+(() => {
+  const im = new Image();
+  im.onload = () => { glassesImg = im; render(); };
+  im.onerror = () => {};
+  im.src = "glasses.png";
+})();
 
-// the Bagworker's holographic ski shades, drawn as vectors
-function drawGlasses(c, cx, cy, w, rotDeg) {
-  const h = w * 0.40;
+// the PATTYICE glasses: a single wraparound shield with diagonal
+// white → pink → cyan → blue stripe bands and a pointed temple nub
+function drawGlasses(c, cx, cy, w, rotDeg, flip) {
   c.save();
   c.translate(cx, cy);
   c.rotate(rotDeg * Math.PI / 180);
-  const lw = Math.max(w * 0.035, 8);
-  const ink = "#17130E";
+  c.scale(flip || 1, 1);
 
-  // arms sweeping back
-  c.strokeStyle = ink; c.lineWidth = lw; c.lineCap = "round";
-  c.beginPath();
-  c.moveTo(-w * 0.47, -h * 0.18); c.lineTo(-w * 0.60, -h * 0.42);
-  c.moveTo(w * 0.47, -h * 0.18); c.lineTo(w * 0.60, -h * 0.42);
-  c.stroke();
-
-  const g = c.createLinearGradient(-w / 2, -h / 2, w / 2, h / 2);
-  g.addColorStop(0, "#F9A8DC"); g.addColorStop(0.22, "#F3C4EC");
-  g.addColorStop(0.4, "#8FD9F8"); g.addColorStop(0.6, "#4FA6F0");
-  g.addColorStop(0.78, "#7B6CF0"); g.addColorStop(1, "#54CDF2");
-
-  const shapes = [
-    () => rrp(c, -w * 0.50, -h * 0.50, w * 0.46, h, h * 0.30),      // left lens
-    () => rrp(c, w * 0.04, -h * 0.50, w * 0.46, h, h * 0.30),       // right lens
-    () => rrp(c, -w * 0.11, -h * 0.50, w * 0.22, h * 0.44, h * 0.12) // bridge
-  ];
-  for (const s of shapes) {
-    s(); c.fillStyle = g; c.fill();
-    c.strokeStyle = ink; c.lineWidth = lw; c.stroke();
-  }
-  // lens shine streaks
-  for (const [s, ox] of [[shapes[0], -w * 0.36], [shapes[1], w * 0.14]]) {
-    c.save(); s(); c.clip();
-    c.translate(ox, 0); c.rotate(-0.45);
-    c.fillStyle = "rgba(255,255,255,0.38)";
-    c.fillRect(0, -h, w * 0.055, h * 2.4);
-    c.fillRect(w * 0.09, -h, w * 0.025, h * 2.4);
+  if (glassesImg) {
+    const h = w * glassesImg.naturalHeight / glassesImg.naturalWidth;
+    c.drawImage(glassesImg, -w / 2, -h / 2, w, h);
     c.restore();
+    return;
   }
+
+  const h = w * 0.42;
+  const lw = Math.max(w * 0.05, 10);
+  const ink = "#17130E";
+  const r = h * 0.34;
+
+  const shield = () => {
+    c.beginPath();
+    c.moveTo(-w / 2 + r * 0.6, -h / 2);
+    c.lineTo(w / 2 - r * 0.6, -h / 2);
+    c.quadraticCurveTo(w / 2, -h / 2, w / 2, -h / 2 + r);
+    c.lineTo(w / 2, h / 2 - r);
+    c.quadraticCurveTo(w / 2, h / 2, w / 2 - r, h / 2);
+    c.lineTo(-w / 2 + r, h / 2);
+    c.quadraticCurveTo(-w / 2, h / 2, -w / 2, h / 2 - r);
+    c.lineTo(-w / 2, -h / 2 + r * 0.7);
+    c.quadraticCurveTo(-w / 2, -h / 2, -w / 2 + r * 0.6, -h / 2);
+    c.closePath();
+  };
+
+  // pointed temple nub (left side, like the artwork)
+  c.fillStyle = ink;
+  c.beginPath();
+  c.moveTo(-w * 0.48, -h * 0.34);
+  c.lineTo(-w * 0.62, -h * 0.46);
+  c.lineTo(-w * 0.48, -h * 0.06);
+  c.closePath(); c.fill();
+
+  // diagonal stripe bands, sampled from the artwork
+  c.save();
+  shield(); c.clip();
+  c.save();
+  c.rotate(-0.16); // stripes lean like the art
+  const bands = [
+    ["#FFFFFF", 0.13], ["#F4B9E5", 0.15], ["#EBDCF8", 0.05],
+    ["#A5E3FA", 0.16], ["#66BDF4", 0.16], ["#4D8FE9", 0.17], ["#7ED9F8", 0.30]
+  ];
+  let bx = -w * 0.62;
+  for (const [color, frac] of bands) {
+    c.fillStyle = color;
+    c.fillRect(bx, -h, w * frac * 1.3, h * 2.6);
+    bx += w * frac * 1.3;
+  }
+  c.restore();
+  // soft white glint top-left
+  c.fillStyle = "rgba(255,255,255,0.5)";
+  c.beginPath(); c.ellipse(-w * 0.30, -h * 0.26, w * 0.10, h * 0.14, -0.4, 0, 6.28); c.fill();
+  c.restore();
+
+  // frame outline
+  shield();
+  c.strokeStyle = ink; c.lineWidth = lw; c.lineJoin = "round"; c.stroke();
   c.restore();
 }
 
@@ -160,7 +190,9 @@ function render() {
     const s = Math.max(SIZE / img.naturalWidth, SIZE / img.naturalHeight);
     const dw = img.naturalWidth * s, dh = img.naturalHeight * s;
     ctx.drawImage(img, (SIZE - dw) / 2, (SIZE - dh) / 2, dw, dh);
-    drawGlasses(ctx, G.x * SIZE, G.y * SIZE, G.w * SIZE, G.rot);
+    drawGlasses(ctx, G.x * SIZE, G.y * SIZE, G.w * SIZE, G.rot, G.flip);
+  } else {
+    drawGlasses(ctx, SIZE * 0.5, SIZE * 0.45, SIZE * 0.55, -4, 1);
   }
 }
 
@@ -171,7 +203,7 @@ document.getElementById("file").addEventListener("change", (e) => {
   const im = new Image();
   im.onload = () => {
     img = im;
-    G.x = 0.5; G.y = 0.42; G.w = 0.74; G.rot = -4;
+    G.x = 0.5; G.y = 0.42; G.w = 0.74; G.rot = -4; G.flip = 1;
     document.getElementById("drop").hidden = true;
     document.getElementById("controls").hidden = false;
     document.getElementById("hint").hidden = false;
@@ -220,6 +252,7 @@ document.getElementById("bigger").addEventListener("click", () => { G.w = Math.m
 document.getElementById("smaller").addEventListener("click", () => { G.w = Math.max(0.15, G.w / 1.1); render(); });
 document.getElementById("rotL").addEventListener("click", () => { G.rot -= 6; render(); });
 document.getElementById("rotR").addEventListener("click", () => { G.rot += 6; render(); });
+document.getElementById("flip").addEventListener("click", () => { G.flip *= -1; render(); });
 
 document.getElementById("download").addEventListener("click", () => {
   render();
@@ -231,7 +264,7 @@ document.getElementById("download").addEventListener("click", () => {
 });
 
 // preview shades on the empty card so the page never looks blank
-drawGlasses(ctx, SIZE * 0.5, SIZE * 0.45, SIZE * 0.55, -4);
+render();
 
 window.__pfp = { G, get hasImg() { return !!img; }, render };
 </script>
