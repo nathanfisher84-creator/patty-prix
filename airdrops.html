@@ -44,6 +44,26 @@
   .tile .l { font-weight: 800; font-size: 11.5px; color: var(--sub); letter-spacing: 0.4px; }
   .tile .v { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; margin-top: 2px; }
   .tile .s { font-weight: 800; font-size: 11px; color: var(--sub); }
+  .lookup { display: flex; gap: 8px; width: min(480px, 100%); margin-bottom: 12px; }
+  #lkIn {
+    flex: 1; min-width: 0;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
+    border: 3px solid var(--ink); border-radius: 999px; background: #fff;
+    padding: 10px 16px; box-shadow: 3px 3px 0 var(--ink);
+    outline: none; color: var(--ink);
+  }
+  .btn.lk { font-size: 14px; padding: 10px 18px; }
+  .lkcard {
+    width: min(480px, 100%);
+    background: var(--card); border: 3px solid var(--ink); border-radius: 16px;
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 14px 16px; margin-bottom: 20px;
+    font-weight: 800; font-size: 13.5px;
+  }
+  .lkcard .big { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; margin: 2px 0; }
+  .lkcard .dim { color: var(--sub); font-size: 12px; }
+  .lkcard .err { color: var(--red); }
+  .lkcard a { color: var(--pill); }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
   .chip {
     font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13.5px;
@@ -93,6 +113,12 @@
   <h1>AIRDROP FAM HQ 🪂</h1>
   <div class="sub">every wallet the airdrop wallet has fed — what they got,
     what they're still holding, and who folded</div>
+
+  <div class="lookup">
+    <input id="lkIn" placeholder="paste any wallet — check its bag 🔎" autocomplete="off" spellcheck="false" />
+    <button class="btn lk" id="lkBtn">CHECK</button>
+  </div>
+  <div class="lkcard" id="lkCard" hidden></div>
 
   <div class="tiles" id="tiles" hidden>
     <div class="tile"><div class="l">BAGS DROPPED</div><div class="v" id="tBags">—</div></div>
@@ -212,6 +238,8 @@ function classify(kept) {
 
 let fam = [];
 let filter = "all";
+// chain state kept around for the wallet lookup
+const state = { ready: false, balances: null, decimals: 6, price: null, supplyUi: null };
 
 function renderRows() {
   const rowsEl = document.getElementById("rows");
@@ -265,6 +293,11 @@ async function load() {
       scanDrops()
     ]);
     const decimals = supply?.result?.value?.decimals ?? 6;
+    state.balances = balances;
+    state.decimals = decimals;
+    state.price = price;
+    state.supplyUi = supply?.result?.value?.uiAmount || null;
+    state.ready = true;
     const now = Date.now() / 1000;
 
     fam = Object.entries(recip).map(([wallet, r]) => {
@@ -310,9 +343,71 @@ async function load() {
   }
 }
 
+// ── wallet lookup: paste any address, get its full $PATTYICE story ──
+const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+
+function lookup() {
+  const card = document.getElementById("lkCard");
+  const w = document.getElementById("lkIn").value.trim();
+  card.hidden = false;
+  card.textContent = "";
+  const line = (txt, cls) => {
+    const d = document.createElement("div");
+    if (cls) d.className = cls;
+    d.textContent = txt;
+    card.appendChild(d);
+    return d;
+  };
+
+  if (!B58.test(w)) { line("that doesn't look like a Solana wallet", "err"); return; }
+  if (!state.ready) { line("still scanning the chain — try again in a few seconds", "dim"); return; }
+
+  const balRaw = state.balances.get(w) || 0;
+  const bal = balRaw / Math.pow(10, state.decimals);
+  const famHit = fam.find((f) => f.wallet === w);
+
+  const head = document.createElement("div");
+  const a = document.createElement("a");
+  a.href = "https://solscan.io/account/" + w;
+  a.target = "_blank"; a.rel = "noopener";
+  a.textContent = shortAddr(w) + " ↗";
+  head.append(a);
+  card.appendChild(head);
+
+  if (famHit) {
+    line((famHit.cls.icon + " Airdrop Fam — " + famHit.cls.label).toUpperCase());
+    line(fmtNum(famHit.amount) + " dropped " + Math.round(famHit.days) + "d ago · holds " +
+      fmtNum(famHit.balance) + " (" + Math.round(Math.min(famHit.kept, 9.99) * 100) + "% kept)");
+    const famRank = fam.indexOf(famHit) + 1;
+    line("fam bag rank #" + famRank + " of " + fam.length +
+      (famHit.value != null ? " · bag worth " + fmtUsd(famHit.value) : ""), "dim");
+    return;
+  }
+
+  if (balRaw > 0) {
+    let rank = 1;
+    for (const v of state.balances.values()) if (v > balRaw) rank++;
+    const share = state.supplyUi ? bal / state.supplyUi * 100 : null;
+    line("🤝 HOLDER — not from the airdrop");
+    const b = line("");
+    b.className = "big";
+    b.textContent = fmtNum(bal) + " $PATTYICE";
+    line("holder #" + rank.toLocaleString() + " of " + state.balances.size.toLocaleString() +
+      (share != null ? " · " + (share >= 0.01 ? share.toFixed(2) : "<0.01") + "% of supply" : "") +
+      (state.price != null ? " · worth " + fmtUsd(bal * state.price) : ""), "dim");
+    return;
+  }
+
+  line("👀 no $PATTYICE in this wallet (yet)");
+  line("not in the fam, not on the holder list — send them the chart", "dim");
+}
+
+document.getElementById("lkBtn").addEventListener("click", lookup);
+document.getElementById("lkIn").addEventListener("keydown", (e) => { if (e.key === "Enter") lookup(); });
+
 load();
 setInterval(load, 180000);
-window.__fam = { get fam() { return fam; }, classify, renderRows, load };
+window.__fam = { get fam() { return fam; }, get state() { return state; }, classify, renderRows, load, lookup };
 </script>
 </body>
 </html>
