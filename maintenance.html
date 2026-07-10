@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Patty Prix 🏁 — pit stop</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%81%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C; --gold: #FFC93C; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background:
+      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .card {
+    background: var(--card);
+    border: 3px solid var(--ink); border-radius: 24px;
+    box-shadow: 10px 10px 0 var(--ink);
+    padding: 44px 34px;
+    max-width: 420px;
+    text-align: center;
+  }
+  .flag { font-size: 64px; animation: bob 2.2s ease-in-out infinite; display: inline-block; }
+  @keyframes bob { 50% { transform: translateY(-8px) rotate(4deg); } }
+  h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(28px, 8vw, 40px);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    margin: 10px 0 12px;
+  }
+  p { font-weight: 800; font-size: 15px; color: var(--sub); }
+  .pill {
+    display: inline-block; margin-top: 20px;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
+    background: linear-gradient(160deg, #FFE18A, var(--gold));
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 9px 20px; box-shadow: 4px 4px 0 var(--ink);
+  }
+</style>
+</head>
+<body>
+  <div class="card">
+    <span class="flag">🏁</span>
+    <h1>PIT STOP</h1>
+    <p>The Bagworker pulled into the garage.<br>
+       Patty Prix is getting a quick tune-up —<br>
+       back on the track soon.</p>
+    <span class="pill">🔧 be right back</span>
+  </div>
+</body>
+</html>

@@ -29,10 +29,22 @@ jobs:
         with:
           enablement: true
 
+      # While vercel.json holds the maintenance redirect, the mirror goes
+      # dark too — it publishes only the pit-stop page. Reverting the
+      # pause commit restores the full mirror automatically.
+      - name: Stage site
+        run: |
+          mkdir -p /tmp/site
+          if [ -f vercel.json ] && grep -q "maintenance" vercel.json; then
+            cp maintenance.html /tmp/site/index.html
+          else
+            rsync -a --exclude ".git" ./ /tmp/site/
+          fi
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: /tmp/site
 
       - name: Deploy
         id: deployment
