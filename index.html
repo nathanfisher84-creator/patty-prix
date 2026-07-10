@@ -210,6 +210,8 @@
     margin: -26px 2px 36px;
     background: var(--card);
   }
+  .fam-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 16px 0 8px; }
+  .fam-links .btn { font-size: 13px; }
   .beta-pill {
     font-size: 11px;
     letter-spacing: 1px;
@@ -647,6 +649,11 @@
       <div class="t-sub">and counting</div>
     </div>
   </div>
+  <div class="fam-links" id="famLinks" hidden>
+    <a class="btn" href="airdrops.html">🪂 full fam tracker — every wallet, every bag</a>
+    <a class="btn" href="https://app.bubblemaps.io/sol/token/2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump"
+       target="_blank" rel="noopener">🫧 holder bubble map</a>
+  </div>
 
   <div class="updated" id="updated"></div>
 </div>
@@ -955,6 +962,7 @@ async function refreshAirdrops(scan) {
     setText("aMedian", med >= 1 ? Math.floor(med) + "d" : Math.max(1, Math.round(med * 24)) + "h");
     document.getElementById("airdropTag").hidden = false;
     document.getElementById("airdrop").hidden = false;
+    document.getElementById("famLinks").hidden = false;
   } catch { /* keep the section hidden */ }
 }
 
