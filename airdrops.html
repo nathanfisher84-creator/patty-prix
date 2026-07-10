@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Airdrop Fam HQ 🪂 — Patty Prix</title>
+<meta name="description" content="Every $PATTYICE airdrop wallet tracked: what they got, what they still hold, who's diamond and who folded." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%AA%82%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C;
+    --pill: #5F4BE0; --gold: #FFC93C; --fill: #7ED3F0;
+    --green: #3EBF6E; --red: #E4373F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background:
+      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 14px 60px;
+  }
+  h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(26px, 7vw, 40px);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    text-align: center;
+  }
+  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 20px; text-align: center; max-width: 420px; }
+  .tiles {
+    width: min(760px, 100%);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 14px; margin-bottom: 22px;
+  }
+  .tile {
+    background: var(--card); border: 3px solid var(--ink); border-radius: 16px;
+    box-shadow: 5px 5px 0 var(--ink); padding: 12px 14px; text-align: center;
+  }
+  .tile .l { font-weight: 800; font-size: 11.5px; color: var(--sub); letter-spacing: 0.4px; }
+  .tile .v { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; margin-top: 2px; }
+  .tile .s { font-weight: 800; font-size: 11px; color: var(--sub); }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
+  .chip {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13.5px;
+    background: var(--card); border: 2.5px solid var(--ink); border-radius: 999px;
+    padding: 7px 14px; box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+  }
+  .chip.on { background: linear-gradient(160deg, #FFE18A, var(--gold)); }
+  .board {
+    width: min(760px, 100%);
+    background: var(--card); border: 3px solid var(--ink); border-radius: 20px;
+    box-shadow: 8px 8px 0 var(--ink);
+    overflow: hidden;
+  }
+  .thead, .row {
+    display: grid;
+    grid-template-columns: 1.5fr 1fr 1fr 0.9fr 1fr;
+    gap: 8px; align-items: center;
+    padding: 9px 14px;
+    font-weight: 800; font-size: 12.5px;
+  }
+  .thead {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 12px;
+    border-bottom: 3px solid var(--ink);
+    position: sticky; top: 0; background: var(--card);
+  }
+  .rows { max-height: 65vh; overflow-y: auto; }
+  .row + .row { border-top: 2px dashed rgba(23,19,14,0.1); }
+  .row a { color: var(--pill); text-decoration: none; }
+  .row .kept-hi { color: var(--green); }
+  .row .kept-lo { color: var(--red); }
+  .num { text-align: right; font-variant-numeric: tabular-nums; }
+  .skeleton { padding: 40px 20px; text-align: center; font-weight: 800; color: var(--sub); }
+  .links { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; justify-content: center; }
+  .btn {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px;
+    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 10px 20px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+    text-decoration: none; display: inline-block;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn.plain { background: var(--card); }
+  .note { margin-top: 10px; font-weight: 800; font-size: 11.5px; color: var(--sub); text-align: center; max-width: 420px; }
+</style>
+</head>
+<body>
+  <h1>AIRDROP FAM HQ 🪂</h1>
+  <div class="sub">every wallet the airdrop wallet has fed — what they got,
+    what they're still holding, and who folded</div>
+
+  <div class="tiles" id="tiles" hidden>
+    <div class="tile"><div class="l">BAGS DROPPED</div><div class="v" id="tBags">—</div></div>
+    <div class="tile"><div class="l">TOKENS DROPPED</div><div class="v" id="tDropped">—</div><div class="s" id="tDroppedSub"></div></div>
+    <div class="tile"><div class="l">STILL IN FAM WALLETS</div><div class="v" id="tHeldPct">—</div><div class="s" id="tHeldSub"></div></div>
+    <div class="tile"><div class="l">DIAMOND RATE 💎</div><div class="v" id="tDiamond">—</div><div class="s" id="tDiamondSub"></div></div>
+    <div class="tile"><div class="l">STACKED MORE 📈</div><div class="v" id="tStacked">—</div><div class="s">bought on top of the drop</div></div>
+  </div>
+
+  <div class="chips" id="chips" hidden>
+    <button class="chip on" data-f="all">all</button>
+    <button class="chip" data-f="stacked">📈 stacked</button>
+    <button class="chip" data-f="full">💎 full bag</button>
+    <button class="chip" data-f="trimmed">✂️ trimmed</button>
+    <button class="chip" data-f="exit">🧻 exited</button>
+  </div>
+
+  <div class="board">
+    <div class="thead">
+      <span>WALLET</span>
+      <span class="num">DROPPED</span>
+      <span class="num">HOLDS NOW</span>
+      <span class="num">KEPT</span>
+      <span class="num">BAG VALUE</span>
+    </div>
+    <div class="rows" id="rows">
+      <div class="skeleton" id="skeleton">counting the fam… 🪂</div>
+    </div>
+  </div>
+  <div class="note">tap a wallet to inspect it on Solscan · balances rescan every few minutes ·
+    "kept" compares today's balance to the airdropped amount</div>
+
+  <div class="links">
+    <a class="btn" id="bubble" href="#" target="_blank" rel="noopener">🫧 HOLDER BUBBLE MAP</a>
+    <a class="btn plain" href="index.html">← back to the race</a>
+  </div>
+
+<script>
+"use strict";
+const CONFIG = {
+  mint: "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+  airdropWallet: "8CFVLmzq8Uo6N859y2qFUumrzP291VceztiEperzv941",
+  statsApi: "https://pattyprix.xyz/api/stats"
+};
+document.getElementById("bubble").href = "https://app.bubblemaps.io/sol/token/" + CONFIG.mint;
+
+const shortAddr = (a) => a.slice(0, 4) + "…" + a.slice(-4);
+const fmtNum = (n) => n >= 1e9 ? (n / 1e9).toFixed(1) + "B" : n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? (n / 1e3).toFixed(1) + "K" : String(Math.round(n));
+const fmtUsd = (n) => n >= 1000 ? "$" + fmtNum(n) : "$" + n.toFixed(2);
+
+async function statsFetch(params) {
+  const u = new URL(CONFIG.statsApi);
+  for (const [k, v] of Object.entries(params)) u.searchParams.set(k, v);
+  const r = await fetch(u);
+  if (!r.ok) throw new Error("stats " + r.status);
+  return r.json();
+}
+
+// current price from the best (PumpSwap-first, deepest) pool
+async function getPrice() {
+  try {
+    const pairs = await (await fetch("https://api.dexscreener.com/token-pairs/v1/solana/" + CONFIG.mint)).json();
+    const score = (p) => (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
+    const best = (pairs || []).sort((a, b) => score(b) - score(a))[0];
+    return Number(best?.priceUsd) || null;
+  } catch { return null; }
+}
+
+// owner → raw balance for every holder (same paging as the homepage)
+async function scanHolders() {
+  const balances = new Map();
+  let page = 1;
+  while (page <= 20) {
+    const data = await statsFetch({ q: "holders", page });
+    const accs = data?.result?.token_accounts || [];
+    for (const a of accs) {
+      const amt = Number(a.amount);
+      if (amt > 0) balances.set(a.owner, (balances.get(a.owner) || 0) + amt);
+    }
+    if (accs.length < 1000) break;
+    page++;
+  }
+  return balances;
+}
+
+// airdrop wallet's outgoing transfers → first drop time + total per wallet
+async function scanDrops() {
+  const recip = {};
+  let before = "";
+  for (let i = 0; i < 10; i++) {
+    const batch = await statsFetch(before ? { q: "airdrop", before } : { q: "airdrop" });
+    if (!Array.isArray(batch) || !batch.length) break;
+    for (const tx of batch) {
+      for (const t of tx.tokenTransfers || []) {
+        if (t.mint !== CONFIG.mint) continue;
+        if (t.fromUserAccount !== CONFIG.airdropWallet) continue;
+        const w = t.toUserAccount;
+        if (!w || w === CONFIG.airdropWallet) continue;
+        if (!recip[w]) recip[w] = { amount: 0, ts: tx.timestamp };
+        recip[w].amount += Number(t.tokenAmount) || 0;
+        recip[w].ts = Math.min(recip[w].ts, tx.timestamp);
+      }
+    }
+    if (batch.length < 100) break;
+    before = batch[batch.length - 1].signature;
+  }
+  return recip;
+}
+
+// classify a wallet by how much of the drop it still holds
+function classify(kept) {
+  if (kept <= 0.02) return { key: "exit", icon: "🧻", label: "exited" };
+  if (kept > 1.02) return { key: "stacked", icon: "📈", label: "stacked" };
+  if (kept >= 0.98) return { key: "full", icon: "💎", label: "full bag" };
+  return { key: "trimmed", icon: "✂️", label: "trimmed" };
+}
+
+let fam = [];
+let filter = "all";
+
+function renderRows() {
+  const rowsEl = document.getElementById("rows");
+  rowsEl.textContent = "";
+  const list = fam.filter((f) => filter === "all" || f.cls.key === filter);
+  if (!list.length) {
+    const d = document.createElement("div");
+    d.className = "skeleton";
+    d.textContent = "nobody in this bucket (yet)";
+    rowsEl.appendChild(d);
+    return;
+  }
+  for (const f of list) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const w = document.createElement("span");
+    const a = document.createElement("a");
+    a.href = "https://solscan.io/account/" + f.wallet;
+    a.target = "_blank"; a.rel = "noopener";
+    a.textContent = f.cls.icon + " " + shortAddr(f.wallet);
+    a.title = f.wallet + " · dropped " + Math.round(f.days) + "d ago";
+    w.appendChild(a);
+    const dropped = document.createElement("span");
+    dropped.className = "num"; dropped.textContent = fmtNum(f.amount);
+    const holds = document.createElement("span");
+    holds.className = "num"; holds.textContent = fmtNum(f.balance);
+    const kept = document.createElement("span");
+    kept.className = "num " + (f.kept >= 0.98 ? "kept-hi" : f.kept <= 0.02 ? "kept-lo" : "");
+    kept.textContent = Math.round(Math.min(f.kept, 9.99) * 100) + "%";
+    const val = document.createElement("span");
+    val.className = "num"; val.textContent = f.value != null ? fmtUsd(f.value) : "—";
+    row.append(w, dropped, holds, kept, val);
+    rowsEl.appendChild(row);
+  }
+}
+
+document.getElementById("chips").addEventListener("click", (e) => {
+  const b = e.target.closest(".chip");
+  if (!b) return;
+  filter = b.dataset.f;
+  for (const c of document.querySelectorAll(".chip")) c.classList.toggle("on", c === b);
+  renderRows();
+});
+
+async function load() {
+  try {
+    const [price, supply, balances, recip] = await Promise.all([
+      getPrice(),
+      statsFetch({ q: "supply" }),
+      scanHolders(),
+      scanDrops()
+    ]);
+    const decimals = supply?.result?.value?.decimals ?? 6;
+    const now = Date.now() / 1000;
+
+    fam = Object.entries(recip).map(([wallet, r]) => {
+      const balance = (balances.get(wallet) || 0) / Math.pow(10, decimals);
+      const kept = r.amount > 0 ? balance / r.amount : 0;
+      return {
+        wallet,
+        amount: r.amount,
+        balance,
+        kept,
+        cls: classify(kept),
+        days: (now - r.ts) / 86400,
+        value: price != null ? balance * price : null
+      };
+    }).sort((a, b) => b.balance - a.balance);
+
+    if (!fam.length) {
+      document.getElementById("skeleton").textContent = "no airdrops found yet 🪂";
+      return;
+    }
+
+    const n = fam.length;
+    const dropped = fam.reduce((s, f) => s + f.amount, 0);
+    const heldOfDrop = fam.reduce((s, f) => s + Math.min(f.balance, f.amount), 0);
+    const diamond = fam.filter((f) => f.cls.key !== "exit").length;
+    const stacked = fam.filter((f) => f.cls.key === "stacked").length;
+    const exits = fam.filter((f) => f.cls.key === "exit").length;
+
+    const set = (id, t) => { document.getElementById(id).textContent = t; };
+    set("tBags", n.toLocaleString());
+    set("tDropped", fmtNum(dropped));
+    set("tDroppedSub", price != null ? "street value " + fmtUsd(dropped * price) : "");
+    set("tHeldPct", Math.round(heldOfDrop / dropped * 100) + "%");
+    set("tHeldSub", fmtNum(heldOfDrop) + " of " + fmtNum(dropped) + " tokens");
+    set("tDiamond", (diamond / n * 100).toFixed(1) + "%");
+    set("tDiamondSub", diamond + " holding · " + exits + " exited");
+    set("tStacked", stacked.toLocaleString());
+    document.getElementById("tiles").hidden = false;
+    document.getElementById("chips").hidden = false;
+    renderRows();
+  } catch {
+    document.getElementById("skeleton").textContent = "fam data unreachable — try a refresh";
+  }
+}
+
+load();
+setInterval(load, 180000);
+window.__fam = { get fam() { return fam; }, classify, renderRows, load };
+</script>
+</body>
+</html>
