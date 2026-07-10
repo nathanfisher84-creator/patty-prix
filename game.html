@@ -113,6 +113,7 @@
   <canvas id="cv"></canvas>
   <div class="hud" id="hud" hidden>
     <span class="chip" id="hudScore">0</span>
+    <span class="chip" id="hudStreak" hidden>🔥 0</span>
     <span class="chip mult" id="hudMult" hidden>x2</span>
   </div>
   <div class="overlay" id="menu">
@@ -126,6 +127,7 @@
     <p id="nameErr" hidden></p>
     <button class="btn" id="startBtn">START ENGINE 🏎️</button>
     <p id="menuBest"></p>
+    <div class="lb" id="daily" hidden></div>
     <div class="lb" id="menuLb" hidden></div>
     <a class="btn small" href="leaderboard.html">FULL LEADERBOARD 🏆</a>
     <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
@@ -134,9 +136,11 @@
     <h1>WRECKED 💥</h1>
     <div class="score-big" id="overScore">0</div>
     <p id="overBest"></p>
+    <p id="overStats"></p>
     <p id="lbMsg" hidden></p>
     <div class="lb" id="overLb" hidden></div>
     <button class="btn" id="retryBtn">RUN IT BACK 🔁</button>
+    <button class="btn small" id="shareBtn">SHARE ON X 🐦</button>
     <a class="btn small" href="leaderboard.html">FULL LEADERBOARD 🏆</a>
     <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
   </div>
@@ -279,13 +283,57 @@ const S = {
   trackOff: 0, shake: 0, spin: 0,
   parts: [],   // particles {x,y,vx,vy,life,max,color,size}
   pops: [],    // floating score text {x,y,txt,life}
+  streak: 0, closeCalls: 0, bagsRun: 0,
+  laneFrom: 1, switchT: -9,      // last lane change, for near-miss detection
+  banners: [], bannerIn: 1.2, bannerIdx: 0,
 };
+
+// all-time bag stash + today's challenge progress live on this device
+let bagsTotal = Number(localStorage.getItem("dash_bags") || 0);
+const DAY = new Date().toISOString().slice(0, 10);
+let daily = { day: DAY, bags: 0, close: 0, streak: 0 };
+try {
+  const d = JSON.parse(localStorage.getItem("dash_daily") || "null");
+  if (d && d.day === DAY) daily = d;
+} catch { /* fresh day */ }
+const GOALS = [
+  { label: "💰 grab 12 bags", key: "bags", goal: 12 },
+  { label: "😅 15 close calls", key: "close", goal: 15 },
+  { label: "🔥 hit a 40 streak", key: "streak", goal: 40 },
+];
+const dailyDone = () => GOALS.filter((g) => daily[g.key] >= g.goal).length;
+
+function renderDaily() {
+  const el = document.getElementById("daily");
+  el.textContent = "";
+  const head = document.createElement("div");
+  head.className = "row head";
+  const hl = document.createElement("span"); hl.textContent = "📅 TODAY'S GOALS";
+  const hr2 = document.createElement("span"); hr2.textContent = dailyDone() + "/3";
+  head.append(hl, hr2);
+  el.appendChild(head);
+  for (const g of GOALS) {
+    const row = document.createElement("div");
+    row.className = "row";
+    const l = document.createElement("span"); l.textContent = g.label;
+    const v = document.createElement("span");
+    v.textContent = daily[g.key] >= g.goal ? "✅" : Math.min(daily[g.key], g.goal) + "/" + g.goal;
+    row.append(l, v);
+    el.appendChild(row);
+  }
+  el.hidden = false;
+}
+
+const BANNERS = ["BUY $PATTYICE 🍔", "PATTYPRIX.XYZ 🏁", "JOIN THE AIRDROP FAM 🪂", "THE BAGWORKER RIDES 😎"];
 
 function reset() {
   S.t = 0; S.score = 0; S.lane = 1; S.carX = laneX(1);
   S.speed = speedAt(0); S.mult = 1; S.multT = 0;
   S.rows = []; S.spawnIn = 0.4; S.lastOpen = 1;
   S.shake = 0; S.spin = 0; S.parts = []; S.pops = [];
+  S.streak = 0; S.closeCalls = 0; S.bagsRun = 0;
+  S.laneFrom = 1; S.switchT = -9;
+  S.banners = []; S.bannerIn = 1.2;
 }
 
 const speedAt = (t) => Math.min(410 + t * 6.5, 1120);
@@ -319,10 +367,44 @@ function burst(x, y, colors, n, power) {
   }
 }
 
+// a row slid past without a crash: streaks build, late dodges pay extra
+function rowPassed(row) {
+  if (!row.cells.some((c) => c === "candle" || c === "paper")) return;
+  S.streak++;
+  daily.streak = Math.max(daily.streak, S.streak);
+  if (S.streak === 10 || (S.streak >= 25 && S.streak % 25 === 0)) {
+    const bonus = 100 * S.mult;
+    S.score += bonus;
+    S.pops.push({ x: W / 2, y: H * 0.32, txt: "🔥 " + S.streak + " STREAK! +" + bonus, life: 1.2 });
+    blip(1500, 0.16, "square");
+  }
+  // near miss: the lane they just bailed out of had a hazard
+  // (each dodge pays once — the switch is consumed)
+  if (S.t - S.switchT < 0.45 && S.laneFrom !== S.lane) {
+    const c = row.cells[S.laneFrom];
+    if (c === "candle" || c === "paper") {
+      const b = 25 * S.mult;
+      S.score += b;
+      S.closeCalls++; daily.close++;
+      S.switchT = -9;
+      S.pops.push({ x: S.carX, y: H - 175, txt: "CLOSE! +" + b, life: 1 });
+      blip(1040, 0.1, "triangle");
+    }
+  }
+}
+
 function crash() {
   S.state = "over";
   S.shake = 1; S.spin = 0.001;
   S.finalScore = Math.round(S.score); S.finalT = S.t;
+  // bank this run: bag stash + daily challenge progress
+  localStorage.setItem("dash_bags", String(bagsTotal));
+  localStorage.setItem("dash_daily", JSON.stringify(daily));
+  document.getElementById("overStats").textContent =
+    "💰 " + S.bagsRun + " bags · 🔥 " + S.streak + " streak · 😅 " + S.closeCalls +
+    " close calls · daily " + dailyDone() + "/3";
+  renderDaily();
+  renderMenuBest();
   burst(S.carX, H - 110, ["#E4373F", "#FFC93C", "#17130E", "#F5A8CB"], 34, 320);
   if (S.score > S.best) { S.best = Math.round(S.score); localStorage.setItem("dash_best", S.best); }
   document.getElementById("overScore").textContent = S.finalScore.toLocaleString();
@@ -350,13 +432,27 @@ function update(dt) {
   S.spawnIn -= dt;
   if (S.spawnIn <= 0) { spawnRow(); S.spawnIn = gapAt(S.t); }
 
+  // trackside hype banners (pure decoration, no collision)
+  S.bannerIn -= dt;
+  if (S.bannerIn <= 0) {
+    S.banners.push({ y: -40, msg: BANNERS[S.bannerIdx++ % BANNERS.length] });
+    S.bannerIn = 7 + Math.random() * 4;
+  }
+  for (const b of S.banners) b.y += S.speed * dt;
+  S.banners = S.banners.filter((b) => b.y < H + 40);
+
   const carY = H - 110, carH = 74;
   for (const row of S.rows) {
     row.y += S.speed * dt;
+    if (!row.passed && row.y > carY + carH * 0.55) {
+      row.passed = true;
+      rowPassed(row);
+    }
     const cell = row.cells[S.lane];
     if (cell && row.y > carY - carH * 0.55 && row.y < carY + carH * 0.55) {
       if (cell === "bag") {
         S.score += 250 * S.mult; row.cells[S.lane] = null;
+        S.bagsRun++; bagsTotal++; daily.bags++;
         burst(S.carX, carY - 30, ["#FFC93C", "#FFE18A", "#fff"], 12, 180);
         S.pops.push({ x: S.carX, y: carY - 46, txt: "+" + (250 * S.mult), life: 0.9 });
         blip(880, 0.12, "square");
@@ -373,6 +469,9 @@ function update(dt) {
   S.rows = S.rows.filter(r => r.y < H + 80);
 
   document.getElementById("hudScore").textContent = Math.round(S.score).toLocaleString();
+  const hs = document.getElementById("hudStreak");
+  hs.hidden = S.streak < 5;
+  hs.textContent = "🔥 " + S.streak;
   const hm = document.getElementById("hudMult");
   hm.hidden = S.mult <= 1;
   hm.textContent = "x" + S.mult + " 👑";
@@ -431,6 +530,22 @@ function draw() {
       const y = (Math.random() * H + S.trackOff * 3) % H;
       ctx.fillRect(x, y, 2.5, 30 + (S.speed - 640) * 0.06);
     }
+  }
+
+  // hype banners lie flat on the track, under the obstacles
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  for (const b of S.banners) {
+    ctx.globalAlpha = 0.95;
+    const g = ctx.createLinearGradient(0, b.y - 13, 0, b.y + 13);
+    g.addColorStop(0, "#FFE18A"); g.addColorStop(1, "#FFC93C");
+    ctx.fillStyle = g;
+    ctx.fillRect(r.x0 + 4, b.y - 13, r.x1 - r.x0 - 8, 26);
+    ctx.strokeStyle = "#17130E"; ctx.lineWidth = 2.5;
+    ctx.strokeRect(r.x0 + 4, b.y - 13, r.x1 - r.x0 - 8, 26);
+    ctx.fillStyle = "#17130E";
+    ctx.font = "600 13px Fredoka, sans-serif";
+    ctx.fillText(b.msg, (r.x0 + r.x1) / 2, b.y + 1);
+    ctx.globalAlpha = 1;
   }
 
   let ox = 0, oy = 0;
@@ -619,20 +734,74 @@ async function tryStart() {
   start();
 }
 
+// the share card: a clean score graphic for the X post
+function scoreCard() {
+  const c = document.createElement("canvas");
+  c.width = 1000; c.height = 524;
+  const x = c.getContext("2d");
+  x.fillStyle = "#F5C8DE"; x.fillRect(0, 0, 1000, 524);
+  x.fillStyle = "#FBF4E4";
+  x.fillRect(24, 24, 952, 476);
+  x.strokeStyle = "#17130E"; x.lineWidth = 10;
+  x.strokeRect(24, 24, 952, 476);
+  x.textAlign = "center"; x.fillStyle = "#17130E";
+  x.font = "700 58px Fredoka, sans-serif";
+  x.fillText("PATTY DASH 🏁", 500, 110);
+  x.font = "700 150px Fredoka, sans-serif";
+  x.fillText((S.finalScore || 0).toLocaleString(), 500, 280);
+  x.font = "800 30px Nunito, sans-serif"; x.fillStyle = "#6E675C";
+  x.fillText("🔥 " + S.streak + " streak · 💰 " + S.bagsRun + " bags · 😅 " + S.closeCalls + " close calls", 500, 350);
+  const g = x.createLinearGradient(0, 420, 0, 476);
+  g.addColorStop(0, "#FFE18A"); g.addColorStop(1, "#FFC93C");
+  x.fillStyle = g; x.fillRect(29, 415, 942, 80);
+  x.strokeStyle = "#17130E"; x.lineWidth = 5; x.strokeRect(29, 415, 942, 80);
+  x.fillStyle = "#17130E"; x.font = "600 34px Fredoka, sans-serif";
+  x.fillText("pattyprix.xyz · $PATTYICE", 500, 462);
+  return c;
+}
+
+async function shareScore() {
+  const txt = "PATTY DASH 🏁 " + (S.finalScore || 0).toLocaleString() +
+    " pts (🔥 " + S.streak + " streak) — think you can beat the Bagworker? " +
+    "https://pattyprix.xyz/game.html $PATTYICE";
+  try {
+    const blob = await new Promise((res) => scoreCard().toBlob(res, "image/png"));
+    const file = new File([blob], "patty-dash-score.png", { type: "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ files: [file], text: txt });
+      return;
+    }
+  } catch (err) { if (err && err.name === "AbortError") return; }
+  window.open("https://twitter.com/intent/tweet?text=" + encodeURIComponent(txt), "_blank", "noopener");
+}
+document.getElementById("shareBtn").addEventListener("click", shareScore);
+
+function renderMenuBest() {
+  document.getElementById("menuBest").innerHTML =
+    (S.best > 0 ? "personal best: <b>" + S.best.toLocaleString() + "</b> · " : "") +
+    "💰 <b>" + bagsTotal.toLocaleString() + "</b> bags stacked";
+}
+
 document.getElementById("startBtn").addEventListener("click", tryStart);
 document.getElementById("retryBtn").addEventListener("click", start);
 document.getElementById("nameInput").value = getName();
-document.getElementById("menuBest").innerHTML = S.best > 0 ? "personal best: <b>" + S.best.toLocaleString() + "</b>" : "";
+renderMenuBest();
+renderDaily();
 
+function steer(dir) {
+  const to = Math.max(0, Math.min(LANES - 1, S.lane + dir));
+  if (to === S.lane) return;
+  S.laneFrom = S.lane; S.switchT = S.t;
+  S.lane = to;
+}
 stage.addEventListener("pointerdown", (e) => {
   if (S.state !== "run") return;
-  if (e.clientX - stage.getBoundingClientRect().left < W / 2) S.lane = Math.max(0, S.lane - 1);
-  else S.lane = Math.min(LANES - 1, S.lane + 1);
+  steer(e.clientX - stage.getBoundingClientRect().left < W / 2 ? -1 : 1);
 });
 window.addEventListener("keydown", (e) => {
   if (S.state !== "run") return;
-  if (e.key === "ArrowLeft" || e.key === "a") S.lane = Math.max(0, S.lane - 1);
-  if (e.key === "ArrowRight" || e.key === "d") S.lane = Math.min(LANES - 1, S.lane + 1);
+  if (e.key === "ArrowLeft" || e.key === "a") steer(-1);
+  if (e.key === "ArrowRight" || e.key === "d") steer(1);
 });
 document.addEventListener("visibilitychange", () => {
   if (document.hidden && S.state === "run") crash();
@@ -643,7 +812,13 @@ window.__dash = {
   get score() { return S.score; },
   get lane() { return S.lane; },
   get lbTop() { return lbTop; },
-  start, crash,
+  get streak() { return S.streak; },
+  get closeCalls() { return S.closeCalls; },
+  get banners() { return S.banners.length; },
+  get bagsTotal() { return bagsTotal; },
+  get daily() { return daily; },
+  rowPass: (cells) => rowPassed({ cells }),
+  start, crash, shareScore,
 };
 
 loadLb();
