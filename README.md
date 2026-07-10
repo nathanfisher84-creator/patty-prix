@@ -63,6 +63,27 @@ Note: GitHub disables scheduled workflows after ~60 days without repo activity �
 
 Keep the token addresses in `scripts/telegram-scoreboard.mjs` in sync with the `CONFIG` block in `index.html`.
 
+## Paper-trading MEV bot 🥷
+
+`scripts/mev-paper-bot.mjs` is an educational, **paper-only** cross-DEX arbitrage bot — no wallet, no keys, no real transactions, ever. It scans DexScreener for Solana tokens that trade in multiple pools (Raydium, Orca, Meteora, …), spots price spreads between pools, and simulates buying the cheap pool / selling the expensive one.
+
+```bash
+node scripts/mev-paper-bot.mjs            # run forever (Ctrl-C prints P&L)
+node scripts/mev-paper-bot.mjs --stats    # show the paper ledger summary
+node scripts/mev-paper-bot.mjs --reset    # wipe the ledger and start over
+```
+
+The simulation is deliberately pessimistic, because that's the lesson:
+
+- **Latency** — an opportunity spotted this poll is filled at *next* poll's prices. Public-API bots are seconds behind; watch the "latency ate X% of edge" lines.
+- **Fees** — both swap legs pay the pool fee, and every attempt pays a priority-fee/tip (default $0.15) even when it fails.
+- **Price impact** — your own trade moves thin pools against you (constant-product estimate).
+- **Racing** — a configurable land rate (default 60%) decides whether a faster bot beat you. Lose the race → pay the tip, get nothing.
+
+Tune with `--size <usd>`, `--min-edge <pct>`, `--land-rate <pct>`, `--interval <ms>`, and `--tokens <mint,mint,…>`. The default scan list is a handful of liquid multi-pool tokens (BONK, WIF, JUP, RAY, POPCAT) — fresh pump.fun tokens usually live in a single PumpSwap pool, so there's nothing to arb there. Trades are logged to `scripts/paper-ledger.json` (gitignored).
+
+Expected result after a few hours: **negative P&L**. That's not a bug — it's an honest demo of why real MEV needs co-located infrastructure, not a polling loop.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
