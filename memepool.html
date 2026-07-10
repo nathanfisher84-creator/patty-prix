@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Meme Pool 😂 — Patty Prix</title>
+<meta name="description" content="The $PATTYICE meme pool — upload your best memes, grab everyone else's." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%98%82%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C;
+    --pill: #5F4BE0; --gold: #FFC93C; --fill: #7ED3F0; --red: #E4373F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background:
+      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 14px 60px;
+  }
+  h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(26px, 7vw, 40px);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    text-align: center;
+  }
+  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 18px; text-align: center; max-width: 420px; }
+  .btn {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px;
+    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 12px 26px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+    text-decoration: none; display: inline-block;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: 2px 2px 0 var(--ink); }
+  .btn.plain { background: var(--card); font-size: 14px; padding: 9px 18px; }
+  #status { margin-top: 12px; font-weight: 800; font-size: 13.5px; color: var(--sub); text-align: center; max-width: 340px; }
+  #status.err { color: var(--red); }
+  .bar {
+    width: min(300px, 84vw); height: 16px; margin-top: 10px;
+    border: 3px solid var(--ink); border-radius: 999px; background: #fff;
+    overflow: hidden;
+  }
+  .bar i { display: block; height: 100%; width: 0%; background: linear-gradient(90deg, #FFE18A, var(--gold)); transition: width 0.15s; }
+  .rules { margin-top: 10px; font-weight: 800; font-size: 12px; color: var(--sub); text-align: center; max-width: 380px; }
+  .grid {
+    margin-top: 26px;
+    width: min(980px, 100%);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 18px;
+  }
+  .card {
+    background: var(--card);
+    border: 3px solid var(--ink); border-radius: 18px;
+    box-shadow: 6px 6px 0 var(--ink);
+    overflow: hidden;
+    display: flex; flex-direction: column;
+  }
+  .card .media { width: 100%; aspect-ratio: 1; object-fit: cover; display: block; background: #fff; }
+  .card .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px; font-weight: 800; font-size: 12px; color: var(--sub);
+    border-top: 3px solid var(--ink);
+  }
+  .card .foot a { color: var(--pill); text-decoration: none; font-weight: 800; }
+  .empty, .note { margin-top: 40px; font-weight: 800; color: var(--sub); text-align: center; max-width: 340px; }
+  .links { display: flex; gap: 12px; margin-top: 34px; flex-wrap: wrap; justify-content: center; }
+</style>
+</head>
+<body>
+  <h1>MEME POOL 😂</h1>
+  <div class="sub">the community stash — drop your best $PATTYICE memes,
+    grab everyone else's. all uploads are public.</div>
+
+  <button class="btn" id="uploadBtn">UPLOAD A MEME ⬆️</button>
+  <input type="file" id="file" accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime" hidden />
+  <div class="bar" id="bar" hidden><i id="barFill"></i></div>
+  <div id="status" hidden></div>
+  <div class="rules">jpg · png · gif · webp · mp4 · webm — 4MB max ·
+    keep it about the memes, anything nasty gets deleted</div>
+
+  <div class="grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>nothing in the pool yet —<br>be the first to feed it 😂</div>
+  <div class="note" id="note" hidden></div>
+
+  <div class="links">
+    <a class="btn plain" href="index.html">← back to pattyprix.xyz</a>
+    <a class="btn plain" href="pfp.html">make a PFP 🕶️</a>
+  </div>
+
+<script>
+"use strict";
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
+const API = TRACKED_HOST ? "/api/memes" : "https://pattyprix.xyz/api/memes";
+const MAX_BYTES = 4 * 1024 * 1024;
+
+const grid = document.getElementById("grid");
+const statusEl = document.getElementById("status");
+const fmtSize = (n) => n > 1048576 ? (n / 1048576).toFixed(1) + "MB" : Math.max(1, Math.round(n / 1024)) + "KB";
+
+function say(msg, isErr) {
+  statusEl.hidden = !msg;
+  statusEl.textContent = msg || "";
+  statusEl.className = isErr ? "err" : "";
+}
+
+function card(m) {
+  const el = document.createElement("div");
+  el.className = "card";
+  const isVideo = /\.(mp4|webm)$/i.test(m.name);
+  let media;
+  if (isVideo) {
+    media = document.createElement("video");
+    media.src = m.url;
+    media.controls = true; media.muted = true; media.playsInline = true;
+    media.preload = "metadata";
+  } else {
+    media = document.createElement("img");
+    media.src = m.url;
+    media.loading = "lazy";
+    media.alt = "meme";
+  }
+  media.className = "media";
+  const foot = document.createElement("div");
+  foot.className = "foot";
+  const size = document.createElement("span");
+  size.textContent = (isVideo ? "🎬 " : "🖼️ ") + (m.size ? fmtSize(m.size) : "");
+  const dl = document.createElement("a");
+  dl.href = m.url + "?download=1";
+  dl.textContent = "⬇️ save";
+  foot.append(size, dl);
+  el.append(media, foot);
+  return el;
+}
+
+async function load() {
+  try {
+    const r = await fetch(API);
+    const j = await r.json();
+    if (r.status === 501) {
+      document.getElementById("note").hidden = false;
+      document.getElementById("note").textContent = "the meme pool is still being plumbed in — check back soon 🔧";
+      document.getElementById("uploadBtn").disabled = true;
+      return;
+    }
+    if (!Array.isArray(j.memes)) return;
+    grid.textContent = "";
+    j.memes.forEach((m) => grid.appendChild(card(m)));
+    document.getElementById("empty").hidden = j.memes.length > 0;
+  } catch {
+    document.getElementById("note").hidden = false;
+    document.getElementById("note").textContent = "meme pool unreachable — try a refresh";
+  }
+}
+
+document.getElementById("uploadBtn").addEventListener("click", () => document.getElementById("file").click());
+document.getElementById("file").addEventListener("change", (e) => {
+  const f = e.target.files && e.target.files[0];
+  e.target.value = "";
+  if (!f) return;
+  if (f.size > MAX_BYTES) return say("that file is " + fmtSize(f.size) + " — 4MB max", true);
+
+  const bar = document.getElementById("bar");
+  const fill = document.getElementById("barFill");
+  bar.hidden = false; fill.style.width = "0%";
+  say("uploading…");
+  document.getElementById("uploadBtn").disabled = true;
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", API);
+  xhr.setRequestHeader("content-type", "application/octet-stream");
+  xhr.upload.onprogress = (ev) => {
+    if (ev.lengthComputable) fill.style.width = Math.round(ev.loaded / ev.total * 100) + "%";
+  };
+  xhr.onload = () => {
+    document.getElementById("uploadBtn").disabled = false;
+    bar.hidden = true;
+    let j = {};
+    try { j = JSON.parse(xhr.responseText); } catch {}
+    if (xhr.status === 200 && j.url) {
+      say("in the pool! 😂");
+      document.getElementById("empty").hidden = true;
+      grid.prepend(card({ url: j.url, name: j.name || "", size: j.size }));
+      setTimeout(() => say(""), 2500);
+    } else {
+      say(j.error || "upload failed (" + xhr.status + ")", true);
+    }
+  };
+  xhr.onerror = () => {
+    document.getElementById("uploadBtn").disabled = false;
+    bar.hidden = true;
+    say("upload failed — check your connection", true);
+  };
+  xhr.send(f);
+});
+
+load();
+window.__pool = { load, card };
+</script>
+</body>
+</html>

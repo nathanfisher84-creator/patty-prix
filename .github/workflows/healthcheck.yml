@@ -92,6 +92,16 @@ jobs:
             -d '{"name":"healthcheck","score":900000,"t":10}' \
             "https://pattyprix.xyz/api/leaderboard"
 
+      - name: Check meme pool
+        run: |
+          echo "=== GET /api/memes"
+          curl -sS -m 20 "https://pattyprix.xyz/api/memes" | head -c 300
+          echo
+          echo "=== POST junk (expect 415 or 501)"
+          curl -sS -o /dev/null -w "%{http_code}\n" -m 20 -X POST -H "content-type: application/octet-stream" \
+            --data-binary "this is definitely not a jpeg, padding padding padding padding padding" \
+            "https://pattyprix.xyz/api/memes"
+
       - name: Check stats API endpoints
         run: |
           for q in supply ath; do
