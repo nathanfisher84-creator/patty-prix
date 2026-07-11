@@ -84,6 +84,25 @@ Tune with `--size <usd>`, `--min-edge <pct>`, `--land-rate <pct>`, `--interval <
 
 Expected result after a few hours: **negative P&L**. That's not a bug — it's an honest demo of why real MEV needs co-located infrastructure, not a polling loop.
 
+## Sandwich simulator 🥪
+
+`scripts/sandwich-simulator.mjs` is a **paper-only calculator** for the predatory side of MEV — the "subway never closes" sandwich attack. It's a self-contained AMM model, not a bot: it never touches a mempool, RPC, wallet, or chain, and there's deliberately no transaction-submission code anywhere in it. You describe a hypothetical victim swap and it computes what a sandwich would do to it.
+
+```bash
+node scripts/sandwich-simulator.mjs                    # default ETH-style example
+node scripts/sandwich-simulator.mjs --chain solana     # Solana fee/tip preset
+node scripts/sandwich-simulator.mjs --sweep            # slippage sensitivity table
+node scripts/sandwich-simulator.mjs --victim 8000 --slippage 3 --land-rate 25
+```
+
+It uses constant-product (Uniswap-v2 / Raydium-style) math to find the attacker's optimal frontrun size, then reports the three numbers the hype threads leave out:
+
+- **Who pays** — the victim's overpayment *is* the attacker's gross profit. It's a transfer, not "tightened spreads."
+- **The revert wall** — if the frontrun pushes price past the victim's slippage tolerance, the victim's tx reverts and the attack fails. Tighter slippage starves the attack; the `--sweep` table shows exactly how.
+- **Rent every attempt** — a lost race still costs gas/tip. The simulator prints the break-even land rate and the expected value per attempt, which goes negative once your win rate drops against better-funded searchers.
+
+Options: `--chain <eth|solana>`, `--liq <usd>`, `--victim <usd>`, `--slippage <pct>`, `--fee <pct>`, `--gas <usd>`, `--land-rate <pct>`.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
