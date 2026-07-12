@@ -125,6 +125,24 @@ Filters: `--trending`, `--per-token`, `--candidates`, `--swap-pages` (how much h
 
 **Where it runs:** anywhere it can reach `mainnet.helius-rpc.com` and Birdeye — your machine or Vercel. It will *not* run in a network-restricted sandbox. Be mindful of API rate limits: scoring N candidates costs roughly N × `--swap-pages` Helius calls, so raise `--candidates` gradually.
 
+### Telegram whale alerts
+
+`scripts/whale-alerts.mjs` + `.github/workflows/whale-alerts.yml` turn the tracker into a live feed: it watches a list of wallets and posts to your Telegram group whenever one makes a fresh buy (token, USD size, time, solscan links). It's **two-phase** so the cron stays cheap:
+
+1. **Discovery (occasional)** — run the tracker to build the watchlist:
+   ```bash
+   node scripts/whale-tracker.mjs --json > scripts/whale-watchlist.json
+   ```
+   The watchlist is any JSON array of addresses or `{ "wallet": "...", "label": "..." }` objects (see `whale-watchlist.example.json`). Commit it. Re-run when you want to refresh who's tracked.
+2. **Alerts (every 15 min)** — the workflow polls that watchlist and posts new buys:
+   ```bash
+   node scripts/whale-alerts.mjs --lookback 15 --min-usd 500
+   ```
+
+Setup: reuse the `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` secrets from the scoreboard bot, and the `HELIUS_API_KEY` (required) / `BIRDEYE_API_KEY` (optional, for SOL pricing) secrets from the stats API. Without a committed watchlist or the secrets, the workflow logs a hint and exits quietly.
+
+Dedup is time-windowed: keep `--lookback` equal to the cron interval so each buy alerts once. A delayed run can rarely repeat or miss one — the deliberate tradeoff for staying database-free, same as the scoreboard. Options: `--file`, `--lookback`, `--min-usd`, `--sol-price`.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
