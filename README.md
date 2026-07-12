@@ -103,6 +103,28 @@ It uses constant-product (Uniswap-v2 / Raydium-style) math to find the attacker'
 
 Options: `--chain <eth|solana>`, `--liq <usd>`, `--victim <usd>`, `--slippage <pct>`, `--fee <pct>`, `--gas <usd>`, `--land-rate <pct>`.
 
+## Smart-money / whale tracker 🐋
+
+`scripts/whale-tracker.mjs` discovers Solana whale wallets you *don't* already know and ranks them by how good their trading actually is — realized PnL and win rate, not just position size — then shows what they're currently buying. It's pure public on-chain analysis (pseudonymous wallets and their swaps); it does not attempt to identify the people behind wallets.
+
+Pipeline: Birdeye **trending tokens** → top holders of each (Helius) as whale suspects → score each suspect's swap history into **realized PnL + win rate** (average-cost basis) → surface the smart-money wallets and their recent buys.
+
+```bash
+node scripts/whale-tracker.mjs                                  # full run, defaults
+node scripts/whale-tracker.mjs --trending 15 --candidates 40 --limit 20
+node scripts/whale-tracker.mjs --min-pnl 10000 --min-winrate 55 --min-trades 8 --json
+```
+
+It reuses the two keys `api/stats.mjs` already needs, read from the environment:
+
+```bash
+HELIUS_API_KEY=…  BIRDEYE_API_KEY=…  node scripts/whale-tracker.mjs
+```
+
+Filters: `--trending`, `--per-token`, `--candidates`, `--swap-pages` (how much history to score), `--min-pnl`, `--min-winrate`, `--min-trades`, `--limit`, `--sol-price`, `--json`. PnL is reconstructed in USD via the SOL/stablecoin legs of each swap (token↔token swaps are skipped since they can't be priced from the trade alone), so treat the numbers as a strong heuristic, not audited accounting.
+
+**Where it runs:** anywhere it can reach `mainnet.helius-rpc.com` and Birdeye — your machine or Vercel. It will *not* run in a network-restricted sandbox. Be mindful of API rate limits: scoring N candidates costs roughly N × `--swap-pages` Helius calls, so raise `--candidates` gradually.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
