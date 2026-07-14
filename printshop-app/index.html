@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Print Shop 🖨️ — Patty Prix</title>
+<meta name="description" content="Prompt the Bagworker into any fit — AI-printed, always the same blue guy." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%96%A8%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C;
+    --pill: #5F4BE0; --gold: #FFC93C; --fill: #7ED3F0; --red: #E4373F;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background:
+      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      var(--bg);
+    font-family: 'Nunito', sans-serif;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 14px 60px;
+  }
+  h1 {
+    font-family: 'Fredoka', sans-serif; font-weight: 700;
+    font-size: clamp(26px, 7vw, 40px);
+    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    text-align: center;
+  }
+  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 20px; text-align: center; max-width: 400px; }
+  .frame {
+    position: relative;
+    width: min(92vw, 420px); height: min(92vw, 420px);
+    border: 3px solid var(--ink); border-radius: 22px;
+    box-shadow: 8px 8px 0 var(--ink);
+    background: var(--card);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .frame img { width: 100%; height: 100%; object-fit: cover; }
+  .idle { text-align: center; padding: 24px; font-weight: 800; color: var(--sub); }
+  .idle .big { font-size: 56px; }
+  .printing { text-align: center; font-weight: 800; color: var(--sub); }
+  .printing .spin { font-size: 46px; display: inline-block; animation: whirr 1s linear infinite; }
+  @keyframes whirr { to { transform: rotate(360deg); } }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 10px; max-width: 440px; }
+  .chip {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px;
+    background: var(--card); border: 2.5px solid var(--ink); border-radius: 999px;
+    padding: 7px 13px; box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+  }
+  .chip:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .bar { display: flex; gap: 8px; width: min(440px, 100%); }
+  #prompt {
+    flex: 1; min-width: 0;
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px;
+    border: 3px solid var(--ink); border-radius: 999px; background: #fff;
+    padding: 12px 18px; box-shadow: 3px 3px 0 var(--ink);
+    outline: none; color: var(--ink);
+  }
+  .btn {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
+    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 12px 22px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+    text-decoration: none; display: inline-block;
+  }
+  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: 2px 2px 0 var(--ink); }
+  .btn.blue { background: var(--fill); }
+  #msg { margin-top: 12px; font-weight: 800; font-size: 13.5px; color: var(--sub); text-align: center; max-width: 360px; }
+  #msg.err { color: var(--red); }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+  .note { margin-top: 14px; font-weight: 800; font-size: 11.5px; color: var(--sub); text-align: center; max-width: 380px; }
+  .links { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+  .btn.plain { background: var(--card); font-size: 14px; }
+</style>
+</head>
+<body>
+  <h1>THE PRINT SHOP 🖨️</h1>
+  <div class="sub">prompt the Bagworker into any fit —
+    same blue guy, whole new drip. AI does the stitching.</div>
+
+  <div class="frame" id="frame">
+    <div class="idle" id="idle">
+      <div class="big">🖨️</div>
+      type a fit below and hit PRINT
+    </div>
+    <div class="printing" id="printing" hidden>
+      <span class="spin">🖨️</span><br>printing the drip…<br>
+      <span style="font-size:11.5px">(takes ~10 seconds)</span>
+    </div>
+    <img id="result" alt="Bagworker print" hidden />
+  </div>
+
+  <div class="chips" id="chips">
+    <button class="chip" data-p="black hoodie with 'STOP BEING POOR' white tee">hoodie drip</button>
+    <button class="chip" data-p="glowing super saiyan golden spiky hair, energy aura">super saiyan</button>
+    <button class="chip" data-p="big 70s afro and gold chain">afro funk</button>
+    <button class="chip" data-p="mullet, tactical vest and camo pants, action hero pose">commando</button>
+    <button class="chip" data-p="turned into a soft plush toy, photographed on a carpet">plushie</button>
+    <button class="chip" data-p="F1 racing suit with sponsor patches and a helmet under his arm">race day</button>
+  </div>
+
+  <div class="bar">
+    <input id="prompt" maxlength="300" placeholder="describe the fit… e.g. pink fur coat" autocomplete="off" />
+    <button class="btn" id="go">PRINT</button>
+  </div>
+  <div id="msg" hidden></div>
+
+  <div class="actions" id="actions" hidden>
+    <button class="btn blue" id="save">SAVE PIC ⬇️</button>
+    <button class="btn" id="again">PRINT ANOTHER 🖨️</button>
+  </div>
+
+  <div class="note">every visitor gets a daily allowance of prints ·
+    the character stays the character — only the fit changes ·
+    on iPhone pick <b>Save Image</b> from the share sheet</div>
+
+  <div class="links">
+    <a class="btn plain" href="https://x.com/Pattyice" target="_blank" rel="noopener">@Pattyice 🐦</a>
+    <a class="btn plain" href="https://pattyprix.xyz" target="_blank" rel="noopener">full site soon 🏁</a>
+  </div>
+
+<script>
+"use strict";
+// standalone deployment — the generate function lives at this same origin
+const API = "/api/generate";
+
+const el = (id) => document.getElementById(id);
+let lastImage = null;
+
+function say(msg, isErr) {
+  el("msg").hidden = !msg;
+  el("msg").textContent = msg || "";
+  el("msg").className = isErr ? "err" : "";
+}
+
+async function print() {
+  const prompt = el("prompt").value.trim();
+  if (prompt.length < 3) return say("describe the fit first — a few words will do", true);
+  el("go").disabled = true;
+  el("idle").hidden = true;
+  el("result").hidden = true;
+  el("actions").hidden = true;
+  el("printing").hidden = false;
+  say("");
+  try {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt })
+    });
+    const j = await r.json();
+    el("printing").hidden = true;
+    if (!r.ok || !j.image) {
+      el("idle").hidden = false;
+      return say(j.error || "print failed — try again", true);
+    }
+    lastImage = j.image;
+    el("result").src = j.image;
+    el("result").hidden = false;
+    el("actions").hidden = false;
+    say(j.left > 0 ? j.left + " prints left today" : "that was your last print today — back tomorrow!");
+  } catch {
+    el("printing").hidden = true;
+    el("idle").hidden = false;
+    say("print shop unreachable — try again in a minute", true);
+  } finally {
+    el("go").disabled = false;
+  }
+}
+
+el("go").addEventListener("click", print);
+el("prompt").addEventListener("keydown", (e) => { if (e.key === "Enter") print(); });
+el("chips").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip");
+  if (!c) return;
+  el("prompt").value = c.dataset.p;
+  print();
+});
+el("again").addEventListener("click", () => {
+  el("prompt").value = "";
+  el("prompt").focus();
+});
+
+// same iOS-friendly save flow as the PFP maker
+el("save").addEventListener("click", async () => {
+  if (!lastImage) return;
+  try {
+    const blob = await (await fetch(lastImage)).blob();
+    const file = new File([blob], "bagworker-print.png", { type: blob.type || "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Bagworker Print" }); return; }
+      catch (err) { if (err && err.name === "AbortError") return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.download = "bagworker-print.png";
+    a.href = url;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch { say("couldn't save that one — long-press the image instead", true); }
+});
+
+window.__print = { print, get last() { return lastImage; } };
+</script>
+</body>
+</html>
