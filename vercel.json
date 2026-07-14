@@ -1,7 +1,7 @@
 {
   "redirects": [
     {
-      "source": "/((?!maintenance\\.html|api/generate|bagworker-base\\.png).*)",
+      "source": "/((?!maintenance\\.html|api/generate|bagworker-base\\.png|og-patty\\.png).*)",
       "destination": "/maintenance.html",
       "permanent": false
     }
