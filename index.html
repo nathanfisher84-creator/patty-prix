@@ -212,6 +212,51 @@
   }
   .fam-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 16px 0 8px; }
   .fam-links .btn { font-size: 13px; }
+  .btn.buy {
+    background: linear-gradient(160deg, #FFE18A, var(--gold));
+    font-weight: 800;
+  }
+  .btn.buy:hover { background: linear-gradient(160deg, #FFE9A6, #FFD34F); }
+  .lore-card {
+    display: flex; gap: 18px; align-items: center;
+    background: var(--card);
+    border: 3px solid var(--ink); border-radius: 20px;
+    box-shadow: 6px 6px 0 var(--ink);
+    padding: 20px 22px; margin-bottom: 36px;
+  }
+  .lore-icon {
+    width: 110px; height: 110px; flex: none;
+    border-radius: 22px; border: 3px solid var(--ink);
+    box-shadow: 4px 4px 0 var(--ink);
+    object-fit: cover; background: #fff;
+  }
+  .lore-text p { font-weight: 700; font-size: 14.5px; margin: 0 0 8px; }
+  .lore-text p:last-child { margin-bottom: 0; }
+  .lore-tag { color: var(--sub); font-size: 13px !important; }
+  .howto {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; margin-bottom: 36px;
+  }
+  .step {
+    background: var(--card);
+    border: 3px solid var(--ink); border-radius: 16px;
+    box-shadow: 5px 5px 0 var(--ink);
+    padding: 14px 16px; font-size: 13.5px; font-weight: 700;
+  }
+  .step b { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15.5px; display: block; margin-bottom: 4px; }
+  .step p { margin: 0; color: var(--sub); font-weight: 700; }
+  .step a { color: var(--pill); }
+  .step-n {
+    float: right;
+    font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px;
+    width: 34px; height: 34px; line-height: 30px; text-align: center;
+    background: linear-gradient(160deg, #FFE18A, var(--gold));
+    border: 2.5px solid var(--ink); border-radius: 50%;
+    box-shadow: 2.5px 2.5px 0 var(--ink);
+  }
+  @media (max-width: 520px) {
+    .lore-card { flex-direction: column; text-align: center; }
+  }
   .beta-pill {
     font-size: 11px;
     letter-spacing: 1px;
@@ -561,6 +606,8 @@
       <h1 class="hero-name" id="heroName">—</h1>
       <div class="hero-ca" id="heroCa"></div>
       <div class="hero-actions">
+        <a class="btn buy" href="https://jup.ag/swap/SOL-2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump"
+           target="_blank" rel="noopener" aria-label="Buy $PATTYICE on Jupiter">🛒 BUY $PATTYICE</a>
         <button class="btn" id="copyBtn" type="button" aria-label="Copy contract address">COPY CA 📋</button>
         <button class="btn" id="refreshBtn" type="button" aria-label="Refresh stats">REFRESH 🔄</button>
         <a class="btn" id="chartLink" href="https://dexscreener.com/solana/9EkXWQ8PXYsiqDDWawUW6knybYaPiB7Ga3iyLoxATCBz" target="_blank" rel="noopener" aria-label="Open the DexScreener chart">CHART 📈</a>
@@ -609,6 +656,49 @@
   <a class="btn play-cta" id="playLink" href="game.html">🎮 PLAY PATTY DASH <span class="beta-pill">BETA</span></a>
   <a class="btn lb-cta" href="leaderboard.html">🏆 weekly leaderboard — see who's topping PATTY DASH</a>
   <a class="btn lb-cta" href="https://memedepot.com/d/patty-ice" target="_blank" rel="noopener">😂 MEME POOL — drop your best, grab the rest</a>
+
+  <div class="section-tag">Who is the Bagworker? 😎</div>
+  <div class="lore-card">
+    <img class="lore-icon" id="loreIcon" alt="The Bagworker" hidden />
+    <div class="lore-text">
+      <p><b>Blue of skin. Chrome of shades. Bag on shoulder.</b></p>
+      <p>The Bagworker doesn't trade — he <b>clocks in</b>. Every candle, every dip,
+        he's on shift hauling the bag a little further up the chart. No suit, no desk,
+        no exit plan. Just the work.</p>
+      <p class="lore-tag">$PATTYICE is his shift. The Grand Prix below is the race card.
+        Hold the bag, and you're on the payroll.</p>
+    </div>
+  </div>
+
+  <div class="section-tag">How to Buy 🛒</div>
+  <div class="howto">
+    <div class="step">
+      <span class="step-n">1</span>
+      <b>Get a wallet</b>
+      <p>Grab <a href="https://phantom.com" target="_blank" rel="noopener">Phantom</a> —
+        free, takes two minutes on any phone.</p>
+    </div>
+    <div class="step">
+      <span class="step-n">2</span>
+      <b>Load it with SOL</b>
+      <p>Buy SOL in the wallet itself, or send some over from an exchange.</p>
+    </div>
+    <div class="step">
+      <span class="step-n">3</span>
+      <b>Swap for $PATTYICE</b>
+      <p>One tap on <a href="https://jup.ag/swap/SOL-2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump"
+        target="_blank" rel="noopener">Jupiter</a> or
+        <a href="https://pump.fun/coin/2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump"
+        target="_blank" rel="noopener">pump.fun</a> — paste the CA from up top.</p>
+    </div>
+    <div class="step">
+      <span class="step-n">4</span>
+      <b>Join the fam</b>
+      <p><a href="https://x.com/Pattyice" target="_blank" rel="noopener">@Pattyice on X</a> ·
+        <a href="https://t.me/patty696969" target="_blank" rel="noopener">Telegram</a> —
+        then go post a <a href="pfp.html">PFP with the shades on</a>.</p>
+    </div>
+  </div>
 
   <div class="title-tag"><h2>Patty Prix 🏁</h2></div>
   <p class="tagline">pattyice — <b>the bag worker</b> — races the field</p>
@@ -799,7 +889,11 @@ function updateHero(me) {
   const caEl = document.getElementById("heroCa");
   caEl.textContent = CONFIG.challenger.slice(0, 6) + "…" + CONFIG.challenger.slice(-6);
   caEl.title = CONFIG.challenger;
-  if (me.icon) document.getElementById("heroIcon").src = me.icon;
+  if (me.icon) {
+    document.getElementById("heroIcon").src = me.icon;
+    const li = document.getElementById("loreIcon");
+    li.src = me.icon; li.hidden = false;
+  }
   document.getElementById("heroUpdated").textContent =
     "stats updated " + new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 
