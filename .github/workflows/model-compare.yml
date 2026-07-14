@@ -1,0 +1,88 @@
+name: Model Compare
+
+# One-off: generate the same Bagworker prompts across several Gemini
+# image models via the live Print Shop endpoint (which holds the key),
+# save the real PNGs, and push them to the model-compare branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      base:
+        description: "Print Shop base URL"
+        required: false
+        default: "https://patty-prix-zg21.vercel.app"
+
+permissions:
+  contents: write
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate across models
+        env:
+          BASE: ${{ inputs.base }}
+        run: |
+          mkdir -p out
+          cat > run.mjs <<'EOF'
+          import fs from 'fs';
+          const BASE = process.env.BASE;
+          const prompts = [
+            { slug: 'stopbeingpoor', text: 'wearing a black zip hoodie over a white t-shirt that reads "STOP BEING POOR" in bold black letters' },
+            { slug: 'saiyan', text: 'glowing super saiyan with tall golden spiky hair and a bright yellow energy aura' },
+            { slug: 'astronaut', text: 'white NASA astronaut spacesuit with helmet, floating in outer space among stars' },
+          ];
+          const models = [
+            { name: 'pro3',        ids: ['gemini-3-pro-image-preview'] },
+            { name: 'flash31',     ids: ['gemini-3.1-flash-image-preview', 'gemini-3.1-flash-image'] },
+            { name: 'flashlite31', ids: ['gemini-3.1-flash-lite-image-preview', 'gemini-3.1-flash-lite-image'] },
+            { name: 'flash25',     ids: ['gemini-2.5-flash-image'] },
+          ];
+          const manifest = [];
+          for (const p of prompts) {
+            for (const m of models) {
+              let done = false;
+              for (const id of m.ids) {
+                const t0 = Date.now();
+                let status = 0, err = '', ok = false;
+                try {
+                  const r = await fetch(BASE + '/api/generate', {
+                    method: 'POST', headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({ prompt: p.text, model: id })
+                  });
+                  status = r.status;
+                  const j = await r.json().catch(() => ({}));
+                  if (r.ok && j.image) {
+                    const mime = j.image.slice(5, j.image.indexOf(';'));
+                    const ext = mime.includes('jpeg') ? 'jpg' : (mime.split('/')[1] || 'png');
+                    const buf = Buffer.from(j.image.split(',')[1], 'base64');
+                    const file = `out/${p.slug}__${m.name}.${ext}`;
+                    fs.writeFileSync(file, buf);
+                    ok = true;
+                    manifest.push({ prompt: p.slug, model: m.name, id, file, ms: Date.now() - t0, bytes: buf.length });
+                    console.log('OK  ', p.slug, m.name, id, (Date.now() - t0) + 'ms', buf.length + 'b');
+                  } else { err = (j.error || '').slice(0, 120); }
+                } catch (e) { err = String(e).slice(0, 120); }
+                if (ok) { done = true; break; }
+                console.log('MISS', p.slug, m.name, id, status, err);
+              }
+              if (!done) manifest.push({ prompt: p.slug, model: m.name, id: m.ids.join('|'), file: null, error: 'all ids failed' });
+              await new Promise(r => setTimeout(r, 1500));
+            }
+          }
+          fs.writeFileSync('out/manifest.json', JSON.stringify(manifest, null, 2));
+          console.log('--- manifest ---'); console.log(JSON.stringify(manifest, null, 2));
+          EOF
+          node run.mjs
+
+      - name: Push results
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          git init -b model-compare > /dev/null
+          git config user.email "actions@github.com"
+          git config user.name "model-compare"
+          git add -A
+          git commit -m "model comparison run" > /dev/null
+          git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" model-compare

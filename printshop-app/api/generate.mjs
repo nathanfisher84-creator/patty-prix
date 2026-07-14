@@ -15,6 +15,14 @@ import { createHash } from "crypto";
 
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
+// callers may request a specific image model from this allow-list (used
+// for A/B comparisons); anything else falls back to MODEL
+const MODEL_ALLOW = new Set([
+  "gemini-3-pro-image-preview",
+  "gemini-3.1-flash-image-preview", "gemini-3.1-flash-image",
+  "gemini-3.1-flash-lite-image-preview", "gemini-3.1-flash-lite-image",
+  "gemini-2.5-flash-image"
+]);
 const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200);
 // per-visitor cap read per-request; 0 (default) = no per-person limit
 const DAY_TTL = 60 * 60 * 24 * 2;         // per-visitor rate-limit window
@@ -109,10 +117,12 @@ export default async function handler(req, res) {
     return res.status(429).json({ error: "you've used today's " + perVisitorCap + " prints — back tomorrow!" });
   }
 
+  const model = (typeof body?.model === "string" && MODEL_ALLOW.has(body.model)) ? body.model : MODEL;
+
   try {
     const base = await baseImage();
     const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent",
+      "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent",
       {
         method: "POST",
         headers: { "content-type": "application/json", "x-goog-api-key": key.trim() },
@@ -141,6 +151,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       image: "data:" + mime + ";base64," + data,
+      model,
       left: perVisitorCap > 0 ? Math.max(0, perVisitorCap - mine) : Math.max(0, GLOBAL_PER_DAY - all)
     });
   } catch (err) {
