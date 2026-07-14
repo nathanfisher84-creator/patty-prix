@@ -4,7 +4,7 @@
 // just counts.
 
 const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200);
-const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 5);
+const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 0); // 0 = unlimited
 const COST = Number(process.env.PRINT_COST || 0.134); // ~$/image, Nano Banana Pro
 const SHUTOFF = process.env.PRINT_SHUTOFF || "2026-07-16T12:30:00Z";
 

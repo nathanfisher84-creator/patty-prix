@@ -12,8 +12,8 @@ const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 // Nano Banana Pro (Gemini 3 Pro Image) — ~13c/image at 1-2K. Override
 // the model or the spend caps from Vercel env without a redeploy.
 const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
-const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 5);
 const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200); // ~$27/day ceiling at ~13c each
+// per-visitor cap read per-request; 0 (default) = no per-person limit
 const DAY_TTL = 60 * 60 * 24 * 2;
 const HIST_TTL = 60 * 60 * 24 * 40; // keep daily totals for the dashboard
 const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z"; // override/clear via PRINT_SHUTOFF env
@@ -78,18 +78,17 @@ export default async function handler(req, res) {
   const visitor = createHash("sha256").update(ip + (req.headers["user-agent"] || "")).digest("hex").slice(0, 12);
   const meKey = "gp:" + day + ":" + visitor;
   const allKey = "gp:total:" + day;
-  const gate = await kvPipeline([
-    ["INCR", meKey], ["EXPIRE", meKey, DAY_TTL],
-    ["INCR", allKey], ["EXPIRE", allKey, HIST_TTL],
-    ["INCR", "gp:alltime"]
-  ], kv);
-  const mine = Number(gate[0]?.result) || 0;
-  const all = Number(gate[2]?.result) || 0;
+  const perVisitorCap = Number(process.env.PRINT_PER_VISITOR || 0); // 0 = unlimited
+  const cmds = [["INCR", allKey], ["EXPIRE", allKey, HIST_TTL], ["INCR", "gp:alltime"]];
+  if (perVisitorCap > 0) cmds.push(["INCR", meKey], ["EXPIRE", meKey, DAY_TTL]);
+  const gate = await kvPipeline(cmds, kv);
+  const all = Number(gate[0]?.result) || 0;
+  const mine = perVisitorCap > 0 ? (Number(gate[3]?.result) || 0) : 0;
   if (all > GLOBAL_PER_DAY) {
     return res.status(429).json({ error: "the print shop hit today's global limit — reopens tomorrow 🖨️" });
   }
-  if (mine > PER_VISITOR_PER_DAY) {
-    return res.status(429).json({ error: "you've used today's " + PER_VISITOR_PER_DAY + " prints — back tomorrow!" });
+  if (perVisitorCap > 0 && mine > perVisitorCap) {
+    return res.status(429).json({ error: "you've used today's " + perVisitorCap + " prints — back tomorrow!" });
   }
 
   try {
@@ -126,7 +125,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       ok: true,
       image: "data:" + mime + ";base64," + data,
-      left: Math.max(0, PER_VISITOR_PER_DAY - mine)
+      left: perVisitorCap > 0 ? Math.max(0, perVisitorCap - mine) : Math.max(0, GLOBAL_PER_DAY - all)
     });
   } catch (err) {
     return res.status(502).json({ error: String(err && err.message || err).slice(0, 200) });

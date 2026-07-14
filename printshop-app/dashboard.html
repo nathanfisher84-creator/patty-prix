@@ -42,7 +42,7 @@
     <div class="tile"><div class="l">Spend today</div><div class="v" id="spendToday">—</div><div class="s" id="costSub"></div></div>
     <div class="tile"><div class="l">All-time prints</div><div class="v blue" id="alltime">—</div></div>
     <div class="tile"><div class="l">All-time spend</div><div class="v" id="spendAll">—</div><div class="s">est.</div></div>
-    <div class="tile"><div class="l">Per-visitor / day</div><div class="v" id="perVisitor">—</div><div class="s">daily allowance</div></div>
+    <div class="tile"><div class="l">Per-visitor / day</div><div class="v" id="perVisitor">—</div><div class="s" id="perVisitorSub">daily allowance</div></div>
     <div class="tile"><div class="l">Goes dark in</div><div class="v red" id="closesIn">—</div><div class="s" id="closesSub"></div></div>
   </div>
 
@@ -85,7 +85,8 @@ async function load() {
     el("costSub").textContent = "~$" + j.costPerImage.toFixed(3) + "/print";
     el("alltime").textContent = j.alltime.toLocaleString();
     el("spendAll").textContent = "$" + j.spendAllTime.toFixed(2);
-    el("perVisitor").textContent = j.perVisitorCap;
+    el("perVisitor").textContent = j.perVisitorCap > 0 ? j.perVisitorCap : "∞";
+    el("perVisitorSub").textContent = j.perVisitorCap > 0 ? "daily allowance" : "no per-person limit";
     if (j.shutoffAt && Number.isFinite(Date.parse(j.shutoffAt))) { deadline = Date.parse(j.shutoffAt); tickCd(); }
     el("tiles").hidden = false;
 
