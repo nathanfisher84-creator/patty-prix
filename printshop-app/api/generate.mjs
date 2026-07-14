@@ -14,7 +14,7 @@
 import { createHash } from "crypto";
 
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
-const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
+const MODEL = (process.env.PRINT_MODEL || "gemini-3.1-flash-image-preview").trim();
 // callers may request a specific image model from this allow-list (used
 // for A/B comparisons); anything else falls back to MODEL
 const MODEL_ALLOW = new Set([
@@ -31,11 +31,12 @@ const HIST_TTL = 60 * 60 * 24 * 40;       // keep daily totals for the dashboard
 // or clear it any time with the PRINT_SHUTOFF env var (or set to "off").
 const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z";
 
-const CONSISTENCY = "Edit this exact cartoon character. CRITICAL: the character must stay " +
-  "100% identical and instantly recognizable — same blue skin with darker blue dash markings, " +
+const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% " +
+  "consistent and instantly recognizable: same bright blue skin with darker blue dash markings, " +
   "same long droopy nose, same forehead wrinkle lines, same iridescent blue shield sunglasses, " +
-  "same body proportions, same thick black outline sticker art style. Change ONLY what is " +
-  "requested, keep a clean simple background, square 1:1 composition. Requested change: ";
+  "same thick black outline sticker art style. You MAY change the pose, body position and camera " +
+  "angle so the requested outfit or scene looks natural and dynamic. Keep the background clean and " +
+  "simple unless the request implies a scene. Square 1:1 composition. Requested change: ";
 
 function kvEnv() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
