@@ -8,9 +8,13 @@ on:
         required: false
         default: ""
       print:
-        description: "Set to 'yes' to test the Print Shop (costs ~4 cents + one allowance slot)"
+        description: "Set to 'yes' to test the Print Shop (spends one print, ~13 cents)"
         required: false
         default: ""
+      print_url:
+        description: "Base URL for the print test (default pattyprix.xyz)"
+        required: false
+        default: "https://pattyprix.xyz"
 
 permissions:
   contents: read
@@ -98,11 +102,13 @@ jobs:
 
       - name: Check the Print Shop
         if: ${{ inputs.print == 'yes' }}
+        env:
+          BASE: ${{ inputs.print_url }}
         run: |
-          echo "=== POST /api/generate (real print — spends ~4 cents)"
+          echo "=== POST $BASE/api/generate (real print — spends ~13 cents)"
           curl -sS -m 120 -X POST -H "content-type: application/json" \
             -d '{"prompt":"tiny red beanie hat"}' \
-            "https://pattyprix.xyz/api/generate" | head -c 300
+            "$BASE/api/generate" | head -c 300
           echo
 
       - name: Check stats API endpoints
