@@ -17,7 +17,8 @@ const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
 const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 5);
 const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 100);
-const DAY_TTL = 60 * 60 * 24 * 2;
+const DAY_TTL = 60 * 60 * 24 * 2;         // per-visitor rate-limit window
+const HIST_TTL = 60 * 60 * 24 * 40;       // keep daily totals for the dashboard
 
 const CONSISTENCY = "Edit this exact cartoon character. CRITICAL: the character must stay " +
   "100% identical and instantly recognizable — same blue skin with darker blue dash markings, " +
@@ -88,7 +89,8 @@ export default async function handler(req, res) {
   const allKey = "gp:total:" + day;
   const gate = await kvPipeline([
     ["INCR", meKey], ["EXPIRE", meKey, DAY_TTL],
-    ["INCR", allKey], ["EXPIRE", allKey, DAY_TTL]
+    ["INCR", allKey], ["EXPIRE", allKey, HIST_TTL],
+    ["INCR", "gp:alltime"]
   ], kv);
   const mine = Number(gate[0]?.result) || 0;
   const all = Number(gate[2]?.result) || 0;
