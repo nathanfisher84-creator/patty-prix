@@ -1,0 +1,98 @@
+[
+  {
+    "prompt": "stopbeingpoor",
+    "model": "pro3",
+    "id": "gemini-3-pro-image-preview",
+    "file": "out/stopbeingpoor__pro3.jpg",
+    "ms": 17059,
+    "bytes": 335539
+  },
+  {
+    "prompt": "stopbeingpoor",
+    "model": "flash31",
+    "id": "gemini-3.1-flash-image-preview",
+    "file": "out/stopbeingpoor__flash31.jpg",
+    "ms": 8241,
+    "bytes": 370175
+  },
+  {
+    "prompt": "stopbeingpoor",
+    "model": "flashlite31",
+    "id": "gemini-3.1-flash-lite-image",
+    "file": "out/stopbeingpoor__flashlite31.jpg",
+    "ms": 4683,
+    "bytes": 335123
+  },
+  {
+    "prompt": "stopbeingpoor",
+    "model": "flash25",
+    "id": "gemini-2.5-flash-image",
+    "file": "out/stopbeingpoor__flash25.png",
+    "ms": 8487,
+    "bytes": 1307854
+  },
+  {
+    "prompt": "saiyan",
+    "model": "pro3",
+    "id": "gemini-3-pro-image-preview",
+    "file": "out/saiyan__pro3.jpg",
+    "ms": 19461,
+    "bytes": 502164
+  },
+  {
+    "prompt": "saiyan",
+    "model": "flash31",
+    "id": "gemini-3.1-flash-image-preview",
+    "file": "out/saiyan__flash31.jpg",
+    "ms": 7939,
+    "bytes": 525814
+  },
+  {
+    "prompt": "saiyan",
+    "model": "flashlite31",
+    "id": "gemini-3.1-flash-lite-image",
+    "file": "out/saiyan__flashlite31.jpg",
+    "ms": 3894,
+    "bytes": 485428
+  },
+  {
+    "prompt": "saiyan",
+    "model": "flash25",
+    "id": "gemini-2.5-flash-image",
+    "file": "out/saiyan__flash25.png",
+    "ms": 7265,
+    "bytes": 1659101
+  },
+  {
+    "prompt": "astronaut",
+    "model": "pro3",
+    "id": "gemini-3-pro-image-preview",
+    "file": "out/astronaut__pro3.jpg",
+    "ms": 17292,
+    "bytes": 543199
+  },
+  {
+    "prompt": "astronaut",
+    "model": "flash31",
+    "id": "gemini-3.1-flash-image-preview",
+    "file": "out/astronaut__flash31.jpg",
+    "ms": 8731,
+    "bytes": 468753
+  },
+  {
+    "prompt": "astronaut",
+    "model": "flashlite31",
+    "id": "gemini-3.1-flash-lite-image",
+    "file": "out/astronaut__flashlite31.jpg",
+    "ms": 3367,
+    "bytes": 489676
+  },
+  {
+    "prompt": "astronaut",
+    "model": "flash25",
+    "id": "gemini-2.5-flash-image",
+    "file": "out/astronaut__flash25.png",
+    "ms": 8788,
+    "bytes": 1282083
+  }
+]
