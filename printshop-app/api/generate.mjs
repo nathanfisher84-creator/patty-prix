@@ -1,19 +1,22 @@
-// THE PRINT SHOP: prompt the Bagworker into any fit. Sends the base
-// character image + a strict consistency instruction + the user's
-// outfit prompt to Gemini's image model (server-side key, GEMINI_API_KEY
-// in Vercel env). Costs real money per image, so it's throttled hard:
-// per-visitor daily allowance plus a global daily cap in the same
-// Upstash KV as everything else. 501 until the key is configured.
+// THE PRINT SHOP (standalone deployment). Prompt the Bagworker into any
+// fit via Gemini's image model (Nano Banana Pro by default). This copy
+// is fully self-contained so it can run as its own Vercel project with
+// its own URL, separate from the main paused site.
+//
+// Env vars this project needs in Vercel:
+//   GEMINI_API_KEY            (required)
+//   KV_REST_API_URL           } Upstash Redis REST — same DB as the main
+//   KV_REST_API_TOKEN         }  site is fine; used only for rate limiting
+//   PRINT_MODEL               (optional) override the model id
+//   PRINT_PER_VISITOR         (optional) daily prints per visitor  [5]
+//   PRINT_GLOBAL              (optional) daily prints site-wide    [100]
 
 import { createHash } from "crypto";
-import { kvEnv, kvPipeline } from "./track.mjs";
 
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
-// Nano Banana Pro (Gemini 3 Pro Image) — ~13c/image at 1-2K. Override
-// the model or the spend caps from Vercel env without a redeploy.
 const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
 const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 5);
-const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 100); // ~$13/day ceiling at ~13c each
+const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 100);
 const DAY_TTL = 60 * 60 * 24 * 2;
 
 const CONSISTENCY = "Edit this exact cartoon character. CRITICAL: the character must stay " +
@@ -22,9 +25,23 @@ const CONSISTENCY = "Edit this exact cartoon character. CRITICAL: the character 
   "same body proportions, same thick black outline sticker art style. Change ONLY what is " +
   "requested, keep a clean simple background, square 1:1 composition. Requested change: ";
 
-// the base art is fetched once per warm function: prefer a hi-res
-// bagworker-base.png committed to the site, fall back to the token's
-// official DexScreener icon
+function kvEnv() {
+  const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN;
+  return url && token ? { url, token } : null;
+}
+async function kvPipeline(cmds, kv) {
+  const r = await fetch(kv.url + "/pipeline", {
+    method: "POST",
+    headers: { authorization: "Bearer " + kv.token, "content-type": "application/json" },
+    body: JSON.stringify(cmds)
+  });
+  return r.json();
+}
+
+// base art: the canonical Bagworker served from the main domain (that
+// path is exempt from the maintenance pause), falling back to the token
+// icon if it's ever unreachable
 let baseCache = null;
 async function baseImage() {
   if (baseCache) return baseCache;
@@ -64,7 +81,6 @@ export default async function handler(req, res) {
   if (prompt.length < 3) return res.status(400).json({ error: "describe the fit — a few words minimum" });
   if (prompt.length > 300) return res.status(400).json({ error: "keep the prompt under 300 characters" });
 
-  // spend guards: per-visitor allowance + global daily ceiling
   const day = new Date().toISOString().slice(0, 10);
   const ip = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
   const visitor = createHash("sha256").update(ip + (req.headers["user-agent"] || "")).digest("hex").slice(0, 12);
@@ -89,7 +105,6 @@ export default async function handler(req, res) {
       "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent",
       {
         method: "POST",
-        // the modern auth header — required for the new AQ.* key format
         headers: { "content-type": "application/json", "x-goog-api-key": key.trim() },
         body: JSON.stringify({
           contents: [{
@@ -109,7 +124,6 @@ export default async function handler(req, res) {
     const parts = j?.candidates?.[0]?.content?.parts || [];
     const img = parts.find((p) => p.inlineData?.data || p.inline_data?.data);
     if (!img) {
-      // usually the safety filter — tell the user to prompt nicer
       return res.status(422).json({ error: "the model declined that one — try a different fit" });
     }
     const data = img.inlineData?.data || img.inline_data?.data;
