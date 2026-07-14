@@ -84,10 +84,11 @@ export default async function handler(req, res) {
   try {
     const base = await baseImage();
     const r = await fetch(
-      "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent?key=" + key,
+      "https://generativelanguage.googleapis.com/v1beta/models/" + MODEL + ":generateContent",
       {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        // the modern auth header — required for the new AQ.* key format
+        headers: { "content-type": "application/json", "x-goog-api-key": key.trim() },
         body: JSON.stringify({
           contents: [{
             parts: [
