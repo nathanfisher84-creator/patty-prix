@@ -30,7 +30,14 @@
     text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
     text-align: center;
   }
-  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 20px; text-align: center; max-width: 400px; }
+  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 14px; text-align: center; max-width: 400px; }
+  .countdown {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
+    color: var(--ink); background: linear-gradient(160deg, #FFE18A, var(--gold));
+    border: 3px solid var(--ink); border-radius: 999px;
+    padding: 8px 18px; box-shadow: 3px 3px 0 var(--ink); margin-bottom: 18px;
+  }
+  .countdown.closed { background: #e9e2d0; color: var(--sub); }
   .frame {
     position: relative;
     width: min(92vw, 420px); height: min(92vw, 420px);
@@ -83,6 +90,7 @@
   <h1>THE PRINT SHOP 🖨️</h1>
   <div class="sub">prompt the Bagworker into any fit —
     same blue guy, whole new drip. AI does the stitching.</div>
+  <div class="countdown" id="countdown" hidden></div>
 
   <div class="frame" id="frame">
     <div class="idle" id="idle">
@@ -133,6 +141,43 @@ const API = "/api/generate";
 const el = (id) => document.getElementById(id);
 let lastImage = null;
 
+// ── 48-hour countdown → the shop goes dark ──
+const SHUTOFF_FALLBACK = "2026-07-16T12:30:00Z";
+let deadline = Date.parse(SHUTOFF_FALLBACK);
+let closed = false;
+function fmtLeft(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600),
+        m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return (d ? d + "d " : "") + String(h).padStart(2, "0") + "h " +
+    String(m).padStart(2, "0") + "m " + String(ss).padStart(2, "0") + "s";
+}
+function tick() {
+  const cd = el("countdown");
+  const left = deadline - Date.now();
+  if (left <= 0) {
+    closed = true;
+    cd.className = "countdown closed";
+    cd.textContent = "🌙 the print shop has gone dark — thanks for playing";
+    el("go").disabled = true;
+    document.querySelectorAll(".chip").forEach((c) => (c.disabled = true));
+    el("idle").innerHTML = '<div class="big">🌙</div>the shop has closed';
+    el("result").hidden = true; el("actions").hidden = true;
+    return;
+  }
+  cd.className = "countdown";
+  cd.textContent = "⏳ shop closes in " + fmtLeft(left);
+}
+(async () => {
+  try {
+    const j = await (await fetch("/api/printstats")).json();
+    if (j.shutoffAt && Number.isFinite(Date.parse(j.shutoffAt))) deadline = Date.parse(j.shutoffAt);
+  } catch { /* keep the fallback deadline */ }
+  el("countdown").hidden = false;
+  tick();
+  setInterval(tick, 1000);
+})();
+
 function say(msg, isErr) {
   el("msg").hidden = !msg;
   el("msg").textContent = msg || "";
@@ -140,6 +185,7 @@ function say(msg, isErr) {
 }
 
 async function print() {
+  if (closed) return say("the print shop has closed 🌙", true);
   const prompt = el("prompt").value.trim();
   if (prompt.length < 3) return say("describe the fit first — a few words will do", true);
   el("go").disabled = true;
