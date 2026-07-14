@@ -16,9 +16,12 @@ import { createHash } from "crypto";
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
 const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 5);
-const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 100);
+const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200);
 const DAY_TTL = 60 * 60 * 24 * 2;         // per-visitor rate-limit window
 const HIST_TTL = 60 * 60 * 24 * 40;       // keep daily totals for the dashboard
+// scheduled shutoff — after this the endpoint refuses to spend. Extend
+// or clear it any time with the PRINT_SHUTOFF env var (or set to "off").
+const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z";
 
 const CONSISTENCY = "Edit this exact cartoon character. CRITICAL: the character must stay " +
   "100% identical and instantly recognizable — same blue skin with darker blue dash markings, " +
@@ -75,6 +78,12 @@ export default async function handler(req, res) {
   if (!key) return res.status(501).json({ error: "print shop not configured — add GEMINI_API_KEY in Vercel" });
   const kv = kvEnv();
   if (!kv) return res.status(501).json({ error: "print shop needs the KV store for rate limiting" });
+
+  // hard off-switch once the countdown ends
+  const shutoff = Date.parse(process.env.PRINT_SHUTOFF || SHUTOFF_DEFAULT);
+  if (Number.isFinite(shutoff) && Date.now() > shutoff) {
+    return res.status(503).json({ closed: true, error: "the print shop has closed 🌙" });
+  }
 
   let body = req.body;
   if (typeof body === "string") { try { body = JSON.parse(body); } catch { body = null; } }

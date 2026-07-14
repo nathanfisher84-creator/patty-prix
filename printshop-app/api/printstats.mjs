@@ -3,9 +3,10 @@
 // the same gp:* counters api/generate.mjs writes. No secrets exposed —
 // just counts.
 
-const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 100);
+const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200);
 const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 5);
 const COST = Number(process.env.PRINT_COST || 0.134); // ~$/image, Nano Banana Pro
+const SHUTOFF = process.env.PRINT_SHUTOFF || "2026-07-16T12:30:00Z";
 
 function kvEnv() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -49,6 +50,8 @@ export default async function handler(req, res) {
       costPerImage: COST,
       spendToday: +(todayCount * COST).toFixed(2),
       spendAllTime: +(alltime * COST).toFixed(2),
+      shutoffAt: SHUTOFF,
+      closed: Number.isFinite(Date.parse(SHUTOFF)) && Date.now() > Date.parse(SHUTOFF),
       days: days.map((d, i) => ({ day: d, prints: series[i] || 0 }))
     });
   } catch (err) {

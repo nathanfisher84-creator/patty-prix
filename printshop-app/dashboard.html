@@ -19,7 +19,7 @@
   .tile .l { font-weight:800; font-size:11px; color:var(--sub); letter-spacing:.5px; text-transform:uppercase; }
   .tile .v { font-family:'Fredoka',sans-serif; font-weight:700; font-size:30px; margin-top:3px; }
   .tile .s { font-weight:800; font-size:11.5px; color:var(--sub); }
-  .v.gold { color:var(--gold); } .v.green { color:var(--green); } .v.blue { color:var(--blue); }
+  .v.gold { color:var(--gold); } .v.green { color:var(--green); } .v.blue { color:var(--blue); } .v.red { color:var(--red); }
   .card { width:min(760px,100%); background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin-top:16px; }
   .card h2 { font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; margin-bottom:14px; }
   .chart { display:flex; align-items:flex-end; gap:5px; height:150px; }
@@ -43,6 +43,7 @@
     <div class="tile"><div class="l">All-time prints</div><div class="v blue" id="alltime">—</div></div>
     <div class="tile"><div class="l">All-time spend</div><div class="v" id="spendAll">—</div><div class="s">est.</div></div>
     <div class="tile"><div class="l">Per-visitor / day</div><div class="v" id="perVisitor">—</div><div class="s">daily allowance</div></div>
+    <div class="tile"><div class="l">Goes dark in</div><div class="v red" id="closesIn">—</div><div class="s" id="closesSub"></div></div>
   </div>
 
   <div class="card" id="chartCard" hidden>
@@ -58,6 +59,20 @@
 const API = "/api/printstats";
 const el = (id) => document.getElementById(id);
 
+let deadline = null;
+function fmtLeft(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return (d ? d + "d " : "") + String(h).padStart(2, "0") + "h " + String(m).padStart(2, "0") + "m " + String(ss).padStart(2, "0") + "s";
+}
+function tickCd() {
+  if (deadline == null) return;
+  const left = deadline - Date.now();
+  el("closesIn").textContent = left <= 0 ? "CLOSED" : fmtLeft(left);
+  el("closesSub").textContent = left <= 0 ? "shop is dark" : new Date(deadline).toUTCString().slice(5, 22) + " UTC";
+}
+setInterval(tickCd, 1000);
+
 async function load() {
   try {
     const j = await (await fetch(API)).json();
@@ -71,6 +86,7 @@ async function load() {
     el("alltime").textContent = j.alltime.toLocaleString();
     el("spendAll").textContent = "$" + j.spendAllTime.toFixed(2);
     el("perVisitor").textContent = j.perVisitorCap;
+    if (j.shutoffAt && Number.isFinite(Date.parse(j.shutoffAt))) { deadline = Date.parse(j.shutoffAt); tickCd(); }
     el("tiles").hidden = false;
 
     const max = Math.max(1, ...j.days.map(d => d.prints));
