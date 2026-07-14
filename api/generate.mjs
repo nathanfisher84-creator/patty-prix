@@ -11,7 +11,7 @@ import { kvEnv, kvPipeline } from "./track.mjs";
 const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
 // Nano Banana Pro (Gemini 3 Pro Image) — ~13c/image at 1-2K. Override
 // the model or the spend caps from Vercel env without a redeploy.
-const MODEL = (process.env.PRINT_MODEL || "gemini-3-pro-image-preview").trim();
+const MODEL = (process.env.PRINT_MODEL || "gemini-3.1-flash-image-preview").trim();
 // callers may request a specific image model from this allow-list (used
 // for A/B comparisons); anything else falls back to MODEL
 const MODEL_ALLOW = new Set([
@@ -20,17 +20,18 @@ const MODEL_ALLOW = new Set([
   "gemini-3.1-flash-lite-image-preview", "gemini-3.1-flash-lite-image",
   "gemini-2.5-flash-image"
 ]);
-const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200); // ~$27/day ceiling at ~13c each
+const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200); // ~$13/day ceiling at ~6.7c each (3.1 Flash)
 // per-visitor cap read per-request; 0 (default) = no per-person limit
 const DAY_TTL = 60 * 60 * 24 * 2;
 const HIST_TTL = 60 * 60 * 24 * 40; // keep daily totals for the dashboard
 const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z"; // override/clear via PRINT_SHUTOFF env
 
-const CONSISTENCY = "Edit this exact cartoon character. CRITICAL: the character must stay " +
-  "100% identical and instantly recognizable — same blue skin with darker blue dash markings, " +
+const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% " +
+  "consistent and instantly recognizable: same bright blue skin with darker blue dash markings, " +
   "same long droopy nose, same forehead wrinkle lines, same iridescent blue shield sunglasses, " +
-  "same body proportions, same thick black outline sticker art style. Change ONLY what is " +
-  "requested, keep a clean simple background, square 1:1 composition. Requested change: ";
+  "same thick black outline sticker art style. You MAY change the pose, body position and camera " +
+  "angle so the requested outfit or scene looks natural and dynamic. Keep the background clean and " +
+  "simple unless the request implies a scene. Square 1:1 composition. Requested change: ";
 
 // the base art is fetched once per warm function: prefer a hi-res
 // bagworker-base.png committed to the site, fall back to the token's
