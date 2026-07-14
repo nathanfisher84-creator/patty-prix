@@ -7,6 +7,10 @@ on:
         description: "Optional token address — dump all of its DexScreener pools"
         required: false
         default: ""
+      print:
+        description: "Set to 'yes' to test the Print Shop (costs ~4 cents + one allowance slot)"
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -91,6 +95,15 @@ jobs:
           curl -sS -o /dev/null -w "%{http_code}\n" -m 20 -X POST -H "content-type: application/json" \
             -d '{"name":"healthcheck","score":900000,"t":10}' \
             "https://pattyprix.xyz/api/leaderboard"
+
+      - name: Check the Print Shop
+        if: ${{ inputs.print == 'yes' }}
+        run: |
+          echo "=== POST /api/generate (real print — spends ~4 cents)"
+          curl -sS -m 120 -X POST -H "content-type: application/json" \
+            -d '{"prompt":"tiny red beanie hat"}' \
+            "https://pattyprix.xyz/api/generate" | head -c 300
+          echo
 
       - name: Check stats API endpoints
         run: |
