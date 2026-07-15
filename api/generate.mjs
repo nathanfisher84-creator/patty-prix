@@ -24,6 +24,8 @@ const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200); // ~$13/day ceil
 // per-visitor cap read per-request; 0 (default) = no per-person limit
 const DAY_TTL = 60 * 60 * 24 * 2;
 const HIST_TTL = 60 * 60 * 24 * 40; // keep daily totals for the dashboard
+const JOB_TTL = 60 * 15;            // recover a finished print for 15 min
+const SID_RE = /^[a-z0-9]{8,64}$/i; // client session id for recovery
 const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z"; // override/clear via PRINT_SHUTOFF env
 
 const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% " +
@@ -58,10 +60,32 @@ async function baseImage() {
   return baseCache;
 }
 
+function getQuery(req) {
+  if (req.query && typeof req.query === "object") return req.query;
+  try { return Object.fromEntries(new URL(req.url, "http://x").searchParams); } catch { return {}; }
+}
+
 export default async function handler(req, res) {
   res.setHeader("access-control-allow-origin", "*");
   res.setHeader("access-control-allow-headers", "content-type");
   if (req.method === "OPTIONS") return res.status(204).end();
+
+  // recovery: mobile tabs abort the POST when backgrounded, but the paid
+  // generation still finishes and gets cached — hand it back by session id
+  if (req.method === "GET") {
+    const sid = String(getQuery(req).sid || "").trim();
+    if (!SID_RE.test(sid)) return res.status(400).json({ error: "bad recovery id" });
+    const kv = kvEnv();
+    if (!kv) return res.status(501).json({ error: "print shop needs the KV store" });
+    try {
+      const out = await kvPipeline([["GET", "printjob:" + sid]], kv);
+      const raw = out?.[0]?.result;
+      if (!raw) return res.status(404).json({ pending: true });
+      res.setHeader("cache-control", "no-store");
+      return res.status(200).json(JSON.parse(raw));
+    } catch { return res.status(404).json({ pending: true }); }
+  }
+
   if (req.method !== "POST") return res.status(405).json({ error: "method not allowed" });
 
   const key = process.env.GEMINI_API_KEY;
@@ -133,12 +157,20 @@ export default async function handler(req, res) {
     }
     const data = img.inlineData?.data || img.inline_data?.data;
     const mime = img.inlineData?.mimeType || img.inline_data?.mime_type || "image/png";
-    return res.status(200).json({
+    const payload = {
       ok: true,
       image: "data:" + mime + ";base64," + data,
       model,
-      left: perVisitorCap > 0 ? Math.max(0, perVisitorCap - mine) : Math.max(0, GLOBAL_PER_DAY - all)
-    });
+      left: perVisitorCap > 0 ? Math.max(0, perVisitorCap - mine) : Math.max(0, GLOBAL_PER_DAY - all),
+      ts: Date.now()
+    };
+    // stash it so a backgrounded mobile tab can pick the print back up.
+    // best-effort — never let a cache hiccup fail the (already-paid) print
+    const sid = String(body?.sid || "").trim();
+    if (SID_RE.test(sid)) {
+      try { await kvPipeline([["SET", "printjob:" + sid, JSON.stringify(payload), "EX", JOB_TTL]], kv); } catch { /* recovery just won't be available */ }
+    }
+    return res.status(200).json(payload);
   } catch (err) {
     return res.status(502).json({ error: String(err && err.message || err).slice(0, 200) });
   }

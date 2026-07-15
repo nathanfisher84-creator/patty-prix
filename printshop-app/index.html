@@ -154,6 +154,21 @@ const API = "/api/generate";
 
 const el = (id) => document.getElementById(id);
 let lastImage = null;
+let busy = false;
+
+// stable per-device id so a print interrupted by backgrounding the tab can
+// be recovered (the server caches each finished print under this id)
+function sid() {
+  let s = localStorage.getItem("pp_sid");
+  if (!s) {
+    s = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^a-z0-9]/gi, "");
+    localStorage.setItem("pp_sid", s);
+  }
+  return s;
+}
+const PENDING = "pp_pending";
+const pendingGet = () => { try { return JSON.parse(localStorage.getItem(PENDING) || "null"); } catch { return null; } };
+const pendingSet = (v) => v ? localStorage.setItem(PENDING, JSON.stringify(v)) : localStorage.removeItem(PENDING);
 
 // ── 48-hour countdown → the shop goes dark ──
 const SHUTOFF_FALLBACK = "2026-07-16T12:30:00Z";
@@ -198,41 +213,100 @@ function say(msg, isErr) {
   el("msg").className = isErr ? "err" : "";
 }
 
-async function print() {
-  if (closed) return say("the print shop has closed 🌙", true);
-  const prompt = el("prompt").value.trim();
-  if (prompt.length < 3) return say("describe the fit first — a few words will do", true);
-  el("go").disabled = true;
+function showPrinting() {
   el("idle").hidden = true;
   el("result").hidden = true;
   el("actions").hidden = true;
   el("printing").hidden = false;
+}
+function showResult(j) {
+  el("printing").hidden = true;
+  lastImage = j.image;
+  el("result").src = j.image;
+  el("result").hidden = false;
+  el("actions").hidden = false;
+  say(j.left > 0 ? j.left + " prints left today" : "that was your last print today — back tomorrow!");
+}
+
+async function print() {
+  if (busy) return;
+  if (closed) return say("the print shop has closed 🌙", true);
+  const prompt = el("prompt").value.trim();
+  if (prompt.length < 3) return say("describe the fit first — a few words will do", true);
+  busy = true;
+  el("go").disabled = true;
+  showPrinting();
   say("");
+  // remember a print is in flight so we can recover it if the tab is
+  // backgrounded (mobile aborts the request but the server finishes it)
+  pendingSet({ ts: Date.now(), prompt });
   try {
     const r = await fetch(API, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, sid: sid() })
     });
     const j = await r.json();
-    el("printing").hidden = true;
     if (!r.ok || !j.image) {
+      pendingSet(null);
+      el("printing").hidden = true;
       el("idle").hidden = false;
       return say(j.error || "print failed — try again", true);
     }
-    lastImage = j.image;
-    el("result").src = j.image;
-    el("result").hidden = false;
-    el("actions").hidden = false;
-    say(j.left > 0 ? j.left + " prints left today" : "that was your last print today — back tomorrow!");
+    pendingSet(null);
+    showResult(j);
   } catch {
-    el("printing").hidden = true;
-    el("idle").hidden = false;
-    say("print shop unreachable — try again in a minute", true);
+    // request dropped (usually: tab backgrounded mid-print). Leave the
+    // pending marker + spinner up — recovery will grab it when we return
+    if (pendingGet()) {
+      say("hang tight — finishing your print…");
+      recover(0);
+    } else {
+      el("printing").hidden = true;
+      el("idle").hidden = false;
+      say("print shop unreachable — try again in a minute", true);
+    }
   } finally {
-    el("go").disabled = false;
+    busy = false;
+    if (!closed) el("go").disabled = false;
   }
 }
+
+// pull a finished-but-interrupted print back from the server. Polls a few
+// times because the generation may still be wrapping up server-side.
+let recovering = false;
+async function recover(attempt) {
+  const p = pendingGet();
+  if (!p || closed) return;
+  // give up on stale markers (past the server's 15-min recovery window)
+  if (Date.now() - p.ts > 15 * 60 * 1000) { pendingSet(null); return; }
+  if (attempt === 0 && recovering) return;
+  recovering = true;
+  showPrinting();
+  try {
+    const r = await fetch(API + "?sid=" + encodeURIComponent(sid()), { cache: "no-store" });
+    if (r.ok) {
+      const j = await r.json();
+      if (j && j.image) { pendingSet(null); recovering = false; showResult(j); return; }
+    }
+  } catch { /* keep polling */ }
+  if ((attempt || 0) < 12) {
+    setTimeout(() => recover((attempt || 0) + 1), 3000);
+  } else {
+    recovering = false;
+    pendingSet(null);
+    el("printing").hidden = true;
+    el("idle").hidden = false;
+    say("couldn't recover that print — give it another go", true);
+  }
+}
+
+// when the tab comes back to the foreground (or on load), resume any print
+// that was cut off while backgrounded
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !busy && pendingGet()) recover(0);
+});
+window.addEventListener("pageshow", () => { if (!busy && pendingGet()) recover(0); });
 
 el("go").addEventListener("click", print);
 el("prompt").addEventListener("keydown", (e) => { if (e.key === "Enter") print(); });
