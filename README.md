@@ -158,7 +158,7 @@ node scripts/research-agent.mjs --out today.md   # also write the Markdown editi
 node scripts/research-agent.mjs                   # build + post to Telegram
 ```
 
-Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (scoreboard bot). For the written intro, add **one** of:
+Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` (scoreboard bot). For the group it posts to, set **`NEWSLETTER_CHAT_ID`** to give the newsletter its own dedicated group; if that's unset it falls back to `TELEGRAM_CHAT_ID` and shares the scoreboard/alerts group. For the written intro, add **one** of:
 
 - `GEMINI_API_KEY` — preferred; model defaults to `gemini-2.5-flash-lite` (the cheapest tier, ~$0.10/$0.40 per 1M tokens), override with `GEMINI_MODEL` (e.g. `gemini-3.1-flash-lite` for the newer budget model).
 - `ANTHROPIC_API_KEY` — used only if no Gemini key; model defaults to `claude-sonnet-5`, override with `ANTHROPIC_MODEL`.

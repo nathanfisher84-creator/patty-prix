@@ -17,7 +17,9 @@
 //   HELIUS_API_KEY      — smart-money discovery + scoring (required)
 //   BIRDEYE_API_KEY     — trending / gainers / losers / SOL price (required)
 //   TELEGRAM_BOT_TOKEN  — bot to post as (required unless --dry)
-//   TELEGRAM_CHAT_ID    — group/channel to post into (required unless --dry)
+//   NEWSLETTER_CHAT_ID  — dedicated newsletter group (falls back to
+//                         TELEGRAM_CHAT_ID); one of the two required unless --dry
+//   TELEGRAM_CHAT_ID    — shared group used if NEWSLETTER_CHAT_ID is unset
 //   GEMINI_API_KEY      — optional; enables the Gemini-written narrative
 //   GEMINI_MODEL        — optional; defaults to gemini-2.5-flash-lite
 //   ANTHROPIC_API_KEY   — optional; Claude fallback if no Gemini key
@@ -343,9 +345,14 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
                            nowDate = new Date().toISOString().slice(0, 10)) {
   const cfg = parseArgs(argv);
 
+  // Dedicated newsletter group if NEWSLETTER_CHAT_ID is set; otherwise share the
+  // main TELEGRAM_CHAT_ID with the scoreboard / whale alerts.
+  const chatId = env.NEWSLETTER_CHAT_ID || env.TELEGRAM_CHAT_ID;
+
   const need = ["HELIUS_API_KEY", "BIRDEYE_API_KEY"];
-  if (!cfg.dry) need.push("TELEGRAM_BOT_TOKEN", "TELEGRAM_CHAT_ID");
+  if (!cfg.dry) need.push("TELEGRAM_BOT_TOKEN");
   const missing = need.filter(k => !env[k]);
+  if (!cfg.dry && !chatId) missing.push("NEWSLETTER_CHAT_ID or TELEGRAM_CHAT_ID");
   if (missing.length) {
     console.log(`Missing secrets (${missing.join(", ")}) — skipping. (Use --dry to build without Telegram.)`);
     return;
@@ -361,7 +368,7 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
 
   if (cfg.dry) { console.log("\n" + markdown + "\n"); return; }
 
-  const sent = await sendTelegram(env, buildTelegram(d, cfg.top), fetchFn);
+  const sent = await sendTelegram(env, buildTelegram(d, cfg.top), fetchFn, chatId);
   console.log(sent.ok ? "Posted the daily newsletter to Telegram." : `sendMessage failed: ${sent.description}`);
 }
 

@@ -128,13 +128,15 @@ export function buildAlert(perWallet, nowTs, maxLines = 25) {
    Telegram
    ================================================================ */
 
-export async function sendTelegram(env, text, fetchFn = fetch) {
+// chatId defaults to env.TELEGRAM_CHAT_ID so existing callers are unchanged;
+// pass an explicit id (e.g. NEWSLETTER_CHAT_ID) to target a different group.
+export async function sendTelegram(env, text, fetchFn = fetch, chatId = env.TELEGRAM_CHAT_ID) {
   const token = env.TELEGRAM_BOT_TOKEN;
   const res = await fetchFn(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      chat_id: env.TELEGRAM_CHAT_ID,
+      chat_id: chatId,
       text,
       parse_mode: "HTML",
       disable_web_page_preview: true,
