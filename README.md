@@ -143,6 +143,25 @@ Setup: reuse the `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` secrets from the scor
 
 Dedup is time-windowed: keep `--lookback` equal to the cron interval so each buy alerts once. A delayed run can rarely repeat or miss one — the deliberate tradeoff for staying database-free, same as the scoreboard. Options: `--file`, `--lookback`, `--min-usd`, `--sol-price`.
 
+## Daily research newsletter 📰
+
+`scripts/research-agent.mjs` + `.github/workflows/research-newsletter.yml` build and post a **daily Solana briefing** to Telegram. It's the capstone that ties the other tools together into one edition:
+
+- 🎯 **Where smart money is going** — the headline: tokens that *multiple* tracked whales are buying (consensus), not just one big trade
+- 🐋 **Smart money** — the top-ranked wallets by realized PnL / win rate (from the whale tracker)
+- 🔥 **Trending**, 📈 **biggest gainers**, 📉 **biggest losers** (Birdeye)
+- a written intro — **Claude writes it when `ANTHROPIC_API_KEY` is set; a deterministic template is used otherwise**, so the agent runs with or without an LLM key
+
+```bash
+node scripts/research-agent.mjs --dry            # build + print, don't post
+node scripts/research-agent.mjs --out today.md   # also write the Markdown edition
+node scripts/research-agent.mjs                   # build + post to Telegram
+```
+
+Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (scoreboard bot). Add `ANTHROPIC_API_KEY` as a secret to enable the Claude-written narrative (model defaults to `claude-opus-4-8`, override with `ANTHROPIC_MODEL`). The Claude call uses plain `fetch` — no SDK, keeping the repo dependency-free. The workflow runs daily at 13:00 UTC; without the required secrets it logs a hint and exits quietly.
+
+Options: `--dry`, `--out <file>`, `--trending <n>`, `--candidates <n>`, `--min-pnl <usd>`, `--min-winrate <pct>`, `--min-trades <n>`, `--consensus <n>` (min whales for consensus), `--top <n>` (rows per section).
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
