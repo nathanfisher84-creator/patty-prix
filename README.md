@@ -167,6 +167,23 @@ With neither, the deterministic template writes the intro. Both LLM calls use pl
 
 Options: `--dry`, `--out <file>`, `--trending <n>`, `--candidates <n>`, `--min-pnl <usd>`, `--min-winrate <pct>`, `--min-trades <n>`, `--consensus <n>` (min whales for consensus), `--top <n>` (rows per section).
 
+## Private DM core 🕵️
+
+`scripts/private-dm.mjs` is a **paper crypto demo** of the confidentiality-first Solana messenger concept — the flow that a wallet messenger needs to let a stranger DM you *without* writing a "sender ↔ recipient" link anywhere an observer (or the whale tracker above) could read. It's a self-contained simulator: no mempool, RPC, wallet, or real funds, using only Node's built-in `crypto` so the repo stays dependency-free.
+
+```bash
+node scripts/private-dm.mjs        # walk through a full Alice/Bob demo
+```
+
+Four properties, built on X25519 ECDH + HKDF + AES-256-GCM:
+
+- **Dedicated identity** — your messaging keys are a separate keypair, not your funded wallet (nothing on-chain to trace back to you).
+- **Stealth addresses** — every message lands at a fresh one-time address; two messages to the same person can't be clustered, and even someone holding your public meta-address can't tell a note is yours. Only your *view key* detects it.
+- **E2E encryption** — bodies are sealed with a key derived from the ECDH handshake; only the recipient decrypts, and tampering is caught (GCM).
+- **Graph-private credit** — the refundable anti-spam stake that gates a stranger's DM is accounted against the one-time address, never your identity.
+
+**Enforced** in the demo: E2E encryption, tamper-evidence, view-key-only detection, one-time-address unlinkability. **Modeled** (not on-curve): binding *spend authority* to the stealth address — a production build derives `P = P_spend + H(s)·G` with an ed25519 library — and the off-chain credit ledger. This is the gap the 2026 Solana privacy primitives (stealth addresses + confidential transfers) exist to close, and what content-only-encrypted messengers (SolChat, Dialect) don't cover.
+
 ## Notes for Claude Code
 
 - Everything lives in one file (`index.html`) — HTML, CSS, and JS.
