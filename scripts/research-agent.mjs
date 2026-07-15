@@ -149,8 +149,12 @@ export async function writeNarrative(d, env, fetchFn = fetch) {
       method: "POST",
       headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({
-        model: env.ANTHROPIC_MODEL || "claude-opus-4-8",
+        model: env.ANTHROPIC_MODEL || "claude-sonnet-5",
         max_tokens: 400,
+        // Simple summarization: keep thinking off so the whole 400-token budget
+        // goes to the intro. On Sonnet 5 adaptive thinking is ON by default when
+        // `thinking` is omitted, which would otherwise risk truncating the intro.
+        thinking: { type: "disabled" },
         messages: [{ role: "user", content: prompt }],
       }),
     });

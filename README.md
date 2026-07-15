@@ -158,7 +158,7 @@ node scripts/research-agent.mjs --out today.md   # also write the Markdown editi
 node scripts/research-agent.mjs                   # build + post to Telegram
 ```
 
-Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (scoreboard bot). Add `ANTHROPIC_API_KEY` as a secret to enable the Claude-written narrative (model defaults to `claude-opus-4-8`, override with `ANTHROPIC_MODEL`). The Claude call uses plain `fetch` — no SDK, keeping the repo dependency-free. The workflow runs daily at 13:00 UTC; without the required secrets it logs a hint and exits quietly.
+Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (scoreboard bot). Add `ANTHROPIC_API_KEY` as a secret to enable the Claude-written narrative (model defaults to `claude-sonnet-5`, override with `ANTHROPIC_MODEL`). The Claude call uses plain `fetch` — no SDK, keeping the repo dependency-free. The workflow runs daily at 13:00 UTC; without the required secrets it logs a hint and exits quietly.
 
 Options: `--dry`, `--out <file>`, `--trending <n>`, `--candidates <n>`, `--min-pnl <usd>`, `--min-winrate <pct>`, `--min-trades <n>`, `--consensus <n>` (min whales for consensus), `--top <n>` (rows per section).
 
