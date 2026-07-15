@@ -150,7 +150,7 @@ Dedup is time-windowed: keep `--lookback` equal to the cron interval so each buy
 - 🎯 **Where smart money is going** — the headline: tokens that *multiple* tracked whales are buying (consensus), not just one big trade
 - 🐋 **Smart money** — the top-ranked wallets by realized PnL / win rate (from the whale tracker)
 - 🔥 **Trending**, 📈 **biggest gainers**, 📉 **biggest losers** (Birdeye)
-- a written intro — **Claude writes it when `ANTHROPIC_API_KEY` is set; a deterministic template is used otherwise**, so the agent runs with or without an LLM key
+- a written intro via a **provider ladder — Gemini → Claude → deterministic template** — so the agent runs with whichever LLM key you have, or none
 
 ```bash
 node scripts/research-agent.mjs --dry            # build + print, don't post
@@ -158,7 +158,12 @@ node scripts/research-agent.mjs --out today.md   # also write the Markdown editi
 node scripts/research-agent.mjs                   # build + post to Telegram
 ```
 
-Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (scoreboard bot). Add `ANTHROPIC_API_KEY` as a secret to enable the Claude-written narrative (model defaults to `claude-sonnet-5`, override with `ANTHROPIC_MODEL`). The Claude call uses plain `fetch` — no SDK, keeping the repo dependency-free. The workflow runs daily at 13:00 UTC; without the required secrets it logs a hint and exits quietly.
+Setup reuses everything you already have: `HELIUS_API_KEY` + `BIRDEYE_API_KEY` (stats API) and `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (scoreboard bot). For the written intro, add **one** of:
+
+- `GEMINI_API_KEY` — preferred; model defaults to `gemini-2.5-flash-lite` (the cheapest tier, ~$0.10/$0.40 per 1M tokens), override with `GEMINI_MODEL` (e.g. `gemini-3.1-flash-lite` for the newer budget model).
+- `ANTHROPIC_API_KEY` — used only if no Gemini key; model defaults to `claude-sonnet-5`, override with `ANTHROPIC_MODEL`.
+
+With neither, the deterministic template writes the intro. Both LLM calls use plain `fetch` — no SDK, keeping the repo dependency-free — and disable "thinking" so the whole 400-token budget goes to the prose. The workflow runs daily at 13:00 UTC; without the required secrets it logs a hint and exits quietly.
 
 Options: `--dry`, `--out <file>`, `--trending <n>`, `--candidates <n>`, `--min-pnl <usd>`, `--min-winrate <pct>`, `--min-trades <n>`, `--consensus <n>` (min whales for consensus), `--top <n>` (rows per section).
 

@@ -5,18 +5,23 @@
 //   • biggest 24h gainers / losers    (Birdeye)
 //   • smart-money wallets + PnL        (whale-tracker: discover + score)
 //   • WHERE smart money is going       (consensus — tokens multiple whales bought)
-//   • a written intro                  (Claude when ANTHROPIC_API_KEY is set,
-//                                        deterministic template otherwise)
+//   • a written intro                  (LLM when a key is set — Gemini preferred,
+//                                        Claude as fallback — template otherwise)
 // …then posts the edition to Telegram. Runs from
 // .github/workflows/research-newsletter.yml on a daily schedule.
+//
+// The narrative uses a provider ladder: Gemini → Claude → deterministic
+// template. Whichever key is present is used; with none, the template runs.
 //
 // Env (GitHub Actions secrets):
 //   HELIUS_API_KEY      — smart-money discovery + scoring (required)
 //   BIRDEYE_API_KEY     — trending / gainers / losers / SOL price (required)
 //   TELEGRAM_BOT_TOKEN  — bot to post as (required unless --dry)
 //   TELEGRAM_CHAT_ID    — group/channel to post into (required unless --dry)
-//   ANTHROPIC_API_KEY   — optional; enables the Claude-written narrative
-//   ANTHROPIC_MODEL     — optional; defaults to claude-opus-4-8
+//   GEMINI_API_KEY      — optional; enables the Gemini-written narrative
+//   GEMINI_MODEL        — optional; defaults to gemini-2.5-flash-lite
+//   ANTHROPIC_API_KEY   — optional; Claude fallback if no Gemini key
+//   ANTHROPIC_MODEL     — optional; defaults to claude-sonnet-5
 //
 // Options:
 //   --dry            build + print the newsletter, don't post to Telegram
@@ -123,13 +128,7 @@ function templateIntro(d) {
   return parts.join(" ");
 }
 
-// Raw fetch to the Messages API — the whole repo calls every external service
-// (Telegram, Helius, Birdeye) with built-in fetch and ships no package.json, so
-// the Claude call follows the same zero-dependency pattern instead of the SDK.
-export async function writeNarrative(d, env, fetchFn = fetch) {
-  const key = env.ANTHROPIC_API_KEY;
-  if (!key) return { text: templateIntro(d), byClaude: false };
-
+function buildPrompt(d) {
   const facts = {
     solPriceUsd: round2(d.solPriceUsd),
     trending: d.trending.slice(0, 5).map(t => ({ symbol: t.symbol, change24h: round2(t.change24h) })),
@@ -138,32 +137,65 @@ export async function writeNarrative(d, env, fetchFn = fetch) {
     smartMoneyWallets: d.smart.length,
     consensusBuys: d.consensus.slice(0, 3).map(c => ({ token: sym(d, c.mint), whales: c.walletCount, usd: Math.round(c.totalUsd) })),
   };
-  const prompt =
+  return (
     "You are the analyst writing the intro for 'Patty Prix Daily', a Solana on-chain market briefing.\n" +
     "Write a punchy 2-3 sentence intro from ONLY the data below. Lead with the most interesting signal " +
     "(usually the smart-money consensus). No hype, no emojis, no financial advice, no invented numbers. " +
-    "Plain prose, no headings.\n\nDATA:\n" + JSON.stringify(facts, null, 2);
+    "Plain prose, no headings.\n\nDATA:\n" + JSON.stringify(facts, null, 2)
+  );
+}
 
-  try {
-    const res = await fetchFn("https://api.anthropic.com/v1/messages", {
+// Google Generative Language API (native REST). Plain fetch, no SDK — same
+// zero-dependency pattern the whole repo uses. thinkingBudget:0 keeps the cheap
+// Flash-Lite tier from spending tokens "thinking" on a simple summarization.
+async function callGemini(prompt, env, fetchFn) {
+  const model = env.GEMINI_MODEL || "gemini-2.5-flash-lite";
+  const res = await fetchFn(
+    `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
       method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01" },
+      headers: { "content-type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
       body: JSON.stringify({
-        model: env.ANTHROPIC_MODEL || "claude-sonnet-5",
-        max_tokens: 400,
-        // Simple summarization: keep thinking off so the whole 400-token budget
-        // goes to the intro. On Sonnet 5 adaptive thinking is ON by default when
-        // `thinking` is omitted, which would otherwise risk truncating the intro.
-        thinking: { type: "disabled" },
-        messages: [{ role: "user", content: prompt }],
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 400, temperature: 0.7, thinkingConfig: { thinkingBudget: 0 } },
       }),
     });
-    const json = await res.json();
-    const text = (json?.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
-    return text ? { text, byClaude: true } : { text: templateIntro(d), byClaude: false };
-  } catch {
-    return { text: templateIntro(d), byClaude: false };
+  const json = await res.json();
+  const text = (json?.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
+  return text || null;
+}
+
+// Anthropic Messages API (raw fetch). Kept as a fallback provider. thinking is
+// disabled so the 400-token budget goes entirely to the intro (Sonnet 5 runs
+// adaptive thinking by default when the field is omitted).
+async function callClaude(prompt, env, fetchFn) {
+  const res = await fetchFn("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({
+      model: env.ANTHROPIC_MODEL || "claude-sonnet-5",
+      max_tokens: 400,
+      thinking: { type: "disabled" },
+      messages: [{ role: "user", content: prompt }],
+    }),
+  });
+  const json = await res.json();
+  const text = (json?.content || []).filter(b => b.type === "text").map(b => b.text).join("").trim();
+  return text || null;
+}
+
+// Provider ladder: Gemini (if GEMINI_API_KEY) → Claude (if ANTHROPIC_API_KEY) →
+// deterministic template. Each network call is best-effort; any failure falls
+// through to the next option so the newsletter always ships. Returns the text
+// and which source produced it.
+export async function writeNarrative(d, env, fetchFn = fetch) {
+  const prompt = buildPrompt(d);
+  if (env.GEMINI_API_KEY) {
+    try { const t = await callGemini(prompt, env, fetchFn); if (t) return { text: t, source: "gemini" }; } catch { /* fall through */ }
   }
+  if (env.ANTHROPIC_API_KEY) {
+    try { const t = await callClaude(prompt, env, fetchFn); if (t) return { text: t, source: "claude" }; } catch { /* fall through */ }
+  }
+  return { text: templateIntro(d), source: "template" };
 }
 
 /* ================================================================
@@ -322,7 +354,7 @@ export async function main(argv = process.argv.slice(2), env = process.env, fetc
   const d = await gather(cfg, env, fetchFn, nowDate);
   const narr = await writeNarrative(d, env, fetchFn);
   d.narrative = narr.text;
-  console.error(`Narrative: ${narr.byClaude ? "Claude-written" : "template fallback"}`);
+  console.error(`Narrative source: ${narr.source}`);
 
   const markdown = buildNewsletter(d, cfg.top);
   if (cfg.out) { writeFileSync(cfg.out, markdown); console.error(`Wrote ${cfg.out}`); }
