@@ -7,9 +7,9 @@
 <meta name="description" content="Launched by jaredfromsubway.eth — the world's highest-earning MEV bot owner. Get in or get sandwiched. Live extraction stats, sandwich targets and the airdrop log." />
 <meta name="theme-color" content="#030905" />
 <meta name="color-scheme" content="dark" />
-<link rel="canonical" href="https://pattyprix.xyz/" />
-<meta property="og:url" content="https://pattyprix.xyz/" />
-<meta property="og:image" content="https://pattyprix.xyz/og-jared.png" />
+<link rel="canonical" href="https://jaredfromsubway.xyz/" />
+<meta property="og:url" content="https://jaredfromsubway.xyz/" />
+<meta property="og:image" content="https://jaredfromsubway.xyz/og-jared.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:title" content="$JARED — Jared From Subway 🥪" />
@@ -18,12 +18,12 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="$JARED — Jared From Subway 🥪" />
 <meta name="twitter:description" content="The MEV extractor. Get in or get sandwiched — the hacker is printing." />
-<meta name="twitter:image" content="https://pattyprix.xyz/og-jared.png" />
+<meta name="twitter:image" content="https://jaredfromsubway.xyz/og-jared.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%A5%AA%3C/text%3E%3C/svg%3E" />
 <script>
   // Vercel Web Analytics + visit beacon — only on Vercel-served
   // domains (neither exists on the GitHub Pages mirror).
-  if (/(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname)) {
+  if (/(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname)) {
     var va = document.createElement("script");
     va.defer = true;
     va.src = "/_vercel/insights/script.js";
@@ -669,13 +669,6 @@
     </div>
   </div>
 
-  <div class="title-tag"><h2>SANDWICH TARGETS 🥪</h2></div>
-  <p class="tagline">every token below sits <b>between two slices</b> — watch $JARED close the gap</p>
-
-  <div id="races">
-    <div class="skeleton">scanning the mempool… 👨‍💻</div>
-  </div>
-
   <div class="section-tag" id="airdropTag" hidden>AIRDROP_LOG 🪂</div>
   <div class="stash" id="airdrop" hidden>
     <div class="tile">
@@ -721,23 +714,12 @@
 /* ================================================================
    CONFIG — paste your token addresses here
    ================================================================ */
+// on any domain wired to the Vercel project (or the mirror), API calls go
+// same-origin; anywhere else they fall back to the canonical domain
+const ON_SITE = /(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname);
 const CONFIG = {
-  // Your token (the racer on every track)
+  // Your token
   challenger: "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump",
-
-  // The tokens it's racing to flip (any number, in any order —
-  // the page auto-sorts by who's closest to being sandwiched)
-  rivals: [
-    "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
-    "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
-    "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
-    "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
-    "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
-    "4U4U8oXwDyVXGeTffMXds4NAgBgLFwq3wNvTCRTSpump",
-    "9E2Q4KKxLS5Y4bu6RKvjg5wQ2kzaLkiVsMt7zwMZpump",
-    "a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump",
-    "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
-  ],
 
   // How often to refresh prices (milliseconds). 10000 = every 10s.
   pollIntervalMs: 10000,
@@ -745,7 +727,7 @@ const CONFIG = {
   // Stats API — Vercel serverless proxy (api/stats.mjs) that holds the
   // Helius key server-side. Powers the HOLDERS tile and the Airdrop Log.
   // Leave "" to hide those sections.
-  statsApi: "https://pattyprix.xyz/api/stats",
+  statsApi: ON_SITE ? "/api/stats" : "https://jaredfromsubway.xyz/api/stats",
 
   // Wallet the airdrops are sent from — powers the Airdrop Log
   // section below the targets. Leave "" to hide the section.
@@ -790,10 +772,7 @@ const CONFIG = {
 // endpoint returns a single pair per token and can pick a stale
 // graduated bonding-curve listing over the live PumpSwap pool.
 const API = "https://api.dexscreener.com/token-pairs/v1/solana/";
-const racesEl = document.getElementById("races");
 const updatedEl = document.getElementById("updated");
-let firstLoad = true;
-let lastProgress = {}; // address -> pct, to trigger vroom animation
 
 function fmtUsd(n) {
   if (n == null || isNaN(n)) return "—";
@@ -803,24 +782,7 @@ function fmtUsd(n) {
   return "$" + n.toFixed(0);
 }
 
-function fmtMult(x) {
-  if (x >= 1000) return Math.round(x).toLocaleString() + "x";
-  if (x >= 100) return Math.round(x) + "x";
-  if (x >= 10) return x.toFixed(0) + "x";
-  return x.toFixed(1) + "x";
-}
-
-function statusLine(pct, timesBigger) {
-  if (pct >= 100) return "<b>SANDWICHED.</b> $JARED is now " + fmtMult(timesBigger) + " their size 🥪";
-  if (pct >= 75)  return pct.toFixed(2) + "% extracted — bread is toasting, so close 🔥";
-  if (pct >= 50)  return pct.toFixed(2) + "% extracted — past halfway, bundle it 📦";
-  if (pct >= 25)  return pct.toFixed(2) + "% extracted — the bot has their scent 👨‍💻";
-  if (pct >= 10)  return pct.toFixed(2) + "% extracted — order placed, filling pending 🥪";
-  if (pct >= 1)   return pct.toFixed(2) + "% extracted — the bot never sleeps. neither should you";
-  return pct.toFixed(2) + "% extracted — generational patience required. WAGMI. 🧘";
-}
-
-// Pick each token's PumpSwap pool (most liquid one if several);
+// Pick the token's PumpSwap pool (most liquid one if several);
 // fall back to the most liquid pool on any DEX only when a token
 // has no PumpSwap pool at all.
 function pairScore(p) {
@@ -1097,165 +1059,22 @@ async function refreshAth() {
   } catch { /* keep the tile hidden */ }
 }
 
-function buildCard(rivalAddr) {
-  const el = document.createElement("div");
-  el.className = "race-card";
-  el.dataset.addr = rivalAddr;
-  el.innerHTML = `
-    <div class="card-top">
-      <span class="flag">🥪</span>
-      <span class="rival-name">—</span>
-      <span class="rival-symbol"></span>
-      <span class="multiplier">—</span>
-    </div>
-    <div class="track">
-      <div class="track-fill" style="width:0%"></div>
-      <img class="car" alt="extractor" style="left:0%" />
-      <div class="finish">
-        <img alt="" hidden />
-        <span class="target">—</span>
-      </div>
-    </div>
-    <div class="status">loading…</div>
-    <div class="hrace" hidden>
-      <div class="htrack"><div class="htrack-fill" style="width:0%"></div></div>
-      <div class="hstat"></div>
-    </div>`;
-  return el;
-}
-
 async function refresh() {
   try {
-    const all = [CONFIG.challenger, ...CONFIG.rivals];
-    // one pools request per token, in parallel
-    const results = await Promise.all(all.map(a =>
-      fetch(API + a).then(r => (r.ok ? r.json() : [])).catch(() => [])
-    ));
-    const pairs = results.flat();
+    const pairs = await fetch(API + CONFIG.challenger).then(r => (r.ok ? r.json() : [])).catch(() => []);
     if (!pairs.length) throw new Error("DexScreener unavailable");
-    const byAddr = bestPairs(pairs, all);
+    const byAddr = bestPairs(pairs, [CONFIG.challenger]);
 
     const me = tokenData(byAddr[CONFIG.challenger.toLowerCase()]);
-    if (!me || me.mcap == null) throw new Error("Challenger token not found — check the address in CONFIG.");
+    if (!me || me.mcap == null) throw new Error("Token not found — check the address in CONFIG.");
     challengerPairAddr = byAddr[CONFIG.challenger.toLowerCase()]?.pairAddress || challengerPairAddr;
 
     // ticker + hero + stash tiles
     updateHero(me);
 
-    // build cards once, entering with a small stagger
-    if (firstLoad) {
-      racesEl.innerHTML = "";
-      CONFIG.rivals.forEach((a, i) => {
-        const card = buildCard(a);
-        card.classList.add("pop");
-        card.style.animationDelay = (i * 70) + "ms";
-        card.addEventListener("animationend", () => {
-          card.classList.remove("pop");
-          card.style.animationDelay = "";
-        }, { once: true });
-        racesEl.appendChild(card);
-      });
-      firstLoad = false;
-    }
-
-    // update each card
-    const rows = [];
-    for (const addr of CONFIG.rivals) {
-      const rival = tokenData(byAddr[addr.toLowerCase()]);
-      const card = racesEl.querySelector(`[data-addr="${addr}"]`);
-      if (!card) continue;
-
-      if (!rival || rival.mcap == null) {
-        card.querySelector(".status").textContent = "Token not found — check this address in CONFIG.";
-        rows.push({ card, pct: -1 }); // sink unknown tokens below live races
-        continue;
-      }
-
-      const pct = Math.min((me.mcap / rival.mcap) * 100, 100);
-      const mult = rival.mcap / me.mcap;
-      rows.push({ card, pct });
-
-      card.querySelector(".rival-name").textContent = rival.name;
-      card.querySelector(".rival-symbol").textContent = "$" + rival.symbol;
-      card.querySelector(".target").textContent = fmtUsd(rival.mcap);
-
-      const finishImg = card.querySelector(".finish img");
-      if (rival.icon) { finishImg.src = rival.icon; finishImg.hidden = false; }
-
-      const car = card.querySelector(".car");
-      if (me.icon && car.src !== me.icon) car.src = me.icon;
-
-      // keep the car visible: clamp visual position between 5% and 92%
-      const visual = Math.max(5, Math.min(pct, 92));
-      card.querySelector(".track-fill").style.width = visual + "%";
-      car.style.left = visual + "%";
-
-      const multEl = card.querySelector(".multiplier");
-      if (pct >= 100) {
-        multEl.textContent = "SANDWICHED 🥪";
-        multEl.classList.add("done");
-        card.classList.add("flipped");
-      } else {
-        // a rival can out-grow us again — drop the highlight if so
-        multEl.textContent = fmtMult(mult) + " to go";
-        multEl.classList.remove("done");
-        card.classList.remove("flipped");
-      }
-
-      card.querySelector(".status").innerHTML = statusLine(pct, me.mcap / rival.mcap);
-
-      // little vroom when progress moves
-      const prev = lastProgress[addr];
-      if (prev != null && Math.abs(pct - prev) > 0.001) {
-        car.classList.remove("vroom"); void car.offsetWidth; car.classList.add("vroom");
-        multEl.classList.add("bump");
-        setTimeout(() => multEl.classList.remove("bump"), 300);
-      }
-      lastProgress[addr] = pct;
-    }
-
-    // sort: closest to the flip on top
-    rows.sort((a, b) => b.pct - a.pct).forEach(r => racesEl.appendChild(r.card));
-
     updatedEl.textContent = "live via DexScreener · updated " + new Date().toLocaleTimeString();
   } catch (err) {
-    if (firstLoad) {
-      racesEl.innerHTML = `<div class="skeleton">couldn't load target data 😵<br><small>${err.message}</small></div>`;
-    }
     updatedEl.textContent = "last update failed — retrying…";
-  }
-}
-
-// The holder race: $JARED's holder count vs each rival's (Birdeye
-// token_overview via the stats proxy). Fills the slim second track in
-// each target card; a card's strip hides itself if its count is missing.
-async function refreshHolderRace() {
-  if (!CONFIG.statsApi) return;
-  const all = [CONFIG.challenger, ...CONFIG.rivals];
-  const counts = {};
-  // sequential on purpose: Birdeye's free tier rate-limits ~1 req/s,
-  // so parallel cold-cache lookups get 429s for most tokens
-  for (const a of all) {
-    try {
-      const d = await statsFetch({ q: "holderCount", token: a });
-      if (d?.holders > 0) counts[a] = d.holders;
-    } catch { /* leave missing */ }
-    await new Promise(r => setTimeout(r, 350));
-  }
-  const mine = counts[CONFIG.challenger];
-  if (!mine) return;
-  for (const addr of CONFIG.rivals) {
-    const card = racesEl.querySelector(`[data-addr="${addr}"]`);
-    const el = card && card.querySelector(".hrace");
-    if (!el) continue;
-    const theirs = counts[addr];
-    if (!theirs) { el.hidden = true; continue; }
-    const pct = Math.min(mine / theirs * 100, 100);
-    el.querySelector(".htrack-fill").style.width = Math.max(3, pct) + "%";
-    el.querySelector(".hstat").innerHTML = pct >= 100
-      ? `🤝 holder race: <b>SANDWICHED 🥪</b> — ${mine.toLocaleString()} vs ${theirs.toLocaleString()}`
-      : `🤝 holder race: <b>${mine.toLocaleString()}</b> vs ${theirs.toLocaleString()} · ${pct.toFixed(1)}% there`;
-    el.hidden = false;
   }
 }
 
@@ -1264,7 +1083,6 @@ async function refreshHolderRace() {
 async function refreshExtras() {
   refreshWhale();
   refreshAth();
-  refreshHolderRace();
   if (!CONFIG.statsApi) return;
   try {
     const scan = await scanHolders();

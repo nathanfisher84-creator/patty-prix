@@ -161,7 +161,7 @@ const LANES = 3;
 const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
 
 // visit + run beacons (Vercel-served domains only; localhost/mirror skip)
-const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname);
 if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
 const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
 
@@ -169,7 +169,7 @@ const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { me
 // served. A random claim token lives in this browser; the server keeps
 // its hash so nobody else can post under the same name. The GitHub
 // Pages mirror talks to the live API cross-origin.
-const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://pattyprix.xyz/api/leaderboard";
+const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://jaredfromsubway.xyz/api/leaderboard";
 const NAME_RE = /^[A-Za-z0-9 _.\-]{3,30}$/;
 const getName = () => {
   const n = localStorage.getItem("dash_name") || "";
@@ -769,7 +769,7 @@ function scoreCard() {
 async function shareScore() {
   const txt = "MEMPOOL RUN ⚡ " + (S.finalScore || 0).toLocaleString() +
     " pts (🔥 " + S.streak + " streak) — think you can out-extract Jared? " +
-    "https://pattyprix.xyz/game.html $JARED";
+    "https://jaredfromsubway.xyz/game.html $JARED";
   try {
     const blob = await new Promise((res) => scoreCard().toBlob(res, "image/png"));
     const file = new File([blob], "mempool-run-score.png", { type: "image/png" });

@@ -138,8 +138,8 @@
 
 <script>
 "use strict";
-const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
-const API = TRACKED_HOST ? "/api/generate" : "https://pattyprix.xyz/api/generate";
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname);
+const API = TRACKED_HOST ? "/api/generate" : "https://jaredfromsubway.xyz/api/generate";
 
 const el = (id) => document.getElementById(id);
 let lastImage = null;
