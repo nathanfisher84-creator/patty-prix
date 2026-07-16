@@ -33,6 +33,8 @@ const MINT2 = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 const backend = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [{ lp: { lpLockedPct: 100 } }] });
+  if (url.includes("tokens.jup.ag")) return j({ tags: ["verified"] });
+  if (url.includes("gopluslabs.io")) return j({ result: {} });
   if (url.includes("token-boosts")) return j([
     { chainId: "solana", tokenAddress: MINT }, { chainId: "solana", tokenAddress: MINT2 },
   ]);
@@ -95,6 +97,7 @@ try {
   check("Buy on Jupiter link points to jup.ag for the token", buy.includes("jup.ag") && buy.includes(MINT));
   check("Buy link carries the Jupiter referral (earns fees)", buy.includes("referrer=") && buy.includes("feeBps="));
   check("disclaimer visible", /Not financial advice/i.test(await page.textContent(".disc")));
+  check("cross-checked line shows external scanners", /Cross-checked:/.test(await page.textContent("#out")) && /RugCheck/.test(await page.textContent("#out")));
 
   // --- Watchlist: add the scanned token, confirm it persists + counter updates.
   await page.click("#watchBtn");

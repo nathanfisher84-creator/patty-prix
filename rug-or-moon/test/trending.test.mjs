@@ -16,13 +16,25 @@ const M3 = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 // Mocked backend: trending source (birdeye/dexscreener) + per-token scan calls.
 // `profiles` maps mint → { liq, mintAuth, holders } to make some tokens clean
 // and some rugs.
-const backend = ({ useBirdeye = false, profiles = {} } = {}) => async (url, opts) => {
+const backend = ({ useBirdeye = false, geckoEmpty = false, profiles = {} } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
+
+  // External per-token cross-check calls (scanToken hits these) — neutral stubs.
+  if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [] });
+  if (url.includes("tokens.jup.ag")) return j({ tags: [] });
+  if (url.includes("gopluslabs.io")) return j({ result: {} });
 
   if (url.includes("token_trending")) {
     return j({ data: { tokens: [
       { address: M1, rank: 1 }, { address: M2, rank: 2 }, { address: M3, rank: 3 },
     ] } });
+  }
+  if (url.includes("trending_pools")) {
+    return j({ data: geckoEmpty ? [] : [
+      { relationships: { base_token: { data: { id: "solana_" + M1 } } } },
+      { relationships: { base_token: { data: { id: "solana_" + M2 } } } },
+      { relationships: { base_token: { data: { id: "solana_" + M3 } } } },
+    ] });
   }
   if (url.includes("token-boosts")) {
     return j([
@@ -71,9 +83,14 @@ check("returns a scored token per trending mint", be.tokens.length === 3, `got $
 check("each token carries a safety score", be.tokens.every(t => typeof t.safety === "number"));
 check("each token carries a trending rank", be.tokens.every(t => typeof t.trendingRank === "number"));
 
-console.log("\n2. DexScreener fallback (no Birdeye key)");
-const ds = await scanTrending({ heliusKey: "k", fetchFn: backend(), smartMoney: parseSmartMoney([]) });
-check("source is dexscreener", ds.source === "dexscreener");
+console.log("\n2. GeckoTerminal organic trending (no Birdeye key)");
+const gt = await scanTrending({ heliusKey: "k", fetchFn: backend(), smartMoney: parseSmartMoney([]) });
+check("source is geckoterminal (not paid boosts)", gt.source === "geckoterminal", `source ${gt.source}`);
+check("parses base-token mints (3)", gt.tokens.length === 3, `got ${gt.tokens.length}`);
+
+console.log("\n2b. DexScreener boosts as last resort (Gecko empty)");
+const ds = await scanTrending({ heliusKey: "k", fetchFn: backend({ geckoEmpty: true }), smartMoney: parseSmartMoney([]) });
+check("falls back to dexscreener", ds.source === "dexscreener", `source ${ds.source}`);
 check("dedupes + filters to Solana (3 unique mints)", ds.tokens.length === 3, `got ${ds.tokens.length}`);
 
 console.log("\n3. Board sort — gems above rugs");

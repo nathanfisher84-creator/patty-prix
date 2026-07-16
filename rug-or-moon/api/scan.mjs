@@ -39,7 +39,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
       }
     : null;
 
-  const [pairsRes, info, largest, lpReport] = await Promise.all([
+  const [pairsRes, info, largest, lpReport, jupTok, goplusRes] = await Promise.all([
     fetchFn("https://api.dexscreener.com/token-pairs/v1/solana/" + mint)
       .then(r => (r && r.ok === false ? [] : r.json())).catch(() => []),
     rpc ? rpc("getAccountInfo", [mint, { encoding: "jsonParsed" }]).catch(() => null) : null,
@@ -48,11 +48,19 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     // is the liquidity locked/burned so the dev can't pull it? Best-effort.
     fetchFn("https://api.rugcheck.xyz/v1/tokens/" + mint + "/report")
       .then(r => (r && r.ok === false ? null : r.json())).catch(() => null),
+    // Jupiter Tokens (keyless) — is it on Jupiter's verified list? Legitimacy signal.
+    fetchFn("https://tokens.jup.ag/token/" + mint)
+      .then(r => (r && r.ok === false ? null : r.json())).catch(() => null),
+    // GoPlus (keyless) — an independent second security opinion (cross-check).
+    fetchFn("https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=" + mint)
+      .then(r => (r && r.ok === false ? null : r.json())).catch(() => null),
   ]);
 
   const market = bestMarket(pairsRes);
   const mintInfo = parseMintInfo(info);
   const lp = parseLpLock(lpReport);
+  const jup = parseJupiter(jupTok);
+  const goplus = parseGoPlus(goplusRes, mint);
 
   // Resolve the OWNERS of the top token accounts (always — used for both holder
   // classification and smart-money overlap). Best-effort: on failure we degrade.
@@ -85,6 +93,17 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     smartMoneyLabels: sm.labels,
     lpLockedPct: lp.lpLockedPct, // null when unknown
     rugged: lp.rugged,
+    jupVerified: jup.verified,
+    goplusFlags: goplus?.flags || null,
+    goplusTrusted: goplus?.trusted || false,
+  };
+
+  // Which independent scanners we could reach + what they said (for the UI's
+  // "cross-checked" trust line). External signals can only ADD caution.
+  const sources = {
+    rugcheck: lpReport ? "ok" : "na",
+    goplus: goplus ? (goplus.flags.length ? "flag" : "ok") : "na",
+    jupiter: jup.verified ? "verified" : (jupTok ? "listed" : "na"),
   };
 
   const result = scoreToken(raw);
@@ -94,6 +113,8 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     smartMoneyHolders: sm.count,
     smartMoneyReliable,
     lpLockedPct: lp.lpLockedPct,
+    jupVerified: jup.verified,
+    sources,
     market: market && {
       priceUsd: market.priceUsd, liquidityUsd: market.liquidityUsd, volume24h: market.volume24h,
       mcap: market.mcap, dexId: market.dexId, symbol: market.symbol, name: market.name, icon: market.icon,
@@ -142,6 +163,33 @@ function parseLpLock(report) {
     if (typeof p === "number" && isFinite(p)) pct = pct == null ? p : Math.max(pct, p);
   }
   return { lpLockedPct: pct, rugged: report.rugged === true };
+}
+
+// Jupiter token entry → is it on the verified/strict list? Absence is NOT a
+// negative (many legit new tokens aren't listed yet), only presence is a plus.
+function parseJupiter(t) {
+  if (!t || typeof t !== "object") return { verified: null };
+  const tags = Array.isArray(t.tags) ? t.tags : [];
+  const verified = t.isVerified === true || t.verified === true || tags.some(x => /^(verified|strict)$/i.test(String(x)));
+  return { verified: !!verified };
+}
+
+// GoPlus Solana token-security → a compact list of danger signals it reports, as
+// an independent second opinion. Strictly additive (can only add caution). Coded
+// defensively to GoPlus's documented shape; sanity-check against a real token
+// after deploy. Returns null when nothing parseable came back.
+function parseGoPlus(res, mint) {
+  const map = res?.result;
+  const r = (map && (map[mint] || Object.values(map)[0])) || null;
+  if (!r || typeof r !== "object") return null;
+  const on = v => { const s = v && typeof v === "object" ? v.status : v; return s === "1" || s === 1 || s === true; };
+  const flags = [];
+  if (on(r.mintable)) flags.push("mint authority active");
+  if (on(r.freezable)) flags.push("freeze authority active");
+  if (on(r.non_transferable)) flags.push("non-transferable (can't sell)");
+  if (Array.isArray(r.transfer_hook) ? r.transfer_hook.length : on(r.transfer_hook)) flags.push("transfer hook");
+  if (on(r.closable)) flags.push("mint can be closed");
+  return { flags, trusted: on(r.trusted_token) };
 }
 
 function parseMintInfo(info) {

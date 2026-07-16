@@ -90,6 +90,16 @@ export function scoreToken(raw = {}) {
   }
   if (raw.rugged) { add("red", "rugged", "RugCheck has flagged this token as already rugged"); cap("high-risk"); }
 
+  // 2d) Independent cross-checks — Jupiter verified list + GoPlus second opinion.
+  // These can only ADD caution (or reassurance), never certify safety.
+  if (raw.jupVerified) add("green", "jup-verified", "On Jupiter's verified token list");
+  if (Array.isArray(raw.goplusFlags) && raw.goplusFlags.length) {
+    add("yellow", "goplus", `Second opinion (GoPlus) also flags: ${raw.goplusFlags.join(", ")}`);
+    cap("caution");
+  } else if (raw.goplusTrusted) {
+    add("green", "goplus", "GoPlus lists this as a trusted token");
+  }
+
   // 3) Holder concentration — how much do non-pool, non-burn OWNERS control?
   const conc = concentration(raw);
   if (conc != null) {

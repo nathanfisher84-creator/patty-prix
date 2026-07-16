@@ -15,11 +15,13 @@ const RAYDIUM = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j"; // recognized poo
 // A mocked backend: DexScreener pairs + Helius getAccountInfo / getTokenLargestAccounts
 // / getMultipleAccounts (owner resolution). `owners` maps token-account → owner.
 // `ext` injects Token-2022 extensions.
-const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged } = {}) => async (url, opts) => {
+const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) {
     return j({ rugged: !!rugged, markets: lpLockedPct != null ? [{ lp: { lpLockedPct } }] : [] });
   }
+  if (url.includes("tokens.jup.ag")) return j({ tags: jupVerified ? ["verified"] : [] });
+  if (url.includes("gopluslabs.io")) return j({ result: { [MINT]: goplus || {} } });
   if (url.includes("dexscreener.com")) {
     return j([{
       dexId: "raydium", priceUsd: "0.0000021", marketCap: 2_100_000,
@@ -108,10 +110,23 @@ check("locked LP token still clean", locked.tier === "clean", `tier ${locked.tie
 const ruggedTok = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, rugged: true }) });
 check("RugCheck 'rugged' forces high-risk", ruggedTok.tier === "high-risk", `tier ${ruggedTok.tier}`);
 
+console.log("\n5d. Cross-checks — Jupiter verified + GoPlus second opinion");
+const verified = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, jupVerified: true }) });
+check("Jupiter-verified → green flag", verified.flags.some(f => f.level === "green" && /verified token list/.test(f.text)));
+check("sources report jupiter verified", verified.sources.jupiter === "verified");
+const gp = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, goplus: { non_transferable: "1" } }) });
+check("GoPlus danger → yellow second-opinion flag", gp.flags.some(f => f.level === "yellow" && /GoPlus/.test(f.text)));
+check("GoPlus danger caps tier (not clean)", gp.tier !== "clean", `tier ${gp.tier}`);
+check("sources mark goplus as flag", gp.sources.goplus === "flag");
+const gpTrust = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, goplus: { trusted_token: "1" } }) });
+check("GoPlus trusted → green flag, stays clean", gpTrust.flags.some(f => f.level === "green" && /trusted token/.test(f.text)) && gpTrust.tier === "clean");
+
 console.log("\n6. Honeypot trading shape — many buys, ~0 sells → not bullish alpha");
 const hp = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [] });
+  if (url.includes("tokens.jup.ag")) return j({ tags: [] });
+  if (url.includes("gopluslabs.io")) return j({ result: {} });
   if (url.includes("dexscreener.com")) return j([{
     dexId: "raydium", priceUsd: "0.1", marketCap: 1e6, pairCreatedAt: Date.now() - 40 * 86_400_000,
     liquidity: { usd: 60_000 }, volume: { h24: 80_000 }, txns: { h24: { buys: 500, sells: 2 } },

@@ -39,16 +39,20 @@ signals** (smart money holding, buy/sell momentum) — the "should I ape?" check
   market data) + Solana RPC via Helius (mint authorities + top holders,
   server-side so the key never reaches the client) and returns a scored result.
 - **`api/trending.mjs`** — gathers today's trending mints (Birdeye if
-  `BIRDEYE_API_KEY` is set, else DexScreener's keyless boosted list) and runs each
-  through the same `scanToken()` pipeline, returning a gems→rugs board.
+  `BIRDEYE_API_KEY` is set → **GeckoTerminal** organic volume-trending, keyless →
+  DexScreener boosts as last resort) and runs each through the same `scanToken()`
+  pipeline, returning a gems→rugs board.
 - **`api/share.mjs`** — per-token Open Graph page so a pasted scan link unfurls
   the verdict in chat apps, then redirects humans into the app.
-- **LP-lock via RugCheck** — `api/scan.mjs` also calls RugCheck's keyless public
-  API (`api.rugcheck.xyz`) for the one thing we can't compute cheaply ourselves:
-  what % of the liquidity is locked/burned. Best-effort — if it's unavailable, no
-  signal is invented. Coded to RugCheck's documented schema; **sanity-check the
-  `lpLockedPct` against one real token after deploy** (it couldn't be verified
-  against live pools in the build sandbox).
+- **Keyless cross-checks** — `api/scan.mjs` fans out (in parallel, degrading
+  silently) to independent public APIs so the verdict is harder to fool:
+  **RugCheck** (`api.rugcheck.xyz`) for LP locked/burned % + rugged status;
+  **GoPlus** (`api.gopluslabs.io`) as a second security opinion; **Jupiter**
+  (`tokens.jup.ag`) for a verified-list legitimacy flag. External signals can
+  only ADD caution or reassurance, never certify safety. The UI shows a
+  "Cross-checked: …" line. Coded to each API's documented schema; **sanity-check
+  `lpLockedPct` and the GoPlus fields against one real token after deploy** (they
+  couldn't be verified against live data in the build sandbox).
 - **`scoring.mjs`** — the pure, tested scoring engine (shared by the API + tests).
 - **`watchlist.mjs`** — the pure, tested diff/alert + freemium logic (what counts
   as an alert-worthy change between two scans). The UI mirrors it client-side.

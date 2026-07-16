@@ -290,6 +290,11 @@ function renderScan(d, token){
   if (w.length) linkParts.push("🔗 website");
   soc.slice(0,3).forEach(t=>linkParts.push(esc(t)));
   const links = `<p class="links">${linkParts.length?linkParts.join(" · "):`<span class="nolink">No website or socials listed</span>`} · <a href="https://solscan.io/token/${encodeURIComponent(token)}" target="_blank" rel="noopener">Verify on Solscan ↗</a></p>`;
+  // Cross-checked against independent scanners — a trust signal.
+  const src = d.sources||{};
+  const chip = (name,st)=> !st||st==="na" ? "" : `${name} ${st==="flag"?"⚠":st==="verified"?"✓verified":"✓"}`;
+  const srcLine = [chip("RugCheck",src.rugcheck),chip("GoPlus",src.goplus),chip("Jupiter",src.jupiter)].filter(Boolean).join(" · ");
+  const xcheck = srcLine ? `<p class="links">Cross-checked: ${srcLine}</p>` : "";
   out.innerHTML = `
     <div class="card">
       <div class="verdict">
@@ -306,6 +311,7 @@ function renderScan(d, token){
         <div>Mkt Cap<b>${usd(m.mcap)}</b></div>
       </div>`:""}
       ${links}
+      ${xcheck}
       ${!d.dataComplete?`<p class="warn">⚠️ Couldn't read the on-chain authorities (no RPC key or a temporary RPC error) — this verdict is capped at "caution" until they can be verified.</p>`:""}
       <ul class="flags">${flags||`<li class="yellow"><span class="dot"></span><span>Not enough data to assess.</span></li>`}</ul>
       <div class="alpha">
