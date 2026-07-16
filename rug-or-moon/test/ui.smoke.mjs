@@ -99,19 +99,14 @@ try {
   check("disclaimer visible", /Not financial advice/i.test(await page.textContent(".disc")));
   check("cross-checked line shows external scanners", /Cross-checked:/.test(await page.textContent("#out")) && /RugCheck/.test(await page.textContent("#out")));
 
-  // --- Watchlist: add the scanned token, confirm it persists + counter updates.
-  await page.click("#watchBtn");
-  await page.waitForSelector("#watchBtn.on", { timeout: 4000 });
-  check("watch button flips to 'Watching'", /Watching/.test(await page.textContent("#watchBtn")));
-  check("watchlist counter shows (1)", (await page.textContent("#wcount")).includes("1"));
-  const stored = await page.evaluate(() => localStorage.getItem("rom.watch.v1"));
-  check("token persisted to localStorage", stored.includes(MINT));
-
-  // --- Watchlist tab renders the saved token.
-  await page.click('.tabs button[data-tab="watch"]');
-  await page.waitForSelector("#tab-watch .row", { timeout: 4000 });
-  check("watchlist tab lists the saved token", (await page.textContent("#tab-watch")).includes("BONK"));
-  check("quota line shows 1/5", /1\/5/.test(await page.textContent("#tab-watch")));
+  // --- Funnel (web mode): watchlist is gated → drives to the Seeker store.
+  check("web funnel banner points to the Seeker store", /Coming soon on|Seeker/i.test(await page.textContent(".funnel")));
+  check("web watch button reads 'Watch on Seeker'", /on Seeker/i.test(await page.textContent("#watchBtn")));
+  await page.click("#watchBtn"); // web → routes to the funnel gate
+  await page.waitForSelector("#tab-watch .lock", { timeout: 4000 });
+  check("watch button routes to the funnel gate (not a save)", (await page.$("#tab-watch .lock")) != null);
+  check("gate pitches the Seeker exclusive", /Seeker exclusive/i.test(await page.textContent("#tab-watch")));
+  check("nothing saved to localStorage on web", !(await page.evaluate(() => localStorage.getItem("rom.watch.v1"))));
 
   // --- Trending tab auto-scans and lists rows (gems→rugs board).
   await page.click('.tabs button[data-tab="trending"]');
@@ -135,15 +130,22 @@ try {
   });
   check("verdict card PNG generated (non-empty)", cardBytes > 1000, `${cardBytes} bytes`);
 
-  // --- Seeker Edition: launching at /?edition=seeker unlocks unlimited watching.
+  // --- Seeker Edition: the watchlist actually works (the exclusive), unlimited.
   const seeker = await browser.newContext();
   const sp = await seeker.newPage({ viewport: { width: 390, height: 780 } });
-  await sp.goto(base + "/?edition=seeker", { waitUntil: "networkidle" });
+  await sp.goto(base + "/?edition=seeker&token=" + MINT, { waitUntil: "networkidle" });
+  await sp.waitForSelector(".verdict h2", { timeout: 8000 });
   check("Seeker Edition badge shows in the header", /Seeker Edition/.test(await sp.textContent("header .tag")));
+  check("no funnel banner in the Seeker edition", (await sp.$(".funnel")) == null);
+  await sp.click("#watchBtn"); // in Seeker this actually saves
+  await sp.waitForSelector("#watchBtn.on", { timeout: 4000 });
+  check("Seeker: watch button saves ('Watching')", /Watching/.test(await sp.textContent("#watchBtn")));
+  const sStored = await sp.evaluate(() => localStorage.getItem("rom.watch.v1"));
+  check("Seeker: token persisted", sStored && sStored.includes(MINT));
   await sp.click('.tabs button[data-tab="watch"]');
-  await sp.waitForSelector("#tab-watch .quota", { timeout: 4000 });
-  const sQuota = await sp.textContent("#tab-watch .quota");
-  check("Seeker Edition shows unlimited (no 5-token cap)", /unlimited/i.test(sQuota) && !/\/5/.test(sQuota));
+  await sp.waitForSelector("#tab-watch .row", { timeout: 4000 });
+  check("Seeker: watchlist lists the saved token", (await sp.textContent("#tab-watch")).includes("BONK"));
+  check("Seeker: unlimited (no 5-token cap)", /unlimited/i.test(await sp.textContent("#tab-watch .quota")));
   check("Seeker flag latches in localStorage", (await sp.evaluate(() => localStorage.getItem("rom.edition"))) === "seeker");
   await seeker.close();
 } finally {

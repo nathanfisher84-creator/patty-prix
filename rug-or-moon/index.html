@@ -65,6 +65,22 @@
     background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:11px 16px;border-radius:12px;font-size:13.5px;
     max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
   #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .funnel{display:flex;align-items:center;gap:10px;background:linear-gradient(90deg,rgba(139,123,255,.16),rgba(34,184,255,.16));
+    border:1px solid var(--line);border-radius:12px;padding:11px 14px;margin-bottom:14px;font-size:13px}
+  .funnel b{color:var(--txt)} .funnel span{color:var(--dim)}
+  .funnel a{margin-left:auto;white-space:nowrap;color:#04121a;background:linear-gradient(90deg,#8b7bff,#22b8ff);
+    font-weight:800;border-radius:9px;padding:8px 12px;text-decoration:none;font-size:12.5px}
+  .funnel a.soon{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+  .lock{text-align:center;padding:26px 18px}
+  .lock .big{font-size:40px}
+  .lock h3{margin:12px 0 6px;font-size:19px}
+  .lock p{color:var(--dim);font-size:14px;margin:0 auto 18px;max-width:340px}
+  .lock ul{list-style:none;padding:0;margin:0 auto 20px;max-width:300px;text-align:left}
+  .lock li{padding:7px 0;font-size:14px;color:var(--txt)}
+  .cta{display:inline-block;color:#04121a;background:linear-gradient(90deg,#8b7bff,#22b8ff);font-weight:800;
+    border-radius:12px;padding:14px 22px;text-decoration:none;font-size:15px}
+  .cta-soon{display:inline-block;color:var(--accent);border:1px solid var(--accent);border-radius:12px;
+    padding:14px 22px;font-weight:800;font-size:15px}
   .disc{color:var(--dim);font-size:11.5px;margin-top:16px;line-height:1.5}
   .msg{color:var(--dim);text-align:center;padding:30px 10px}
   .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);
@@ -151,6 +167,9 @@ const $$ = s => [...document.querySelectorAll(s)];
 // feeBps tiers: 10 = 0.1%, 50 = 0.5%, 100 = 1%. Fees accrue to this referral
 // account (manage/claim at referral.jup.ag).
 const JUP_REFERRAL = "?referrer=D7to5YzRTeGEKzNXW5qzZPT2dzQeFgzwdAnRj3m65x3A&feeBps=50";
+// Your Seeker dApp Store listing URL — set this after publishing. Until then the
+// funnel CTA honestly says "coming soon" instead of linking somewhere broken.
+const STORE_URL = "";
 // Freemium: on the web, users watch up to this many tokens. The Seeker dApp
 // Store edition unlocks unlimited watching — that's the exclusive perk.
 const FREE_WATCH_LIMIT = 5;
@@ -201,6 +220,14 @@ function refreshWCount(){ const n = loadWatch().length; $("#wcount").textContent
 function canWatch(count){
   if (IS_PREMIUM) return { ok:true, remaining:Infinity };
   return { ok: count < FREE_WATCH_LIMIT, remaining: Math.max(0, FREE_WATCH_LIMIT - count) };
+}
+
+// The "get it on Seeker" call-to-action. Links to the store once STORE_URL is
+// set (after publishing); until then it honestly reads "coming soon".
+function storeCta(){
+  return STORE_URL
+    ? `<a class="cta" href="${STORE_URL}" target="_blank" rel="noopener">⬇ Get it on the Seeker dApp Store</a>`
+    : `<div class="cta-soon">✦ Coming soon on the Seeker dApp Store</div>`;
 }
 
 // Snapshot only the fields the diff needs, plus display bits.
@@ -320,13 +347,14 @@ function renderScan(d, token){
       </div>
       <a class="buy" href="${jup}" target="_blank" rel="noopener">Buy on Jupiter ↗</a>
       <div class="btnrow">
-        <button class="watch ${watching?"on":""}" id="watchBtn">${watching?"★ Watching":"☆ Watch"}</button>
+        <button class="watch ${watching?"on":""}" id="watchBtn">${IS_SEEKER?(watching?"★ Watching":"☆ Watch"):"☆ Watch on Seeker"}</button>
         <button class="watch" id="shareBtn">↗ Share verdict</button>
       </div>
       <p class="disc">${esc(d.disclaimer||"Heuristic estimate. Not financial advice.")}</p>
     </div>`;
   window.__lastScan = { d, token }; // for the smoke test
   $("#watchBtn").onclick = async () => {
+    if (!IS_SEEKER){ showTab("watch"); return; } // web → the funnel gate
     const res = toggleWatch(d, token);
     if (res.blocked){ alert(res.reason); return; }
     if (res.watching) await ensureNotifyPermission();
@@ -455,6 +483,22 @@ function wireRows(container){
 const wout = $("#wout");
 
 function renderWatch(items){
+  // On the web this is the funnel gate — watchlist + alerts are the Seeker
+  // exclusive. Scan & Trending stay free hooks; the sticky feature lives in the app.
+  if (!IS_SEEKER){
+    wout.innerHTML = `<div class="card lock">
+      <div class="big">👀🔒</div>
+      <h3>Watchlist & alerts are a Seeker exclusive</h3>
+      <p>Save tokens and get alerted the moment a watched token's safety drops, smart money exits, or a new red flag appears.</p>
+      <ul>
+        <li>🔔 Real-time safety alerts</li>
+        <li>♾️ Unlimited watched tokens</li>
+        <li>📉 Smart-money exit warnings</li>
+      </ul>
+      ${storeCta()}
+    </div>`;
+    return;
+  }
   const gate = canWatch(items.length);
   const quota = IS_SEEKER
     ? `<p class="quota">✦ Seeker Edition — unlimited watching unlocked.</p>`
@@ -553,6 +597,17 @@ refreshWCount();
 if (IS_SEEKER){
   const tag = $("header .tag");
   if (tag){ tag.textContent = "✦ Seeker Edition"; tag.classList.add("seeker"); }
+} else {
+  // Web = teaser: a gentle funnel banner under the tabs pointing to the app.
+  const banner = document.createElement("div");
+  banner.className = "funnel";
+  const cta = STORE_URL
+    ? `<a href="${STORE_URL}" target="_blank" rel="noopener">Get it ↗</a>`
+    : `<a class="soon">Coming soon</a>`;
+  banner.innerHTML = `<div><b>Free scan.</b> <span>Watchlist + alerts live in the Seeker app.</span></div>${cta}`;
+  $(".tabs").after(banner);
+  $("#wref").style.display = "none"; // Re-scan is meaningless on the locked web gate
+  $("#whint").style.display = "none";
 }
 
 // Deep-link support: /?token=... scans on load (great for shared links).

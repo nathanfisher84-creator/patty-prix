@@ -90,12 +90,15 @@ Deploy as its own **Vercel** project (root = `rug-or-moon/`):
    Configured via `JUP_REFERRAL` in `index.html`; fees accrue to the referral
    account (manage/claim at referral.jup.ag). Change `feeBps` to 10 (0.1%) or
    100 (1%) to taste.
-3. **Seeker-exclusive premium** — the watchlist caps at 5 tokens on the web, but
-   the **Seeker dApp Store edition unlocks unlimited watching**. The app detects
-   the installed edition via its launch URL (`/?edition=seeker`) or an
-   `android-app://` referrer and latches it in `localStorage` (see `detectSeeker`
-   in `index.html`). This is a soft unlock — the real exclusivity is that the APK
-   ships only on the dApp Store. A true paid tier would still need auth + payment.
+3. **Seeker-exclusive funnel** — the web build is a **teaser that funnels to the
+   dApp Store**: Scan + Trending are free hooks (and the share cards spread them),
+   but the sticky **watchlist + alerts are gated** behind a "Get it on Seeker"
+   CTA. The installed Seeker edition (detected via the `/?edition=seeker` launch
+   URL or an `android-app://` referrer — see `detectSeeker` in `index.html`)
+   unlocks the full experience. Set **`STORE_URL`** in `index.html` to your dApp
+   Store listing after publishing; until then the CTA honestly reads "coming
+   soon". This is a soft gate — the real exclusivity is that the APK ships only on
+   the dApp Store.
 
 Honest ceiling: ~150k Seeker devices is niche scale — treat this as "ship a sharp
 useful app, plausibly earn a grant + modest referral revenue," not a unicorn.
