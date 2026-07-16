@@ -1,0 +1,17 @@
+{
+  "name": "seeker-dm",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Confidentiality-first Solana messenger for the Seeker dApp Store — protocol core, content-blind relay, and mobile app.",
+  "type": "module",
+  "workspaces": [
+    "packages/core",
+    "packages/relay"
+  ],
+  "scripts": {
+    "test": "node test/relay.integration.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

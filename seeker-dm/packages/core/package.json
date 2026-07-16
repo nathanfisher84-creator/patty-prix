@@ -1,0 +1,11 @@
+{
+  "name": "@seeker-dm/core",
+  "version": "0.1.0",
+  "description": "Confidential messaging protocol: dedicated identities, stealth addresses, view-key scanning, E2E encryption.",
+  "type": "module",
+  "main": "protocol.mjs",
+  "exports": {
+    ".": "./protocol.mjs"
+  },
+  "license": "MIT"
+}
