@@ -89,8 +89,9 @@ Activity**. See <https://docs.solanamobile.com/dapp-store/publishing-a-web-app>.
    Publisher, App, and Release NFTs (your keypair + a little SOL), then submit;
    review is ~3–5 business days.
 4. Provide listing assets (icon, screenshots, description) and a **privacy
-   policy** URL (the scanner sends only the token address you type to your own
-   API; no accounts, no personal data — state that).
+   policy** URL. The policy is built: `privacy.html` deploys at
+   `https://your-app/privacy.html` (linked from the app footer). Fill in the
+   `REPLACE_WITH_YOUR_CONTACT_EMAIL` placeholder before you submit.
 
 ## What's verified vs. yours
 
