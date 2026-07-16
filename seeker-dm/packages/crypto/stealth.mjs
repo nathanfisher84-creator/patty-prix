@@ -28,7 +28,18 @@ const Pt = ed25519.Point ?? ed25519.ExtendedPoint;     // point class
 const BASE = Pt.BASE;                                    // generator G
 const ORDER = (Pt.Fn?.ORDER) ?? ed25519.CURVE?.n ?? Pt.CURVE?.n; // scalar field order ℓ
 const toRaw = p => p.toRawBytes();                       // point → 32 bytes
-const fromRaw = b => Pt.fromHex(Buffer.from(b).toString("hex")); // bytes → point
+const fromRaw = b => Pt.fromHex(Buffer.from(b).toString("hex")); // bytes → point (validates on-curve/canonical)
+
+// Neutral element compressed encoding (y=1, x=0). 8·P == identity ⇔ P has order
+// dividing 8 (a small-order / torsion point) — which we must reject on any
+// attacker-supplied point, or the ECDH shared secret can be forced to a known
+// value. fromRaw already rejects off-curve / non-canonical encodings.
+const IDENTITY = "0100000000000000000000000000000000000000000000000000000000000000";
+export function safePoint(bytes) {
+  const p = fromRaw(bytes); // throws on invalid encoding
+  if (Buffer.from(toRaw(p.multiply(8n))).toString("hex") === IDENTITY) throw new Error("small-order point rejected");
+  return p;
+}
 
 if (!Pt || !BASE || typeof ORDER !== "bigint") {
   throw new Error("@noble/curves binding failed — check the installed version and update the shims at the top of stealth.mjs");
@@ -74,9 +85,10 @@ export function parseMetaAddress(s) {
 
 export function sealNote(recipientMetaAddr, plaintext) {
   const { viewPub, spendPub } = parseMetaAddress(recipientMetaAddr);
+  safePoint(spendPub);                              // validate the recipient's published keys
   const r = randScalar();
   const R = BASE.multiply(r);                       // ephemeral pub
-  const shared = fromRaw(viewPub).multiply(r);      // r·V  (ECDH point)
+  const shared = safePoint(viewPub).multiply(r);    // r·V  (ECDH point)
   const sharedBytes = toRaw(shared);
   const k = hashToScalar(sharedBytes);
   const P = fromRaw(spendPub).add(BASE.multiply(k)); // stealth pub = S + k·G  (spendable)
@@ -99,7 +111,12 @@ export function sealNote(recipientMetaAddr, plaintext) {
 // Detect + decrypt with the VIEW key. Returns { isMine, plaintext?, tampered?,
 // stealthPub? }. The shared point is the same on both sides: v·R == r·V.
 export function scanNote(identity, note) {
-  const shared = fromRaw(unb64u(note.ephemeralPub)).multiply(identity.view.scalar);
+  let shared;
+  try {
+    // ephemeralPub is attacker-supplied — validate before use. A malicious or
+    // malformed note is simply "not mine", never a crash.
+    shared = safePoint(unb64u(note.ephemeralPub)).multiply(identity.view.scalar);
+  } catch { return { isMine: false, invalid: true }; }
   const sharedBytes = toRaw(shared);
   if (note.viewTag && hkdf(sharedBytes, "seeker-dm/viewtag", 1).toString("hex") !== note.viewTag) return { isMine: false };
 
@@ -123,7 +140,7 @@ export function scanNote(identity, note) {
 // the property the v1 core lacked — proof of spend authority. p = (s + k) mod ℓ,
 // and G·p must equal the note's stealth public key.
 export function deriveStealthPrivate(identity, note) {
-  const shared = fromRaw(unb64u(note.ephemeralPub)).multiply(identity.view.scalar);
+  const shared = safePoint(unb64u(note.ephemeralPub)).multiply(identity.view.scalar);
   const k = hashToScalar(toRaw(shared));
   const p = (identity.spend.scalar + k) % ORDER;
   const bound = b64u(toRaw(BASE.multiply(p))) === note.stealthPub;

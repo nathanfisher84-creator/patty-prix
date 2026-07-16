@@ -9,7 +9,7 @@
     "packages/relay"
   ],
   "scripts": {
-    "test": "node test/relay.integration.mjs"
+    "test": "node test/core.test.mjs && node test/payments.test.mjs && node test/relay.integration.mjs && node packages/crypto/stealth.test.mjs"
   },
   "engines": {
     "node": ">=20"

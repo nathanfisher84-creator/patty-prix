@@ -8,7 +8,7 @@
 // actually controls the stealth public point — spend authority is bound.
 
 import {
-  createIdentity, metaAddress, sealNote, scanNote, deriveStealthPrivate,
+  createIdentity, metaAddress, sealNote, scanNote, deriveStealthPrivate, safePoint,
 } from "./stealth.mjs";
 
 let failures = 0;
@@ -50,6 +50,18 @@ console.log("\n6. Tamper-evidence");
 const raw = Buffer.from(note.ciphertext, "base64url"); raw[0] ^= 0xff;
 const t = scanNote(alice, { ...note, ciphertext: raw.toString("base64url") });
 check("tampered ciphertext is caught, not returned as plaintext", t.isMine && t.tampered && t.plaintext === undefined);
+
+console.log("\n7. Point validation — reject malicious/invalid ephemeral keys");
+// The ed25519 neutral element is small-order; safePoint must reject it.
+const IDENTITY_B64U = Buffer.from("0100000000000000000000000000000000000000000000000000000000000000", "hex").toString("base64url");
+let rejected = false; try { safePoint(Buffer.from(IDENTITY_B64U, "base64url")); } catch { rejected = true; }
+check("safePoint rejects a small-order (identity) point", rejected);
+let offCurve = false; try { safePoint(Buffer.alloc(32, 0xff)); } catch { offCurve = true; }
+check("safePoint rejects a non-canonical/off-curve encoding", offCurve);
+const malNote = { ...note, ephemeralPub: IDENTITY_B64U };
+const scanned = scanNote(alice, malNote);
+check("scanNote skips a malicious note (no crash)", scanned.isMine === false && scanned.invalid === true);
+check("a valid ephemeral point still passes", (() => { try { safePoint(Buffer.from(note.ephemeralPub, "base64url")); return true; } catch { return false; } })());
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);
