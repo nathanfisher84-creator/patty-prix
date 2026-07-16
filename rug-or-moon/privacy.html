@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Privacy Policy — Rug or Moon</title>
+<meta name="description" content="Privacy policy for the Rug or Moon Solana token safety scanner. No accounts, no personal data, no tracking." />
+<meta name="theme-color" content="#0b0f17" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<style>
+  :root{
+    --bg:#0b0f17; --card:#141a26; --line:#26314a; --txt:#e8edf7; --dim:#8a97b1; --accent:#8b7bff; --green:#39d98a;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    padding:max(20px,env(safe-area-inset-top)) 18px calc(40px + env(safe-area-inset-bottom))}
+  .wrap{max-width:640px;margin:0 auto}
+  header{display:flex;align-items:center;gap:10px;margin:6px 0 22px}
+  header img{width:34px;height:34px}
+  header b{font-size:18px;font-weight:800}
+  a{color:var(--accent)}
+  h1{font-size:26px;margin:0 0 4px}
+  .date{color:var(--dim);font-size:13px;margin:0 0 24px}
+  h2{font-size:18px;margin:28px 0 8px}
+  p{margin:10px 0}
+  ul{margin:10px 0;padding-left:20px}
+  li{margin:6px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin:18px 0}
+  .tl{color:var(--green);font-weight:700}
+  .dim{color:var(--dim)}
+  .back{display:inline-block;margin-top:28px;color:var(--dim);text-decoration:none;font-size:14px}
+  footer{margin-top:36px;padding-top:18px;border-top:1px solid var(--line);color:var(--dim);font-size:12.5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="icons/icon.svg" alt="" />
+    <b>Rug or Moon</b>
+  </header>
+
+  <h1>Privacy Policy</h1>
+  <p class="date">Last updated: 16 July 2026</p>
+
+  <div class="card">
+    <p class="tl">The short version</p>
+    <p class="dim" style="margin-bottom:0">Rug or Moon has no accounts and collects no personal
+    information. The only thing it sends anywhere is the token address you choose to scan — and
+    that goes to our own server purely to look up public blockchain data. Your watchlist stays on
+    your device. We don't track you, run ads, or sell data.</p>
+  </div>
+
+  <h2>What we collect</h2>
+  <p><b>Personal information: none.</b> We don't ask for your name, email, wallet address, or any
+  account. You can use the entire app without identifying yourself.</p>
+
+  <h2>Information you send when you scan</h2>
+  <p>When you scan a token, the app sends the <b>token address you typed</b> to our own server
+  (hosted on Vercel) so it can fetch that token's public on-chain and market data. This request
+  is used only to generate your result and is not linked to any identity. We do not build a
+  profile of what you scan.</p>
+
+  <h2>Your watchlist and settings</h2>
+  <p>Tokens you save to your <b>watchlist</b> are stored <b>locally on your own device</b> (in your
+  browser's storage). They are never uploaded to us. When the app re-checks your watchlist, it
+  scans each saved token the same way as above — sending only the token address. If you clear your
+  browser data or remove the app, your watchlist is gone.</p>
+
+  <h2>Notifications</h2>
+  <p>If you allow notifications, alerts about your watched tokens are generated <b>on your device</b>
+  by your browser. We do not operate a push-notification server and do not receive your device
+  token.</p>
+
+  <h2>Third-party data sources</h2>
+  <p>To produce a scan, our server queries public blockchain and market-data providers. These
+  services see the token address (not you) as part of a normal server request:</p>
+  <ul>
+    <li><b>DexScreener</b> — public market data (price, liquidity, volume).</li>
+    <li><b>Helius</b> — public Solana RPC (token authorities and top holders).</li>
+    <li><b>Birdeye</b> — trending-token data (only if enabled by the operator).</li>
+  </ul>
+  <p class="dim">These are read-only lookups of public information. We never share personal data
+  with them because we don't collect any.</p>
+
+  <h2>Analytics and advertising</h2>
+  <p>We do not use third-party analytics or advertising SDKs. There are no tracking cookies.</p>
+
+  <h2>The "Buy on Jupiter" button</h2>
+  <p>The app can link out to <b>Jupiter</b> to swap a token. Tapping it opens Jupiter in a new tab;
+  any trade happens on Jupiter under <b>their</b> terms and privacy policy, with your own wallet.
+  Rug or Moon never has access to your funds, keys, or wallet.</p>
+
+  <h2>Children</h2>
+  <p>This app is not directed to children under 13 and does not knowingly collect their data.</p>
+
+  <h2>Changes to this policy</h2>
+  <p>If this policy changes, the "Last updated" date above will change. Continued use after an
+  update means you accept the revised policy.</p>
+
+  <h2>Contact</h2>
+  <p>Questions about this policy? Contact the operator at
+  <a href="mailto:REPLACE_WITH_YOUR_CONTACT_EMAIL">REPLACE_WITH_YOUR_CONTACT_EMAIL</a>.</p>
+
+  <a class="back" href="/">← Back to the app</a>
+
+  <footer>
+    Rug or Moon provides heuristic risk estimates from public on-chain data. It is not financial
+    advice and not a guarantee of a token's safety. Always do your own research.
+  </footer>
+</div>
+</body>
+</html>

@@ -2,7 +2,7 @@
 // loads offline. API responses (/api/scan) are always fetched fresh (network
 // only), never cached, so scores are live.
 const CACHE = "rug-or-moon-v1";
-const SHELL = ["/", "/index.html", "/manifest.json", "/icons/icon.svg"];
+const SHELL = ["/", "/index.html", "/privacy.html", "/manifest.json", "/icons/icon.svg"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting()));
