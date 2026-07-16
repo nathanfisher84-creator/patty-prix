@@ -63,9 +63,11 @@ Deploy as its own **Vercel** project (root = `rug-or-moon/`):
 
 1. **SKR developer grant** — shipping a quality app to the dApp Store has been
    rewarded directly (Season 1: 750k SKR each to 188 devs). Zero store fees.
-2. **Jupiter referral** — the "Buy on Jupiter" button routes swaps to Jupiter.
-   Set `JUP_REFERRAL` in `index.html` to your referral params to earn a fee on
-   every swap the app sends.
+2. **Jupiter referral** — the "Buy on Jupiter" button routes swaps to Jupiter
+   with a referral (`?referrer=…&feeBps=50`, 0.5%), earning a fee on every swap.
+   Configured via `JUP_REFERRAL` in `index.html`; fees accrue to the referral
+   account (manage/claim at referral.jup.ag). Change `feeBps` to 10 (0.1%) or
+   100 (1%) to taste.
 3. **Seeker-exclusive premium** — the watchlist caps at 5 tokens on the web, but
    the **Seeker dApp Store edition unlocks unlimited watching**. The app detects
    the installed edition via its launch URL (`/?edition=seeker`) or an

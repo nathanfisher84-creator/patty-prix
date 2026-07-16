@@ -92,6 +92,7 @@ try {
   check("green flags rendered", flags.some(f => /revoked/i.test(f)));
   check("market row present ($BONK)", (await page.textContent(".market")).includes("BONK") || (await page.textContent(".sym")).includes("BONK"));
   check("Buy on Jupiter link points to jup.ag for the token", buy.includes("jup.ag") && buy.includes(MINT));
+  check("Buy link carries the Jupiter referral (earns fees)", buy.includes("referrer=") && buy.includes("feeBps="));
   check("disclaimer visible", /Not financial advice/i.test(await page.textContent(".disc")));
 
   // --- Watchlist: add the scanned token, confirm it persists + counter updates.

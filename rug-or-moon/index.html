@@ -138,8 +138,10 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 
 // ---- config -----------------------------------------------------------------
-// Configure your Jupiter referral to earn a fee on swaps routed from the app.
-const JUP_REFERRAL = ""; // e.g. "?referrer=<yourRefKey>&feeBps=50"
+// Jupiter referral — earns a fee on swaps the "Buy on Jupiter" button routes.
+// feeBps tiers: 10 = 0.1%, 50 = 0.5%, 100 = 1%. Fees accrue to this referral
+// account (manage/claim at referral.jup.ag).
+const JUP_REFERRAL = "?referrer=D7to5YzRTeGEKzNXW5qzZPT2dzQeFgzwdAnRj3m65x3A&feeBps=50";
 // Freemium: on the web, users watch up to this many tokens. The Seeker dApp
 // Store edition unlocks unlimited watching — that's the exclusive perk.
 const FREE_WATCH_LIMIT = 5;
