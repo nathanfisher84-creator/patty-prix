@@ -79,9 +79,10 @@ useful app, plausibly earn a grant + modest referral revenue," not a unicorn.
 The store takes a signed Android APK; a PWA is wrapped as a **Trusted Web
 Activity**. See <https://docs.solanamobile.com/dapp-store/publishing-a-web-app>.
 
-1. **Add PNG icons** the manifest references: `icons/icon-192.png`,
-   `icon-512.png`, `icon-512-maskable.png` (render them from `icon.svg`). The SVG
-   alone installs, but bubblewrap/TWA wants PNGs.
+1. **PNG icons** the manifest references (`icons/icon-192.png`, `icon-512.png`,
+   `icon-512-maskable.png`) are generated and committed — rendered from
+   `icon.svg` via `node scripts/render-icons.mjs` (re-run it if you change the
+   SVG). The maskable variant is full-bleed with the shield inside the safe zone.
 2. **Wrap the PWA** with Bubblewrap (`@bubblewrap/cli`) against your deployed URL
    + `manifest.json` → a signed release APK.
 3. **Publish** with the dApp Store CLI (`@solana-mobile/dapp-store-cli`): mint the
@@ -98,5 +99,5 @@ Activity**. See <https://docs.solanamobile.com/dapp-store/publishing-a-web-app>.
   headless-browser smoke-test that drives all three tabs, the watch button,
   localStorage persistence, and the trending board.
 - 👤 **Yours:** deploy + set `HELIUS_API_KEY` (and optional `BIRDEYE_API_KEY`),
-  add PNG icons, set the Jupiter referral, add auth+payment to unlock premium
-  watching, wrap + sign the APK, and mint the store NFTs.
+  set the Jupiter referral, add auth+payment to unlock premium watching, wrap +
+  sign the APK, and mint the store NFTs.
