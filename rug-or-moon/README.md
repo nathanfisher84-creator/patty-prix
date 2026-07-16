@@ -32,6 +32,11 @@ Deploy as its own **Vercel** project (root = `rug-or-moon/`):
 - Set env var **`HELIUS_API_KEY`** (Settings → Environment Variables) — powers the
   authority + holder checks. Without it the app still runs on market data only
   and says so.
+- **Smart-money alpha (the differentiator):** provide a wallet list so the scanner
+  flags when known smart money holds a token. Either commit a `smart-money.json`
+  (copy `smart-money.sample.json`) or set `SMART_MONEY_JSON` to inline JSON. The
+  Patty Prix whale tracker produces this directly: `node scripts/whale-tracker.mjs
+  --json > rug-or-moon/smart-money.json`. Without a list, alpha uses momentum only.
 - Static files + the `api/` function deploy automatically (same convention as the
   main patty-prix site).
 

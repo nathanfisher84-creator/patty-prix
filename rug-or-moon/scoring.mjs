@@ -103,7 +103,13 @@ function alphaScore(raw, market) {
   let score = 0;
   const smHolders = raw.smartMoneyHolders ?? (Array.isArray(raw.smartMoney) && Array.isArray(raw.holders)
     ? raw.holders.filter(h => raw.smartMoney.includes(h.owner)).length : 0);
-  if (smHolders > 0) { score += Math.min(60, smHolders * 20); signals.push(`${smHolders} tracked smart-money wallet${smHolders > 1 ? "s" : ""} holding`); }
+  if (smHolders > 0) {
+    score += Math.min(60, smHolders * 20);
+    const who = raw.smartMoneyLabels?.length
+      ? ` (${raw.smartMoneyLabels.slice(0, 2).join(", ")}${raw.smartMoneyLabels.length > 2 ? ", +" + (raw.smartMoneyLabels.length - 2) : ""})`
+      : "";
+    signals.push(`${smHolders} tracked smart-money wallet${smHolders > 1 ? "s" : ""} holding${who}`);
+  }
 
   if (market && market.buys24h != null && market.sells24h != null) {
     const buys = market.buys24h, sells = market.sells24h || 0;

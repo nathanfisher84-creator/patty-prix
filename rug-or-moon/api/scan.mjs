@@ -6,12 +6,14 @@
 // patty-prix's api/stats.mjs. The scoring itself is the tested pure module.
 
 import { scoreToken } from "../scoring.mjs";
+import { loadSmartMoney, matchSmartMoney } from "../smart-money.mjs";
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
-// Core, testable: gather → score. `fetchFn` injectable for tests.
-export async function scanToken(mint, { heliusKey, fetchFn = fetch } = {}) {
+// Core, testable: gather → score. `fetchFn` and `smartMoney` injectable for tests.
+export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney } = {}) {
   if (!BASE58.test(mint)) return { error: "invalid token address" };
+  const smSet = smartMoney || loadSmartMoney();
 
   const rpc = heliusKey
     ? async (method, params) => {
@@ -34,13 +36,28 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch } = {}) {
   const mintInfo = parseMintInfo(info);
   const holders = parseHolders(largest, market);
 
+  // Resolve top-holder OWNERS and flag overlap with known smart money — the app's
+  // differentiator. Best-effort: on any failure, alpha falls back to momentum.
+  let sm = { count: 0, labels: [] };
+  if (rpc && smSet.set.size) {
+    try {
+      const addrs = (largest?.result?.value || []).map(v => v.address).filter(Boolean).slice(0, 20);
+      if (addrs.length) {
+        const owners = await rpc("getMultipleAccounts", [addrs, { encoding: "jsonParsed" }])
+          .then(r => (r?.result?.value || []).map(a => a?.data?.parsed?.info?.owner))
+          .catch(() => []);
+        sm = matchSmartMoney(owners, smSet);
+      }
+    } catch { /* fall back to momentum-only alpha */ }
+  }
+
   const raw = {
     mint: mintInfo || {},
     holders,
     market,
-    // supply for concentration must be in ui units
+    smartMoneyHolders: sm.count,
+    smartMoneyLabels: sm.labels,
   };
-  if (mintInfo) raw.mint = mintInfo;
 
   const result = scoreToken(raw);
   return {
