@@ -12,13 +12,15 @@ export function createRelayConnection(baseUrl) {
     baseUrl,
     get cursor() { return cursor; },
 
-    // v1: models a deposit. Production: pass a confirmed on-chain payment
-    // signature the relay verifies before crediting (see wallet.payForCredit).
-    async fund(amountUsd) {
-      const res = await deposit(baseUrl, amountUsd);
+    // Redeem a confirmed on-chain payment signature for relay credit. Get the
+    // signature from wallet.payForCredit(); the relay verifies it before
+    // crediting and each signature is single-use.
+    async fund(paymentSignature) {
+      const res = await deposit(baseUrl, paymentSignature);
       if (res.sessionToken) sessionToken = res.sessionToken;
       return res;
     },
+    get funded() { return !!sessionToken; },
 
     async send(recipientMetaAddr, body, myMetaAddr) {
       if (!sessionToken) throw new Error("no credit — call fund() first");

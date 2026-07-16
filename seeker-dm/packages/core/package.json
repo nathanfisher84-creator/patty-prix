@@ -5,7 +5,9 @@
   "type": "module",
   "main": "protocol.mjs",
   "exports": {
-    ".": "./protocol.mjs"
+    ".": "./protocol.mjs",
+    "./names": "./names.mjs",
+    "./conversations": "./conversations.mjs"
   },
   "license": "MIT"
 }

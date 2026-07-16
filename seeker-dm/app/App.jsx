@@ -1,65 +1,81 @@
-// seeker-dm — minimal end-to-end app flow (scaffold).
+// seeker-dm — Seeker client (scaffold).
 //
-// Deliberately a single-file, no-navigation-library flow so the moving parts are
-// legible and there's little unverifiable SDK surface: create/hold a dedicated
-// identity, show your address, message a recipient address, and poll an inbox —
-// all through the real identity/relay modules and the tested protocol core.
+// A working end-to-end flow using the real packages: dedicated identity in
+// secure storage, credit via a wallet-signed on-chain payment, name/address
+// resolution, stealth messaging over a content-blind relay, and conversation
+// threading. This is a STARTING POINT — not final UI polish. Build out proper
+// navigation, onboarding, backup/restore, push notifications, and publish an
+// SNS record so others can resolve your name. Status: app/README.md.
 //
-// This is a STARTING POINT, not a finished UI. Build out with proper navigation,
-// a name-service (.sol) resolver in place of raw address entry, a contacts list,
-// per-conversation threading, push notifications, and the wallet-funded credit
-// deposit (see src/wallet.js). Status + build steps: app/README.md.
+// ⚠️ Not built/run in-repo (no Android tooling/device); the Solana Mobile SDK
+// and crypto-in-RN bindings must be verified on device (see README).
 
-import React, { useEffect, useState, useCallback } from "react";
-import { SafeAreaView, View, Text, TextInput, Button, FlatList, StyleSheet } from "react-native";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import { SafeAreaView, View, Text, TextInput, Button, FlatList, StyleSheet, Alert } from "react-native";
 import { loadOrCreateIdentity, myMetaAddress } from "./src/identity";
 import { createRelayConnection } from "./src/relay";
+import { resolveRecipient } from "./src/names";
+import { payForCredit } from "./src/wallet";
+import { createConversationStore } from "@seeker-dm/core/conversations";
 
-const RELAY_URL = "http://127.0.0.1:8787"; // set to your hosted relay
+const RELAY_URL = "http://127.0.0.1:8787";   // set to your hosted relay
+const TREASURY = "REPLACE_WITH_RELAY_TREASURY_ADDRESS";
+const CREDIT_LAMPORTS = 5_000_000;           // how much SOL to deposit per top-up
 
 export default function App() {
   const [identity, setIdentity] = useState(null);
   const [addr, setAddr] = useState("");
   const [relay] = useState(() => createRelayConnection(RELAY_URL));
+  const [store] = useState(() => createConversationStore());
   const [funded, setFunded] = useState(false);
   const [to, setTo] = useState("");
   const [body, setBody] = useState("");
-  const [inbox, setInbox] = useState([]);
+  const [threads, setThreads] = useState([]);
+  const [openPeer, setOpenPeer] = useState(null);
   const [status, setStatus] = useState("starting…");
+
+  const refresh = useCallback(() => setThreads(store.list()), [store]);
 
   useEffect(() => {
     (async () => {
       const id = await loadOrCreateIdentity();
       setIdentity(id);
       setAddr(myMetaAddress(id));
-      setStatus("identity ready");
+      setStatus("ready");
     })().catch(e => setStatus("error: " + e.message));
   }, []);
 
   const fund = useCallback(async () => {
-    // v1 models the deposit; production routes through wallet.payForCredit.
-    await relay.fund(1.0);
-    setFunded(true);
-    setStatus("credit added");
+    try {
+      const sig = await payForCredit({ toAddress: TREASURY, lamports: CREDIT_LAMPORTS });
+      await relay.fund(sig);
+      setFunded(true);
+      setStatus("credit added");
+    } catch (e) { setStatus("fund failed: " + e.message); }
   }, [relay]);
 
   const send = useCallback(async () => {
-    if (!to || !body) return;
     try {
-      await relay.send(to.trim(), body, addr);
-      setBody("");
+      const target = await resolveRecipient(to);
+      if (!target) return Alert.alert("Can't resolve recipient", "Enter a .sol name (published) or a meta-address.");
+      await relay.send(target, body, addr);
+      store.addOutgoing(target, body, Date.now());
+      setBody(""); setOpenPeer(target); refresh();
       setStatus("sent");
     } catch (e) { setStatus("send failed: " + e.message); }
-  }, [relay, to, body, addr]);
+  }, [relay, store, to, body, addr, refresh]);
 
   const poll = useCallback(async () => {
     if (!identity) return;
     try {
       const msgs = await relay.poll(identity);
-      if (msgs.length) setInbox(prev => [...msgs, ...prev]);
+      msgs.forEach(m => store.addIncoming(m));
+      refresh();
       setStatus(`inbox: ${msgs.length} new`);
     } catch (e) { setStatus("poll failed: " + e.message); }
-  }, [relay, identity]);
+  }, [relay, identity, store, refresh]);
+
+  const conversation = useMemo(() => (openPeer ? store.thread(openPeer) : []), [openPeer, store, threads]);
 
   return (
     <SafeAreaView style={s.root}>
@@ -74,23 +90,38 @@ export default function App() {
         <Button title="check inbox" onPress={poll} />
       </View>
 
-      <Text style={s.label}>Send to (recipient address)</Text>
-      <TextInput style={s.input} value={to} onChangeText={setTo} autoCapitalize="none" placeholder="paste a meta-address" />
+      <Text style={s.label}>Message (to a .sol name or address)</Text>
+      <TextInput style={s.input} value={to} onChangeText={setTo} autoCapitalize="none" placeholder="patty.sol or a meta-address" />
       <TextInput style={s.input} value={body} onChangeText={setBody} placeholder="message" />
       <Button title="send" onPress={send} disabled={!funded} />
 
-      <Text style={s.label}>Inbox</Text>
-      <FlatList
-        data={inbox}
-        keyExtractor={(m, i) => m.stealthAddress + i}
-        renderItem={({ item }) => (
-          <View style={s.msg}>
-            <Text style={s.from}>{item.from ? item.from.slice(0, 10) + "…" : "unknown"}</Text>
-            <Text>{item.body}</Text>
-          </View>
-        )}
-        ListEmptyComponent={<Text style={s.dim}>no messages yet</Text>}
-      />
+      {openPeer ? (
+        <>
+          <Text style={s.label}>Conversation</Text>
+          <FlatList
+            data={conversation}
+            keyExtractor={(m, i) => (m.stealthPub || m.stealthAddress || String(m.ts)) + i}
+            renderItem={({ item }) => (
+              <Text style={item.dir === "out" ? s.out : s.in}>{item.dir === "out" ? "→ " : "← "}{item.body}</Text>
+            )}
+          />
+          <Button title="← all chats" onPress={() => setOpenPeer(null)} />
+        </>
+      ) : (
+        <>
+          <Text style={s.label}>Chats</Text>
+          <FlatList
+            data={threads}
+            keyExtractor={t => t.peer}
+            renderItem={({ item }) => (
+              <Text style={s.thread} onPress={() => setOpenPeer(item.peer)}>
+                {item.peer.slice(0, 10)}…  ·  {item.preview}
+              </Text>
+            )}
+            ListEmptyComponent={<Text style={s.dim}>no chats yet</Text>}
+          />
+        </>
+      )}
     </SafeAreaView>
   );
 }
@@ -103,6 +134,7 @@ const s = StyleSheet.create({
   mono: { fontFamily: "monospace", fontSize: 12 },
   row: { flexDirection: "row", gap: 12, marginTop: 8 },
   input: { borderWidth: 1, borderColor: "#ccc", borderRadius: 8, padding: 10 },
-  msg: { paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: "#eee" },
-  from: { fontFamily: "monospace", fontSize: 11, color: "#666" },
+  thread: { paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: "#eee" },
+  in: { alignSelf: "flex-start", backgroundColor: "#eee", borderRadius: 8, padding: 8, marginVertical: 2 },
+  out: { alignSelf: "flex-end", backgroundColor: "#d6ebff", borderRadius: 8, padding: 8, marginVertical: 2 },
 });

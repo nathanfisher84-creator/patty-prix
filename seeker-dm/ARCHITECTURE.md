@@ -53,12 +53,18 @@ sender-session clustering; see SECURITY.md §3.
 
 | Layer | State | Verified |
 |---|---|---|
-| `@seeker-dm/core` protocol | built | ✅ unit + integration tests |
-| `@seeker-dm/relay` server + client | built | ✅ real-HTTP integration test (localhost) |
+| `@seeker-dm/core` protocol (identity, seal/scan, names, conversations) | built | ✅ unit + integration tests |
+| `@seeker-dm/relay` server + client — content-blind, on-chain deposit verification, replay protection, pluggable storage, rate limiting | built | ✅ real-HTTP integration + payments/storage tests |
+| `@seeker-dm/crypto` on-curve stealth (ed25519, bound spend authority, point validation) | built | ✅ tested against `@noble/curves` (`G·p == P`; small-order/off-curve points rejected) |
+| `.sol` name resolution (opt-in) | built | ✅ registry + SNS RPC/parse tested (SNS record-account derivation is the one flagged integration point) |
+| Conversation store (threading/dedupe/snapshot) | built | ✅ tested |
+| Reference CLI (`bin/seeker-dm.mjs demo`) — runs the whole stack end-to-end | built | ✅ runs |
 | Audit docs (threat model) | written | n/a |
-| `@seeker-dm/crypto` on-curve stealth (ed25519, bound spend authority) | built | ✅ tested (`@noble/curves` installs from npm; test asserts `G·p == P` — spend authority binds — and non-recipients can't derive it). Still requires independent audit before production. |
-| React Native app (`app/`) — identity, wallet connect, relay wiring, e2e flow | **scaffold** | ⚠️ **not built/run** — needs Android tooling + device; SDK & crypto-in-RN bindings must be verified (see app/README.md) |
-| Push notifications / relay hosting / persistence | **to build** | operational |
+| React Native app (`app/`) — identity in secure store, wallet connect, name resolution, threaded UI | **scaffold** | ⚠️ **not built/run** — needs Android tooling + device; SDK & crypto-in-RN bindings must be verified (app/README.md) |
+| Relay hosting / durable DB adapter / push notifications | **operational** | owner (implement StorageAdapter for a real DB; host it) |
+
+Run everything: `cd seeker-dm && npm test` (4 suites) and
+`node bin/seeker-dm.mjs demo` (full-stack end-to-end).
 
 ## Run the backend locally
 
@@ -70,13 +76,18 @@ node packages/relay/server.mjs   # start a relay on :8787
 
 ## Roadmap to a store-ready build
 
-1. On-curve stealth crypto (ed25519 spend-authority binding) — code, then audit.
-2. React Native app: MWA wallet connect, identity in Seed Vault/keystore,
-   contacts (`.sol` resolution), conversation UI, relay client, notifications.
-3. On-chain credit: verify real deposits before crediting a relay session.
-4. Independent security audit (see SECURITY.md).
-5. Relay hosting + persistence + rate limits; privacy policy + ToS.
-6. dApp Store publishing: publisher/app/release NFTs, APK, listing, device QA.
+Engineering to the audit line is **done** (protocol, on-curve crypto, relay with
+verified on-chain deposits + persistence interface + rate limiting, name
+resolution, conversation store, reference CLI, and the app scaffold). Remaining:
+
+1. **Independent security audit** (see SECURITY.md) — the gate before real users.
+2. Build/run the **app** on a Seeker: verify the Solana Mobile SDK + crypto-in-RN
+   bindings, finish onboarding/backup/notifications, publish an SNS record.
+3. **Operate** the relay: implement the `StorageAdapter` against a real DB, host
+   it, configure the treasury + a trusted RPC for the payment verifier.
+4. **Privacy policy + ToS** (store-required for a messenger).
+5. **dApp Store publishing**: publisher/app/release NFTs, APK, listing, device QA.
+
 ```
-Steps 4–6 require an auditor, your keys + SOL, hosting, legal, and a Seeker.
+Steps 1, 3–5 require an auditor, your keys + SOL, hosting, legal, and a Seeker.
 ```
