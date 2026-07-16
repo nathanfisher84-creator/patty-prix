@@ -23,7 +23,10 @@ money holding, buy/sell momentum) — the 5-second "should I ape this?" check.
 - **👀 Watchlist + alerts** — save tokens; the app re-scans them and flags when
   **safety drops** (≥20 pts), a **tier downgrades**, **smart money exits**, or a
   **new red flag** appears — firing a local notification. Free plan watches up to
-  5 tokens (premium unlimited is a planned auth+payment step).
+  5 tokens; the Seeker dApp Store edition unlocks unlimited.
+- **↗ Share verdict** — every result makes a pasteable PNG verdict card + a link
+  that **unfurls** the verdict in Telegram / X / Discord (`/api/share`), so scans
+  spread themselves.
 
 ## How it's built
 
@@ -37,6 +40,8 @@ money holding, buy/sell momentum) — the 5-second "should I ape this?" check.
 - **`api/trending.mjs`** — gathers today's trending mints (Birdeye if
   `BIRDEYE_API_KEY` is set, else DexScreener's keyless boosted list) and runs each
   through the same `scanToken()` pipeline, returning a gems→rugs board.
+- **`api/share.mjs`** — per-token Open Graph page so a pasted scan link unfurls
+  the verdict in chat apps, then redirects humans into the app.
 - **`scoring.mjs`** — the pure, tested scoring engine (shared by the API + tests).
 - **`watchlist.mjs`** — the pure, tested diff/alert + freemium logic (what counts
   as an alert-worthy change between two scans). The UI mirrors it client-side.

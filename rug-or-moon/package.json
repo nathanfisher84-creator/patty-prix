@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Solana token safety + alpha scanner PWA for the Seeker dApp Store.",
   "scripts": {
-    "test": "node test/scoring.test.mjs && node test/scan.test.mjs && node test/watchlist.test.mjs && node test/trending.test.mjs",
+    "test": "node test/scoring.test.mjs && node test/scan.test.mjs && node test/watchlist.test.mjs && node test/trending.test.mjs && node test/share.test.mjs",
     "smoke": "node test/ui.smoke.mjs"
   },
   "devDependencies": {

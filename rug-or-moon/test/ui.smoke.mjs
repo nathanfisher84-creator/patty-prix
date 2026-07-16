@@ -121,6 +121,16 @@ try {
   await page.screenshot({ path: join(ROOT, "test", "ui-smoke.png") });
   console.log("  📸 screenshot: test/ui-smoke.png");
 
+  // --- Share verdict: button exists, text summary + PNG card generate.
+  check("Share button present on a result", (await page.$("#shareBtn")) != null);
+  const shareTxt = await page.evaluate(() => window.__rom.shareText(window.__lastScan.d, window.__lastScan.token));
+  check("share text carries score + verdict", /100/.test(shareTxt) && /clean/i.test(shareTxt));
+  const cardBytes = await page.evaluate(async () => {
+    const b = await window.__rom.cardBlob(window.__lastScan.d, window.__lastScan.token);
+    return b ? b.size : 0;
+  });
+  check("verdict card PNG generated (non-empty)", cardBytes > 1000, `${cardBytes} bytes`);
+
   // --- Seeker Edition: launching at /?edition=seeker unlocks unlimited watching.
   const seeker = await browser.newContext();
   const sp = await seeker.newPage({ viewport: { width: 390, height: 780 } });

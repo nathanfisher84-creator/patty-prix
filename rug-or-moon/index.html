@@ -59,6 +59,12 @@
   .watch{display:block;width:100%;text-align:center;background:transparent;border:1px solid var(--line);color:var(--txt);
     font-weight:700;border-radius:12px;padding:12px;margin-top:10px;font-size:14px}
   .watch.on{border-color:var(--accent);color:var(--accent)}
+  .btnrow{display:flex;gap:10px;margin-top:10px}
+  .btnrow .watch{margin-top:0}
+  #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%) translateY(20px);
+    background:var(--card2);border:1px solid var(--line);color:var(--txt);padding:11px 16px;border-radius:12px;font-size:13.5px;
+    max-width:90vw;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
   .disc{color:var(--dim);font-size:11.5px;margin-top:16px;line-height:1.5}
   .msg{color:var(--dim);text-align:center;padding:30px 10px}
   .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);
@@ -307,15 +313,92 @@ function renderScan(d, token){
         ${sigs}
       </div>
       <a class="buy" href="${jup}" target="_blank" rel="noopener">Buy on Jupiter ↗</a>
-      <button class="watch ${watching?"on":""}" id="watchBtn">${watching?"★ Watching — tap to remove":"☆ Add to watchlist"}</button>
+      <div class="btnrow">
+        <button class="watch ${watching?"on":""}" id="watchBtn">${watching?"★ Watching":"☆ Watch"}</button>
+        <button class="watch" id="shareBtn">↗ Share verdict</button>
+      </div>
       <p class="disc">${esc(d.disclaimer||"Heuristic estimate. Not financial advice.")}</p>
     </div>`;
+  window.__lastScan = { d, token }; // for the smoke test
   $("#watchBtn").onclick = async () => {
     const res = toggleWatch(d, token);
     if (res.blocked){ alert(res.reason); return; }
     if (res.watching) await ensureNotifyPermission();
     renderScan(d, token); // reflect the new state
   };
+  $("#shareBtn").onclick = () => shareVerdict(d, token);
+}
+
+// ---- Share (viral loop) -----------------------------------------------------
+// A tweet-style summary anyone can paste into Telegram / X / Discord.
+function shareText(d, token){
+  const v = VERDICT[d.tier] || VERDICT.caution;
+  const sym = d.market?.symbol ? "$"+d.market.symbol : short(token);
+  const top = (d.flags||[]).filter(f=>f.level!=="green")[0];
+  const line = top ? `\n${top.text}` : "\nNo major red flags — still DYOR.";
+  return `${v.emoji} ${sym} — ${d.safety}/100 · ${v.label} on Rug or Moon${line}`;
+}
+
+// Render the verdict as a 1200×630 PNG card (the image people paste).
+async function cardBlob(d, token){
+  try{
+    const c = document.createElement("canvas"); c.width = 1200; c.height = 630;
+    const x = c.getContext("2d");
+    const col = { clean:"#39d98a", caution:"#ffcc4d", "high-risk":"#ff5c72" }[d.tier] || "#8a97b1";
+    x.fillStyle = "#0b0f17"; x.fillRect(0,0,1200,630);
+    x.fillStyle = "#141a26"; roundRect(x,40,40,1120,550,28); x.fill();
+    // score ring
+    const cx=210, cy=300, r=120;
+    x.lineWidth=26; x.strokeStyle="#26314a"; x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.stroke();
+    x.strokeStyle=col; x.beginPath(); x.arc(cx,cy,r,-Math.PI/2,-Math.PI/2+Math.PI*2*(d.safety/100)); x.stroke();
+    x.fillStyle="#e8edf7"; x.textAlign="center"; x.font="800 96px system-ui,sans-serif"; x.fillText(String(d.safety), cx, cy+20);
+    x.fillStyle="#8a97b1"; x.font="500 26px system-ui,sans-serif"; x.fillText("/100", cx, cy+64);
+    // verdict + symbol
+    const v = VERDICT[d.tier] || VERDICT.caution;
+    const sym = d.market?.symbol ? "$"+d.market.symbol : short(token);
+    x.textAlign="left";
+    x.fillStyle=col; x.font="800 64px system-ui,sans-serif"; x.fillText(`${v.emoji} ${v.label}`, 400, 210);
+    x.fillStyle="#e8edf7"; x.font="700 40px system-ui,sans-serif"; x.fillText(sym, 400, 268);
+    // top flags
+    let fy=340;
+    for (const f of (d.flags||[]).slice(0,3)){
+      x.fillStyle={red:"#ff5c72",yellow:"#ffcc4d",green:"#39d98a"}[f.level]||"#8a97b1";
+      x.beginPath(); x.arc(412,fy-10,9,0,Math.PI*2); x.fill();
+      x.fillStyle="#c7d0e0"; x.font="400 28px system-ui,sans-serif";
+      x.fillText(clip(f.text, 44), 436, fy); fy+=52;
+    }
+    // brand
+    x.fillStyle="#8a97b1"; x.font="600 26px system-ui,sans-serif"; x.textAlign="right";
+    x.fillText("🚩🌙 Rug or Moon — Solana token safety", 1120, 560);
+    return await new Promise(res => c.toBlob(b=>res(b), "image/png"));
+  }catch{ return null; }
+}
+function roundRect(x,px,py,w,h,r){ x.beginPath(); x.moveTo(px+r,py); x.arcTo(px+w,py,px+w,py+h,r); x.arcTo(px+w,py+h,px,py+h,r); x.arcTo(px,py+h,px,py,r); x.arcTo(px,py,px+w,py,r); x.closePath(); }
+function clip(s,n){ s=String(s); return s.length>n ? s.slice(0,n-1)+"…" : s; }
+
+async function shareVerdict(d, token){
+  const url = location.origin + "/api/share?token=" + encodeURIComponent(token);
+  const text = shareText(d, token);
+  const v = VERDICT[d.tier] || VERDICT.caution;
+  const title = `${v.emoji} ${d.market?.symbol?"$"+d.market.symbol:"token"} — ${d.safety}/100`;
+  try{
+    const blob = await cardBlob(d, token);
+    const file = blob ? new File([blob], "rug-or-moon.png", { type: "image/png" }) : null;
+    if (navigator.share){
+      if (file && navigator.canShare && navigator.canShare({ files:[file] })) { await navigator.share({ title, text, url, files:[file] }); return; }
+      await navigator.share({ title, text, url }); return;
+    }
+  }catch(e){ if (e && e.name === "AbortError") return; }
+  try{ await navigator.clipboard.writeText(`${text}\n${url}`); toast("Copied — paste it anywhere"); }
+  catch{ toast(url); }
+}
+
+let toastT;
+function toast(msg){
+  let el = $("#toast");
+  if (!el){ el = document.createElement("div"); el.id = "toast"; document.body.appendChild(el); }
+  el.textContent = msg; el.classList.add("show");
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove("show"), 2600);
 }
 
 // ---- Trending tab -----------------------------------------------------------
@@ -469,6 +552,9 @@ if (IS_SEEKER){
 // Deep-link support: /?token=... scans on load (great for shared links).
 const pre = new URLSearchParams(location.search).get("token");
 if(pre){ q.value = pre; scan(); }
+
+// Exposed for the smoke test (pure share text + card generation).
+window.__rom = { shareText, cardBlob };
 
 if("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(()=>{});
 </script>
