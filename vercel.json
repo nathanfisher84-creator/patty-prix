@@ -1,9 +1,1 @@
-{
-  "redirects": [
-    {
-      "source": "/((?!maintenance\\.html|api/generate|extractor-base\\.png|og-jared\\.png).*)",
-      "destination": "/maintenance.html",
-      "permanent": false
-    }
-  ]
-}
+{}
