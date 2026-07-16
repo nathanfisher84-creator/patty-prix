@@ -1,0 +1,41 @@
+name: Token Info
+
+# Fetch a token's live metadata (name, symbol, socials, pairs) from
+# DexScreener + pump.fun and push the raw JSON to the token-info branch,
+# where the sandboxed dev session can read it.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mint:
+        description: "Solana mint address"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch metadata
+        env:
+          MINT: ${{ inputs.mint }}
+        run: |
+          mkdir -p out
+          curl -sS --max-time 30 "https://api.dexscreener.com/token-pairs/v1/solana/${MINT}" -o out/dexscreener.json || echo '{"error":"dexscreener fetch failed"}' > out/dexscreener.json
+          curl -sS --max-time 30 -H "accept: application/json" "https://frontend-api-v3.pump.fun/coins/${MINT}" -o out/pump.json || echo '{"error":"pump fetch failed"}' > out/pump.json
+          echo "--- dexscreener ---"; head -c 2000 out/dexscreener.json; echo
+          echo "--- pump ---"; head -c 2000 out/pump.json; echo
+
+      - name: Push results
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          git init -b token-info > /dev/null
+          git config user.email "actions@github.com"
+          git config user.name "token-info"
+          git add -A
+          git commit -m "token info fetch" > /dev/null
+          git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" token-info
