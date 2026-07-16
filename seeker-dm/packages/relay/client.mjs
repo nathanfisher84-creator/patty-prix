@@ -12,8 +12,11 @@ const post = async (fetchFn, url, body) => {
   return r.json();
 };
 
-export async function deposit(baseUrl, amountUsd, fetchFn = fetch) {
-  return post(fetchFn, baseUrl + "/deposit", { amountUsd });
+// Buy credit with proof of an on-chain payment. `signature` is a confirmed
+// Solana transaction that paid the relay treasury (see app/src/wallet.js →
+// payForCredit). Returns { ok, sessionToken, credits }.
+export async function deposit(baseUrl, signature, fetchFn = fetch) {
+  return post(fetchFn, baseUrl + "/deposit", { signature });
 }
 
 export async function submitNote(baseUrl, sessionToken, note, fetchFn = fetch) {

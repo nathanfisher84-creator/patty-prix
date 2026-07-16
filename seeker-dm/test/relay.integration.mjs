@@ -2,6 +2,7 @@
 // and the privacy invariants. Run: node test/relay.integration.mjs
 
 import { startRelay } from "../packages/relay/server.mjs";
+import { mockVerifier } from "../packages/relay/payments.mjs";
 import { deposit, sendMessage, receiveMessages, submitNote, pullLog } from "../packages/relay/client.mjs";
 import { createIdentity, metaAddress, sealNote, scanNote, exportIdentity, importIdentity } from "../packages/core/protocol.mjs";
 
@@ -11,7 +12,12 @@ const check = (name, cond, extra = "") => {
   if (!cond) failures++;
 };
 
-const relay = await startRelay({ port: 0, feeUsd: 0.01 });
+// Mock on-chain payments: signature -> credits. "pay-big" buys 100, "pay-2" buys 2.
+const relay = await startRelay({
+  port: 0,
+  feeCredits: 1,
+  verifier: mockVerifier({ "pay-big": 100, "pay-2": 2, "pay-dup": 5 }),
+});
 try {
   console.log("\n1. Health");
   const health = await (await fetch(relay.url + "/health")).json();
@@ -24,9 +30,11 @@ try {
   const restored = importIdentity(exportIdentity(alice));
   check("export → import preserves the identity", metaAddress(restored) === aliceAddr);
 
-  console.log("\n3. Deposit credit → opaque session");
-  const dep = await deposit(relay.url, 1.0);
-  check("deposit returns a session token + balance", !!dep.sessionToken && dep.balanceUsd === 1.0);
+  console.log("\n3. Deposit credit via verified on-chain payment");
+  const dep = await deposit(relay.url, "pay-big");
+  check("verified payment returns a session token + credits", !!dep.sessionToken && dep.credits === 100);
+  const badPay = await deposit(relay.url, "no-such-tx");
+  check("unverified payment is refused (402)", !badPay.sessionToken && /not verified/i.test(badPay.error));
 
   console.log("\n4. Bob messages Alice; Alice receives + decrypts");
   await sendMessage(relay.url, dep.sessionToken, aliceAddr, "gm — saw your .sol, collab?", bobAddr);
@@ -56,21 +64,28 @@ try {
   check("distinct ephemeral keys", ephs.size === 2);
 
   console.log("\n8. Relay is content-blind — no identity anywhere in its state");
-  const dump = JSON.stringify({ log: relay.state.log, sessions: [...relay.state.sessions.entries()] });
+  const snap = relay.storage.snapshot();
+  const dump = JSON.stringify(snap);
   check("no meta-address (Alice/Bob) in relay state", !dump.includes(aliceAddr) && !dump.includes(bobAddr));
   check("no plaintext in relay state", !dump.includes("collab") && !dump.includes("dm me"));
-  check("relay stores only opaque note fields", relay.state.log.every(e =>
+  check("relay stores only opaque note fields", snap.log.every(e =>
     e.note.ephemeralPub && e.note.stealthAddress && e.note.ciphertext && !("from" in e.note)));
 
   console.log("\n9. Spam pricing — credit is consumed, blasting runs dry");
-  const small = await deposit(relay.url, 0.02); // 2 notes' worth at $0.01
+  const small = await deposit(relay.url, "pay-2"); // buys exactly 2 credits
   const r1 = await sendMessage(relay.url, small.sessionToken, aliceAddr, "1", bobAddr);
   const r2 = await sendMessage(relay.url, small.sessionToken, aliceAddr, "2", bobAddr);
   const r3 = await sendMessage(relay.url, small.sessionToken, aliceAddr, "3", bobAddr);
   check("first two sends succeed", r1.ok && r2.ok);
   check("third is rejected — out of credit (spam has a real cost)", !r3.ok && /insufficient/i.test(r3.error));
 
-  console.log("\n10. Bad input is rejected");
+  console.log("\n10. Replay protection — a payment signature is single-use");
+  const first = await deposit(relay.url, "pay-dup");
+  const replay = await deposit(relay.url, "pay-dup");
+  check("first redemption succeeds", first.ok && first.credits === 5);
+  check("second redemption of the same signature is refused (409)", !replay.ok && /already redeemed/i.test(replay.error));
+
+  console.log("\n11. Bad input is rejected");
   const badSess = await submitNote(relay.url, "not-a-real-token", sealNote(aliceAddr, "x"));
   check("unknown session token rejected", badSess.error && /session/i.test(badSess.error));
   const badNote = await submitNote(relay.url, dep.sessionToken, { junk: true });

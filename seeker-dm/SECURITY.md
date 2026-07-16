@@ -65,15 +65,21 @@ These are **intentionally unfinished** and must be resolved before production:
    **can** withhold, delay, or reorder them, and can deny service. It is a
    liveness/censorship trust point, not a confidentiality one. Consider multiple
    relays / a gossip layer for censorship resistance.
-5. **Credit / deposit is modeled, not on-chain.** `/deposit` credits a session
-   in memory with no payment. Production must verify a real on-chain payment
-   (SOL / SPL) before crediting, and decide the refund/stake semantics
-   (v1 is a non-refundable per-note fee; a *refundable* stake needs
-   recipient-exclusive settlement authority that does not leak identity — an
-   open design item).
-6. **No persistence, no rate limiting, no auth hardening.** In-memory store;
-   restart loses everything. Anyone with credit can flood the log (DoS). Needs a
-   datastore, per-session rate limits, and abuse controls.
+5. **Credit / deposit — now on-chain-verified (was modeled).** `/deposit`
+   requires a confirmed Solana transaction signature; `solanaRpcVerifier`
+   (payments.mjs) confirms lamports landed in the treasury and the signature is
+   single-use (replay-protected via the storage adapter). *Remaining for
+   production/audit:* configure a real treasury + RPC, decide SOL vs SPL
+   pricing, harden against RPC lies (use your own trusted RPC / multiple
+   confirmations), and — if a *refundable* stake is ever wanted over the current
+   non-refundable per-note fee — design recipient-exclusive settlement that
+   doesn't leak identity (still an open design item).
+6. **Persistence & rate limiting — now present, but dev-grade.** A `StorageAdapter`
+   interface (storage.mjs) backs the relay; ships with in-memory + a single-node
+   JSON-file adapter, plus a per-session token-bucket rate limit. *Remaining:*
+   implement the adapter against a real database (Postgres/Redis) for multi-node
+   deployment, add per-IP limits and broader abuse controls, and load-test the
+   log-DoS surface.
 7. **Scanning scalability.** Recipients download the whole log and scan locally
    (the view tag only saves per-note compute, not bandwidth). This is
    privacy-maximizing but does not scale; a production system needs sharding or
