@@ -38,6 +38,12 @@ signals** (smart money holding, buy/sell momentum) — the "should I ape?" check
 - **`api/scan.mjs`** — Vercel serverless endpoint. Gathers DexScreener (keyless
   market data) + Solana RPC via Helius (mint authorities + top holders,
   server-side so the key never reaches the client) and returns a scored result.
+  Holder concentration is computed by **owner**, and liquidity pools are detected
+  generally: each top holder's authority is resolved and matched against known
+  **AMM program IDs** (Raydium v4/CLMM/CPMM, Orca, Meteora, PumpSwap, Phoenix, …),
+  so any DEX's LP vault is excluded — not just Raydium — without hardcoding
+  per-pool addresses. Unidentifiable large holders are still counted (safe
+  direction) with a "verify on Solscan" hint.
 - **`api/trending.mjs`** — gathers today's trending mints (Birdeye if
   `BIRDEYE_API_KEY` is set → **GeckoTerminal** organic volume-trending, keyless →
   DexScreener boosts as last resort) and runs each through the same `scanToken()`

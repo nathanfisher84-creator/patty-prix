@@ -15,7 +15,7 @@ const RAYDIUM = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j"; // recognized poo
 // A mocked backend: DexScreener pairs + Helius getAccountInfo / getTokenLargestAccounts
 // / getMultipleAccounts (owner resolution). `owners` maps token-account → owner.
 // `ext` injects Token-2022 extensions.
-const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus } = {}) => async (url, opts) => {
+const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus, programs } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) {
     return j({ rugged: !!rugged, markets: lpLockedPct != null ? [{ lp: { lpLockedPct } }] : [] });
@@ -45,7 +45,14 @@ const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, o
     ] } });
   if (body.method === "getMultipleAccounts") {
     const addrs = body.params[0];
-    return j({ result: { value: addrs.map(a => ({ data: { parsed: { info: { owner: (owners || {})[a] || ("owner-" + a) } } } })) } });
+    // Each account carries BOTH: top-level `owner` (the program that owns the
+    // account — used to detect AMM-PDA pool authorities) and parsed.info.owner
+    // (the token account's authority). `programs` maps an authority → its owning
+    // program; default is the System Program (a normal wallet).
+    return j({ result: { value: addrs.map(a => ({
+      owner: (programs || {})[a] || "11111111111111111111111111111111",
+      data: { parsed: { info: { owner: (owners || {})[a] || ("owner-" + a) } } },
+    })) } });
   }
   return j({});
 };
@@ -58,6 +65,21 @@ check("market surfaced (symbol/liquidity)", clean.market.symbol === "BONK" && cl
 check("surfaces socials/websites (was thrown away)", clean.market.socials.includes("twitter") && clean.market.websites.length === 1);
 check("dataComplete true with Helius key", clean.dataComplete === true);
 check("recognized LP excluded → low concentration", clean.concentration <= 0.06, `conc ${clean.concentration}`);
+
+console.log("\n1b. General pool detection — any AMM's LP is excluded, not just Raydium");
+// The pool account's authority is NOT a known fast-path address, but that
+// authority is owned by the Orca Whirlpools program → detected as a pool.
+const ORCA = "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc";
+const orcaPool = await scanToken(MINT, {
+  heliusKey: "k",
+  fetchFn: backend({
+    holders: [{ address: "acct-pool", uiAmount: 400_000_000 }, { address: "acct-1", uiAmount: 30_000_000 }, { address: "acct-2", uiAmount: 20_000_000 }],
+    owners: { "acct-pool": "orcaPoolPda" },   // authority isn't in the fast-path set
+    programs: { "orcaPoolPda": ORCA },         // ...but it's owned by the Orca program
+  }),
+});
+check("Orca LP excluded via program-owner check → low concentration", orcaPool.concentration <= 0.06, `conc ${orcaPool.concentration}`);
+check("no 'large share in one wallet' hint when the pool is identified", !orcaPool.flags.some(f => f.id === "pool-unverified"));
 
 console.log("\n2. Rug token — active authorities + low liquidity");
 const rug = await scanToken(MINT, {

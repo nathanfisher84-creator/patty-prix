@@ -111,10 +111,11 @@ export function scoreToken(raw = {}) {
     // can't earn its way to "clean" while a few wallets can dump on everyone.
     if (conc >= 0.7) cap("high-risk");
     else if (conc >= 0.5) cap("caution");
-    // A large "holder" on a token WITH real liquidity may be an LP we don't
-    // recognize — flag it as verify-worthy rather than silently trusting it.
+    // Pools/burns are already excluded by owner. If a large share still sits in
+    // one un-clearable wallet on a liquid token, it's worth an eyeball — it's
+    // usually a real whale, occasionally an unlisted LP or a CEX hot wallet.
     if (conc >= 0.3 && (market?.liquidityUsd || 0) >= 10_000)
-      add("yellow", "pool-unverified", "Largest holder may be an unrecognized liquidity pool — verify on Solscan before trusting the % above");
+      add("yellow", "pool-unverified", "A large share sits in one wallet — verify on Solscan it's not an unlisted pool or exchange");
   } else { add("yellow", "concentration", "Holder distribution unknown — couldn't read it on-chain"); cap("caution"); }
 
   // 4) Liquidity — thin pools are trivial to rug.

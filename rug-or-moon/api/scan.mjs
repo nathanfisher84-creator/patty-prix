@@ -11,13 +11,28 @@ import { loadSmartMoney, matchSmartMoney } from "../smart-money.mjs";
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const SYSTEM_PROGRAM = "11111111111111111111111111111111";
 
-// Owners that are NOT insiders — classify holders by OWNER, never by "biggest
-// account is the pool" (that hid a dev whale larger than the LP). Unrecognized
-// pools fall through to being counted (safe direction: over-warn, never
-// false-clean); scoring adds a "verify on Solscan" hint in that case.
+// Classify holders by OWNER, never by "biggest account is the pool" (that hid a
+// dev whale larger than the LP). A liquidity-pool vault is a token account whose
+// authority is a PDA owned by an AMM PROGRAM — so we detect pools generally by
+// resolving each holder's authority and checking which program owns it, rather
+// than hardcoding per-pool addresses (there are millions). This covers every
+// pool on every listed AMM below. A known fast-path authority set is kept for
+// when the extra lookup fails. Anything we still can't identify is COUNTED
+// (safe direction: over-warn, never false-clean) with a "verify" hint.
+const AMM_PROGRAMS = new Set([
+  "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8", // Raydium AMM v4
+  "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grrKgrWqK",  // Raydium CLMM
+  "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C",  // Raydium CPMM
+  "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc",   // Orca Whirlpools
+  "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP",  // Orca Token Swap v2
+  "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo",   // Meteora DLMM
+  "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB",  // Meteora Pools (DAMM)
+  "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",   // PumpSwap AMM
+  "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",   // Pump.fun bonding curve
+  "PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY",   // Phoenix
+]);
 const POOL_OWNERS = new Set([
-  "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j", // Raydium AMM v4 authority (base/quote vaults)
-  // Extend with other AMM authorities as they're verified.
+  "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j", // Raydium AMM v4 authority (fast-path)
 ]);
 const BURN_OWNERS = new Set([
   "1nc1nerator11111111111111111111111111111111",
@@ -74,7 +89,21 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     ownersReliable = owners.length === addrs.length && owners.every(Boolean);
   }
 
-  const holders = parseHolders(largest, owners);
+  // Which program owns each holder's authority? An authority owned by an AMM
+  // program is a pool vault (works across every AMM, no per-pool hardcoding).
+  let ownerProgram = {}; // authority -> owning program id
+  const distinctOwners = [...new Set(owners.filter(Boolean))];
+  if (rpc && distinctOwners.length) {
+    ownerProgram = await rpc("getMultipleAccounts", [distinctOwners, { encoding: "jsonParsed" }])
+      .then(r => {
+        const out = {};
+        (r?.result?.value || []).forEach((a, i) => { out[distinctOwners[i]] = a?.owner || null; });
+        return out;
+      })
+      .catch(() => ({}));
+  }
+
+  const holders = parseHolders(largest, owners, ownerProgram);
 
   // Smart-money overlap — only trusted when owner resolution actually succeeded,
   // so a transient RPC failure can't masquerade as "smart money exited".
@@ -230,7 +259,7 @@ function parseMintInfo(info) {
 // classify pool / burn by owner. `owners[i]` aligns with the i-th largest
 // account. When owners are unavailable we key by account and treat all as
 // holders — the safe (over-count) direction.
-function parseHolders(largest, owners) {
+function parseHolders(largest, owners, ownerProgram = {}) {
   const vals = largest?.result?.value;
   if (!Array.isArray(vals) || !vals.length) return [];
   const byOwner = new Map();
@@ -238,14 +267,20 @@ function parseHolders(largest, owners) {
     const amount = Number(v.uiAmountString ?? v.uiAmount ?? 0) || 0;
     const owner = owners[i] || null;
     const key = owner || ("acct:" + (v.address || i));
-    const kind = owner && BURN_OWNERS.has(owner) ? "burn"
-      : owner && POOL_OWNERS.has(owner) ? "pool"
-      : "holder";
+    const kind = classifyOwner(owner, ownerProgram[owner]);
     const cur = byOwner.get(key) || { amount: 0, kind, owner };
     cur.amount += amount;
     byOwner.set(key, cur);
   });
   return [...byOwner.values()];
+}
+
+function classifyOwner(owner, program) {
+  if (!owner) return "holder";
+  if (BURN_OWNERS.has(owner)) return "burn";
+  if (POOL_OWNERS.has(owner)) return "pool";              // fast-path
+  if (program && AMM_PROGRAMS.has(program)) return "pool"; // general: authority is an AMM PDA
+  return "holder";
 }
 
 export default async function handler(req, res) {
