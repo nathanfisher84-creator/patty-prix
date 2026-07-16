@@ -9,7 +9,7 @@
 //   GET /api/stats?q=airdrop[&before=SIG] → airdrop wallet's transactions
 
 const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
-const AIRDROP_WALLET = "8CFVLmzq8Uo6N859y2qFUumrzP291VceztiEperzv941";
+const AIRDROP_WALLET = "JCphPSVpR9ddhuyvukbKcqyLwdTY6opLXujxGFEoDUDg";
 // Keep in sync with CONFIG.rivals in index.html — the holderCount
 // endpoint only answers for these tokens.
 const RIVALS = [
