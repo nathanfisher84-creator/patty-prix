@@ -1,4 +1,4 @@
-// THE PRINT SHOP (standalone deployment). Prompt the Bagworker into any
+// THE PRINT SHOP (standalone deployment). Prompt Jared into any
 // fit via Gemini's image model (Nano Banana Pro by default). This copy
 // is fully self-contained so it can run as its own Vercel project with
 // its own URL, separate from the main paused site.
@@ -13,7 +13,7 @@
 
 import { createHash } from "crypto";
 
-const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
+const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
 const MODEL = (process.env.PRINT_MODEL || "gemini-3.1-flash-image-preview").trim();
 // callers may request a specific image model from this allow-list (used
 // for A/B comparisons); anything else falls back to MODEL
@@ -29,16 +29,17 @@ const DAY_TTL = 60 * 60 * 24 * 2;         // per-visitor rate-limit window
 const HIST_TTL = 60 * 60 * 24 * 40;       // keep daily totals for the dashboard
 const JOB_TTL = 60 * 15;                  // recover a finished print for 15 min
 const SID_RE = /^[a-z0-9]{8,64}$/i;       // client session id for recovery
-// scheduled shutoff — after this the endpoint refuses to spend. Extend
-// or clear it any time with the PRINT_SHUTOFF env var (or set to "off").
-const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z";
+// scheduled shutoff — after this the endpoint refuses to spend. Schedule
+// one any time with the PRINT_SHUTOFF env var ("off" = always open).
+const SHUTOFF_DEFAULT = "off";
 
 const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% " +
-  "consistent and instantly recognizable: same bright blue skin with darker blue dash markings, " +
-  "same long droopy nose, same forehead wrinkle lines, same iridescent blue shield sunglasses, " +
-  "same thick black outline sticker art style. You MAY change the pose, body position and camera " +
-  "angle so the requested outfit or scene looks natural and dynamic. Keep the background clean and " +
-  "simple unless the request implies a scene. Square 1:1 composition. Requested change: ";
+  "consistent and instantly recognizable: same pale-skinned man with a sly smug grin, same " +
+  "glowing bright green eyes, same dark navy hooded hoodie with the hood up, same green neon " +
+  "rim-lighting, same bold comic style with dark outlines. You MAY change the pose, body " +
+  "position and camera angle so the requested outfit or scene looks natural and dynamic. Keep " +
+  "the dark hacker / matrix-code mood of the background unless the request implies a different " +
+  "scene. Square 1:1 composition. Requested change: ";
 
 function kvEnv() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -59,14 +60,14 @@ function getQuery(req) {
   try { return Object.fromEntries(new URL(req.url, "http://x").searchParams); } catch { return {}; }
 }
 
-// base art: the canonical Bagworker served from the main domain (that
+// base art: the canonical Jared served from the main domain (that
 // path is exempt from the maintenance pause), falling back to the token
 // icon if it's ever unreachable
 let baseCache = null;
 async function baseImage() {
   if (baseCache) return baseCache;
   try {
-    const r = await fetch("https://pattyprix.xyz/bagworker-base.png", { redirect: "follow" });
+    const r = await fetch("https://pattyprix.xyz/extractor-base.png", { redirect: "follow" });
     const ct = r.headers.get("content-type") || "";
     if (r.ok && ct.startsWith("image/")) {
       baseCache = { mime: ct.split(";")[0], b64: Buffer.from(await r.arrayBuffer()).toString("base64") };

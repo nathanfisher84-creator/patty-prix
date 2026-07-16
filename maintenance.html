@@ -3,68 +3,76 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Patty Prix 🏁 — pit stop</title>
+<title>$JARED 🥪 — system upgrade</title>
 <meta name="robots" content="noindex" />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Patty Prix 🏁" />
-<meta property="og:description" content="pattyice — the bag worker — races the field. Back on track soon." />
+<meta property="og:title" content="$JARED — Jared From Subway 🥪" />
+<meta property="og:description" content="The MEV extractor is compiling. Get in or get sandwiched — back online soon." />
 <meta property="og:url" content="https://pattyprix.xyz/" />
-<meta property="og:image" content="https://pattyprix.xyz/og-patty.png" />
+<meta property="og:image" content="https://pattyprix.xyz/og-jared.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="Patty Prix 🏁" />
-<meta name="twitter:description" content="pattyice — the bag worker — races the field. Back on track soon." />
-<meta name="twitter:image" content="https://pattyprix.xyz/og-patty.png" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%81%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<meta name="twitter:title" content="$JARED — Jared From Subway 🥪" />
+<meta name="twitter:description" content="The MEV extractor is compiling. Get in or get sandwiched — back online soon." />
+<meta name="twitter:image" content="https://pattyprix.xyz/og-jared.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%A5%AA%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
-  :root { --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C; --gold: #FFC93C; }
+  :root { --bg: #030905; --card: #08130C; --edge: #1D5232; --ink: #CDFFD9; --sub: #63A377; --green: #00FF41; }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
-    background:
-      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
-      var(--bg);
-    font-family: 'Nunito', sans-serif;
+    background: radial-gradient(800px 400px at 80% -80px, rgba(0,255,65,0.07), transparent 60%), var(--bg);
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
     color: var(--ink);
     min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
   }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
+  }
   .card {
     background: var(--card);
-    border: 3px solid var(--ink); border-radius: 24px;
-    box-shadow: 10px 10px 0 var(--ink);
+    border: 2px solid var(--edge); border-radius: 12px;
+    box-shadow: 0 0 24px rgba(0,255,65,0.18);
     padding: 44px 34px;
-    max-width: 420px;
+    max-width: 440px;
     text-align: center;
+    position: relative; z-index: 1;
   }
-  .flag { font-size: 64px; animation: bob 2.2s ease-in-out infinite; display: inline-block; }
-  @keyframes bob { 50% { transform: translateY(-8px) rotate(4deg); } }
+  .glyph { font-size: 58px; animation: bob 2.2s ease-in-out infinite; display: inline-block; }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
   h1 {
-    font-family: 'Fredoka', sans-serif; font-weight: 700;
-    font-size: clamp(28px, 8vw, 40px);
-    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    font-family: 'VT323', monospace; font-weight: 400;
+    font-size: clamp(34px, 9vw, 48px);
+    color: var(--green);
+    text-shadow: 0 0 18px rgba(0,255,65,0.55);
     margin: 10px 0 12px;
+    letter-spacing: 2px;
   }
-  p { font-weight: 800; font-size: 15px; color: var(--sub); }
+  p { font-size: 14px; color: var(--sub); line-height: 1.55; }
+  .cursor::after { content: "▮"; color: var(--green); animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
   .pill {
     display: inline-block; margin-top: 20px;
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
-    background: linear-gradient(160deg, #FFE18A, var(--gold));
-    border: 3px solid var(--ink); border-radius: 999px;
-    padding: 9px 20px; box-shadow: 4px 4px 0 var(--ink);
+    font-size: 13px; letter-spacing: 1px;
+    background: #04100A; color: var(--green);
+    border: 2px solid var(--edge); border-radius: 6px;
+    padding: 9px 20px;
   }
 </style>
 </head>
 <body>
   <div class="card">
-    <span class="flag">🏁</span>
-    <h1>PIT STOP</h1>
-    <p>The Bagworker pulled into the garage.<br>
-       Patty Prix is getting a quick tune-up —<br>
-       back on the track soon.</p>
-    <span class="pill">🔧 be right back</span>
+    <span class="glyph">👨‍💻</span>
+    <h1>SYSTEM UPGRADE</h1>
+    <p>&gt; jared went back into the mempool.<br>
+       &gt; deploying new extraction contracts…<br>
+       <span class="cursor">&gt; the hacker is printing</span></p>
+    <span class="pill">🥪 $JARED — back online soon</span>
   </div>
 </body>
 </html>

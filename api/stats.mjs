@@ -8,7 +8,7 @@
 //   GET /api/stats?q=supply           → Helius getTokenSupply (our mint)
 //   GET /api/stats?q=airdrop[&before=SIG] → airdrop wallet's transactions
 
-const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
+const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
 const AIRDROP_WALLET = "8CFVLmzq8Uo6N859y2qFUumrzP291VceztiEperzv941";
 // Keep in sync with CONFIG.rivals in index.html — the holderCount
 // endpoint only answers for these tokens.

@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>PATTY DASH 🏁 — beta</title>
-<meta name="description" content="Dodge the paper hands. Stack the bags. PATTY DASH — the Patty Prix arcade game." />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%8F%8E%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<title>MEMPOOL RUN ⚡ — beta</title>
+<meta name="description" content="Dodge the reverts. Extract the bags. MEMPOOL RUN — the $JARED arcade game." />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%E2%9A%A1%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #F5C8DE; --card: #FBF4E4; --stripe: #F2E8D3; --ink: #17130E;
-    --sub: #6E675C; --pill: #5F4BE0; --gold: #FFC93C; --green: #3EBF6E; --red: #E4373F;
+    --bg: #030905; --card: #08130C; --stripe: #0B1A10; --ink: #CDFFD9; --edge: #1D5232;
+    --sub: #63A377; --pill: #C6FF4A; --gold: #00FF41; --green: #00FF41; --red: #FF4655;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     background:
-      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(800px 400px at 80% -80px, rgba(0,255,65,0.07), transparent 60%),
       var(--bg);
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
     color: var(--ink);
     display: flex;
     flex-direction: column;
@@ -32,9 +32,9 @@
     width: min(440px, 100%);
     flex: 1;
     max-height: 800px;
-    border: 3px solid var(--ink);
-    border-radius: 22px;
-    box-shadow: 8px 8px 0 var(--ink);
+    border: 2px solid var(--edge);
+    border-radius: 14px;
+    box-shadow: 0 0 24px rgba(0,255,65,0.2);
     overflow: hidden;
     background: var(--card);
     touch-action: none;
@@ -46,66 +46,71 @@
     position: absolute; inset: 0; z-index: 5;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
     gap: 14px; text-align: center; padding: 24px;
-    background: rgba(251,244,228,0.94);
+    background: rgba(3,9,5,0.94);
   }
   .overlay h1 {
-    font-family: 'Fredoka', sans-serif; font-weight: 700;
-    font-size: clamp(30px, 9vw, 44px);
-    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    font-family: 'VT323', monospace; font-weight: 400;
+    font-size: clamp(36px, 10vw, 52px);
+    color: var(--green);
+    text-shadow: 0 0 18px rgba(0,255,65,0.55);
+    letter-spacing: 2px;
   }
-  .overlay p { font-weight: 800; font-size: 15px; color: var(--sub); max-width: 300px; }
-  .overlay .score-big { font-family: 'Fredoka', sans-serif; font-size: 42px; font-weight: 700; }
+  .overlay p { font-size: 13.5px; color: var(--sub); max-width: 300px; line-height: 1.45; }
+  .overlay p b { color: var(--green); font-weight: 400; }
+  .overlay .score-big { font-family: 'VT323', monospace; font-size: 48px; color: var(--green); }
   #menuIcon {
-    width: 92px; height: 92px; border-radius: 50%;
-    border: 3px solid var(--ink); background: #fff;
-    box-shadow: 5px 5px 0 var(--ink);
+    width: 92px; height: 92px; border-radius: 14px;
+    border: 2px solid var(--green); background: #000;
+    box-shadow: 0 0 18px rgba(0,255,65,0.4);
     animation: bob 2.2s ease-in-out infinite;
   }
-  @keyframes bob { 50% { transform: translateY(-8px) rotate(3deg); } }
+  @keyframes bob { 50% { transform: translateY(-8px); } }
   .btn {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 20px;
-    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
-    border: 3px solid var(--ink); border-radius: 999px;
-    padding: 14px 34px; box-shadow: 5px 5px 0 var(--ink); cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 18px;
+    background: var(--green); color: #001505;
+    border: 2px solid var(--green); border-radius: 8px;
+    padding: 14px 34px; cursor: pointer;
+    box-shadow: 0 0 18px rgba(0,255,65,0.4);
   }
-  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
-  .btn.small { font-size: 15px; padding: 9px 20px; background: var(--card); }
+  .btn:active { transform: translate(1px, 1px); }
+  .btn.small { font-size: 13px; padding: 9px 20px; background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; }
+  .btn.small:hover { border-color: var(--green); }
   .hud {
     position: absolute; top: 10px; left: 10px; right: 10px; z-index: 4;
     display: flex; justify-content: space-between; align-items: flex-start;
     pointer-events: none;
   }
   .chip {
-    background: var(--card); border: 2.5px solid var(--ink); border-radius: 999px;
-    padding: 5px 14px; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
-    box-shadow: 3px 3px 0 var(--ink);
+    background: rgba(4,16,10,0.9); border: 1.5px solid var(--edge); border-radius: 6px;
+    padding: 5px 14px; font-size: 15px; color: var(--green);
   }
-  .chip.mult { background: linear-gradient(160deg, #FFE18A, var(--gold)); }
+  .chip.mult { border-color: var(--pill); color: var(--pill); }
   .chip.mult.pulse { animation: pulse 0.35s ease; }
-  @keyframes pulse { 50% { transform: scale(1.25) rotate(-4deg); } }
-  .beta-note { margin-top: 10px; font-weight: 800; font-size: 12.5px; color: var(--sub); text-align: center; }
+  @keyframes pulse { 50% { transform: scale(1.25); } }
+  .beta-note { margin-top: 10px; font-size: 12px; color: var(--sub); text-align: center; }
   .beta-note a { color: var(--pill); }
   .lb {
-    width: min(280px, 84%); font-weight: 800; font-size: 13.5px;
-    background: #fff; border: 2.5px solid var(--ink); border-radius: 14px;
-    box-shadow: 3px 3px 0 var(--ink); padding: 8px 12px;
+    width: min(280px, 84%); font-size: 13px;
+    background: #04100A; border: 1.5px solid var(--edge); border-radius: 10px;
+    padding: 8px 12px;
     max-height: 168px; overflow-y: auto;
   }
   .lb .row { display: flex; justify-content: space-between; gap: 10px; padding: 2.5px 0; }
-  .lb .row + .row { border-top: 2px dashed rgba(23,19,14,0.1); }
-  .lb .row.head { font-family: 'Fredoka', sans-serif; font-weight: 600; }
+  .lb .row + .row { border-top: 1.5px dashed rgba(0,255,65,0.12); }
+  .lb .row.head { color: var(--green); letter-spacing: 1px; }
   .lb .row.me { color: var(--pill); }
   #nameInput {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
-    border: 3px solid var(--ink); border-radius: 999px; background: #fff;
-    padding: 10px 16px; width: min(280px, 88%); box-shadow: 3px 3px 0 var(--ink);
+    font-family: 'Share Tech Mono', monospace; font-size: 15px;
+    border: 2px solid var(--edge); border-radius: 8px; background: #04100A;
+    padding: 10px 16px; width: min(280px, 88%);
     outline: none; color: var(--ink); text-align: center;
   }
-  .name-note { font-weight: 800; font-size: 12.5px; color: var(--sub); max-width: 300px; }
-  #nameErr { font-weight: 800; font-size: 13px; color: var(--red); max-width: 300px; }
-  #lbMsg { font-weight: 800; font-size: 13.5px; color: var(--sub); max-width: 300px; }
+  #nameInput:focus { border-color: var(--green); }
+  .name-note { font-size: 12px; color: var(--sub); max-width: 300px; }
+  #nameErr { font-size: 12.5px; color: var(--red); max-width: 300px; }
+  #lbMsg { font-size: 13px; color: var(--sub); max-width: 300px; }
   .overlay { overflow-y: auto; }
-  a.btn { text-decoration: none; color: var(--ink); }
+  a.btn { text-decoration: none; }
 </style>
 </head>
 <body>
@@ -118,22 +123,22 @@
   </div>
   <div class="overlay" id="menu">
     <img id="menuIcon" alt="" hidden />
-    <h1>PATTY DASH 🏁</h1>
+    <h1>MEMPOOL RUN ⚡</h1>
     <p>Tap <b>left / right</b> to change lanes.<br>
-       Dodge 🕯 candles &amp; 🧻 paper hands · grab 💰 bags · 👑 boost.</p>
-    <input id="nameInput" maxlength="30" placeholder="pick your racer name" autocomplete="off" spellcheck="false" />
+       Dodge 🕯 red candles &amp; 🧻 paper hands · extract 💰 bags · ⚡ boost.</p>
+    <input id="nameInput" maxlength="30" placeholder="pick your extractor name" autocomplete="off" spellcheck="false" />
     <p class="name-note">3-30 characters · names are first come, first served —
       your weekly best posts under it</p>
     <p id="nameErr" hidden></p>
-    <button class="btn" id="startBtn">START ENGINE 🏎️</button>
+    <button class="btn" id="startBtn">DEPLOY BOT ⚡</button>
     <p id="menuBest"></p>
     <div class="lb" id="daily" hidden></div>
     <div class="lb" id="menuLb" hidden></div>
     <a class="btn small" href="leaderboard.html">FULL LEADERBOARD 🏆</a>
-    <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
+    <button class="btn small" onclick="location.href='index.html'">← back to $JARED</button>
   </div>
   <div class="overlay" id="over" hidden>
-    <h1>WRECKED 💥</h1>
+    <h1>SANDWICHED 🥪</h1>
     <div class="score-big" id="overScore">0</div>
     <p id="overBest"></p>
     <p id="overStats"></p>
@@ -142,10 +147,10 @@
     <button class="btn" id="retryBtn">RUN IT BACK 🔁</button>
     <button class="btn small" id="shareBtn">SHARE ON X 🐦</button>
     <a class="btn small" href="leaderboard.html">FULL LEADERBOARD 🏆</a>
-    <button class="btn small" onclick="location.href='index.html'">← back to the race</button>
+    <button class="btn small" onclick="location.href='index.html'">← back to $JARED</button>
   </div>
 </div>
-<div class="beta-note">BETA — pick a racer name · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">pattyprix.xyz</a></div>
+<div class="beta-note">BETA — pick an extractor name · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">$JARED</a></div>
 
 <script>
 "use strict";
@@ -153,7 +158,7 @@ const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const stage = document.getElementById("stage");
 const LANES = 3;
-const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
+const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
 
 // visit + run beacons (Vercel-served domains only; localhost/mirror skip)
 const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
@@ -250,7 +255,7 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-// the Bagworker rides in the cockpit — his token icon from DexScreener
+// Jared rides in the cockpit — his token icon from DexScreener
 let carImg = null;
 (async () => {
   try {
@@ -324,7 +329,7 @@ function renderDaily() {
   el.hidden = false;
 }
 
-const BANNERS = ["BUY $PATTYICE 🍔", "PATTYPRIX.XYZ 🏁", "JOIN THE AIRDROP FAM 🪂", "THE BAGWORKER RIDES 😎"];
+const BANNERS = ["BUY $JARED 🥪", "GET IN OR GET SANDWICHED", "THE HACKER IS PRINTING 👨‍💻", "MEV NEVER SLEEPS ⚡"];
 
 function reset() {
   S.t = 0; S.score = 0; S.lane = 1; S.carX = laneX(1);
@@ -405,7 +410,7 @@ function crash() {
     " close calls · daily " + dailyDone() + "/3";
   renderDaily();
   renderMenuBest();
-  burst(S.carX, H - 110, ["#E4373F", "#FFC93C", "#17130E", "#F5A8CB"], 34, 320);
+  burst(S.carX, H - 110, ["#FF4655", "#00FF41", "#C6FF4A", "#0BAF3C"], 34, 320);
   if (S.score > S.best) { S.best = Math.round(S.score); localStorage.setItem("dash_best", S.best); }
   document.getElementById("overScore").textContent = S.finalScore.toLocaleString();
   document.getElementById("overBest").innerHTML = "personal best: <b>" + S.best.toLocaleString() + "</b>";
@@ -453,13 +458,13 @@ function update(dt) {
       if (cell === "bag") {
         S.score += 250 * S.mult; row.cells[S.lane] = null;
         S.bagsRun++; bagsTotal++; daily.bags++;
-        burst(S.carX, carY - 30, ["#FFC93C", "#FFE18A", "#fff"], 12, 180);
+        burst(S.carX, carY - 30, ["#00FF41", "#C6FF4A", "#fff"], 12, 180);
         S.pops.push({ x: S.carX, y: carY - 46, txt: "+" + (250 * S.mult), life: 0.9 });
         blip(880, 0.12, "square");
       } else if (cell === "crown") {
         S.mult = Math.min(S.mult + 1, 5); S.multT = 8; row.cells[S.lane] = null;
-        burst(S.carX, carY - 30, ["#FFC93C", "#fff", "#5F4BE0"], 18, 220);
-        S.pops.push({ x: S.carX, y: carY - 46, txt: "x" + S.mult + " 👑", life: 1.1 });
+        burst(S.carX, carY - 30, ["#C6FF4A", "#fff", "#00FF41"], 18, 220);
+        S.pops.push({ x: S.carX, y: carY - 46, txt: "x" + S.mult + " ⚡", life: 1.1 });
         const hm = document.getElementById("hudMult");
         hm.classList.remove("pulse"); void hm.offsetWidth; hm.classList.add("pulse");
         blip(1320, 0.14, "square");
@@ -474,7 +479,7 @@ function update(dt) {
   hs.textContent = "🔥 " + S.streak;
   const hm = document.getElementById("hudMult");
   hm.hidden = S.mult <= 1;
-  hm.textContent = "x" + S.mult + " 👑";
+  hm.textContent = "x" + S.mult + " ⚡";
 }
 
 function updateFx(dt) {
@@ -491,31 +496,31 @@ function draw() {
   ctx.clearRect(0, 0, W, H);
   const r = ROAD();
 
-  // shoulders
-  ctx.fillStyle = "#F3CFE0";
+  // shoulders — near-black with faint code ticks
+  ctx.fillStyle = "#04100A";
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "rgba(23,19,14,0.05)";
+  ctx.fillStyle = "rgba(0,255,65,0.07)";
   for (let y = -26 + (S.trackOff % 26); y < H; y += 26) {
     ctx.fillRect(0, y, r.x0 - 12, 2);
     ctx.fillRect(r.x1 + 12, y, W - r.x1 - 12, 2);
   }
-  // racing surface
-  ctx.fillStyle = "#F7EED9";
+  // racing surface — the data highway
+  ctx.fillStyle = "#071209";
   ctx.fillRect(r.x0, 0, r.x1 - r.x0, H);
-  ctx.fillStyle = "rgba(23,19,14,0.035)";
+  ctx.fillStyle = "rgba(0,255,65,0.045)";
   for (let y = -80 + S.trackOff; y < H; y += 80) ctx.fillRect(r.x0, y, r.x1 - r.x0, 40);
-  // red/white curbs
+  // green/black hazard curbs
   for (const cx of [r.x0 - 12, r.x1]) {
     for (let y = -40 + (S.trackOff % 40); y < H; y += 40) {
-      ctx.fillStyle = "#E4373F"; ctx.fillRect(cx, y, 12, 20);
-      ctx.fillStyle = "#FFFDF6"; ctx.fillRect(cx, y + 20, 12, 20);
+      ctx.fillStyle = "#00A82F"; ctx.fillRect(cx, y, 12, 20);
+      ctx.fillStyle = "#03240E"; ctx.fillRect(cx, y + 20, 12, 20);
     }
-    ctx.strokeStyle = "#17130E"; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#00FF41"; ctx.lineWidth = 1.5;
     ctx.strokeRect(cx, -2, 12, H + 4);
   }
   // lane dashes
-  ctx.strokeStyle = "rgba(23,19,14,0.16)";
-  ctx.lineWidth = 4; ctx.setLineDash([24, 28]); ctx.lineDashOffset = -S.trackOff * 1.5;
+  ctx.strokeStyle = "rgba(0,255,65,0.22)";
+  ctx.lineWidth = 3; ctx.setLineDash([24, 28]); ctx.lineDashOffset = -S.trackOff * 1.5;
   for (let i = 1; i < LANES; i++) {
     const x = r.x0 + (r.x1 - r.x0) * i / LANES;
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
@@ -523,7 +528,7 @@ function draw() {
   ctx.setLineDash([]);
   // speed streaks
   if (S.state === "run" && S.speed > 640) {
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.fillStyle = "rgba(0,255,65,0.35)";
     const n = Math.floor((S.speed - 640) / 90);
     for (let i = 0; i < n; i++) {
       const x = r.x0 + Math.random() * (r.x1 - r.x0);
@@ -536,14 +541,12 @@ function draw() {
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (const b of S.banners) {
     ctx.globalAlpha = 0.95;
-    const g = ctx.createLinearGradient(0, b.y - 13, 0, b.y + 13);
-    g.addColorStop(0, "#FFE18A"); g.addColorStop(1, "#FFC93C");
-    ctx.fillStyle = g;
+    ctx.fillStyle = "#0B2A14";
     ctx.fillRect(r.x0 + 4, b.y - 13, r.x1 - r.x0 - 8, 26);
-    ctx.strokeStyle = "#17130E"; ctx.lineWidth = 2.5;
+    ctx.strokeStyle = "#00FF41"; ctx.lineWidth = 1.5;
     ctx.strokeRect(r.x0 + 4, b.y - 13, r.x1 - r.x0 - 8, 26);
-    ctx.fillStyle = "#17130E";
-    ctx.font = "600 13px Fredoka, sans-serif";
+    ctx.fillStyle = "#00FF41";
+    ctx.font = "13px 'Share Tech Mono', monospace";
     ctx.fillText(b.msg, (r.x0 + r.x1) / 2, b.y + 1);
     ctx.globalAlpha = 1;
   }
@@ -560,27 +563,27 @@ function draw() {
       const c = row.cells[i]; if (!c) continue;
       const x = laneX(i);
       if (c === "candle") {
-        ctx.fillStyle = "rgba(23,19,14,0.14)";
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.beginPath(); ctx.ellipse(x + 4, row.y + 30, 20, 7, 0, 0, 6.28); ctx.fill();
-        ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
+        ctx.strokeStyle = "#5C0F16"; ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(x, row.y - 36); ctx.lineTo(x, row.y + 36); ctx.stroke();
         const g = ctx.createLinearGradient(x - 15, 0, x + 15, 0);
-        g.addColorStop(0, "#F06A66"); g.addColorStop(0.5, "#E4373F"); g.addColorStop(1, "#B7242B");
+        g.addColorStop(0, "#FF6B75"); g.addColorStop(0.5, "#FF4655"); g.addColorStop(1, "#B7242B");
         ctx.fillStyle = g;
         rr(x - 15, row.y - 23, 30, 46, 8); ctx.fill(); ctx.stroke();
-        ctx.fillStyle = "rgba(255,255,255,0.35)";
+        ctx.fillStyle = "rgba(255,255,255,0.3)";
         rr(x - 10, row.y - 18, 7, 36, 3); ctx.fill();
       } else {
         const by = row.y + (c === "paper" ? 0 : bob(row));
-        ctx.fillStyle = "rgba(23,19,14,0.14)";
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.beginPath(); ctx.ellipse(x + 3, by + 26, 18, 6, 0, 0, 6.28); ctx.fill();
         if (c !== "paper") {
-          ctx.fillStyle = c === "crown" ? "rgba(255,201,60,0.35)" : "rgba(255,255,255,0.75)";
+          ctx.fillStyle = c === "crown" ? "rgba(198,255,74,0.22)" : "rgba(0,255,65,0.14)";
           ctx.beginPath(); ctx.arc(x, by, 26, 0, 6.28); ctx.fill();
-          ctx.strokeStyle = "#17130E"; ctx.lineWidth = 2.5; ctx.stroke();
+          ctx.strokeStyle = c === "crown" ? "#C6FF4A" : "#00FF41"; ctx.lineWidth = 1.5; ctx.stroke();
         }
         ctx.font = "32px serif";
-        ctx.fillText(c === "paper" ? "🧻" : c === "bag" ? "💰" : "👑", x, by + 1);
+        ctx.fillText(c === "paper" ? "🧻" : c === "bag" ? "💰" : "⚡", x, by + 1);
       }
     }
   }
@@ -595,11 +598,11 @@ function draw() {
     ctx.fillRect(p.x - p.size / 2, p.y - p.size / 2, p.size, p.size);
   }
   ctx.globalAlpha = 1;
-  ctx.font = "700 20px Fredoka, sans-serif";
+  ctx.font = "20px 'Share Tech Mono', monospace";
   for (const p of S.pops) {
     ctx.globalAlpha = Math.min(p.life * 2, 1);
-    ctx.strokeStyle = "#FBF4E4"; ctx.lineWidth = 5; ctx.strokeText(p.txt, p.x, p.y);
-    ctx.fillStyle = "#17130E"; ctx.fillText(p.txt, p.x, p.y);
+    ctx.strokeStyle = "#001505"; ctx.lineWidth = 5; ctx.strokeText(p.txt, p.x, p.y);
+    ctx.fillStyle = "#00FF41"; ctx.fillText(p.txt, p.x, p.y);
   }
   ctx.globalAlpha = 1;
   ctx.restore();
@@ -616,18 +619,18 @@ function drawCar(x, y) {
   ctx.fillStyle = "rgba(23,19,14,0.22)";
   ctx.beginPath(); ctx.ellipse(4, 8, w * 0.55, h * 0.5, 0, 0, 6.28); ctx.fill();
 
-  ctx.strokeStyle = "#17130E"; ctx.lineWidth = 3;
+  ctx.strokeStyle = "#001505"; ctx.lineWidth = 3;
   // wheels
-  ctx.fillStyle = "#17130E";
+  ctx.fillStyle = "#001505";
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
     rr(sx * w * 0.52 - 5, sy * h * 0.28 - 11, 10, 22, 4); ctx.fill();
   });
   // rear wing
-  ctx.fillStyle = "#5F4BE0";
+  ctx.fillStyle = "#C6FF4A";
   rr(-w * 0.42, h * 0.34, w * 0.84, 12, 5); ctx.fill(); ctx.stroke();
-  // body
+  // body — the extraction bot glows green
   const bodyG = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-  bodyG.addColorStop(0, "#F7B8D4"); bodyG.addColorStop(0.5, "#F5A8CB"); bodyG.addColorStop(1, "#E88BB5");
+  bodyG.addColorStop(0, "#4CFF7A"); bodyG.addColorStop(0.5, "#00E23A"); bodyG.addColorStop(1, "#00A82F");
   ctx.fillStyle = bodyG;
   ctx.beginPath();
   ctx.moveTo(0, -h * 0.52);                       // nose tip
@@ -637,18 +640,18 @@ function drawCar(x, y) {
   ctx.quadraticCurveTo(-w * 0.46, -h * 0.34, 0, -h * 0.52);
   ctx.closePath(); ctx.fill(); ctx.stroke();
   // racing stripe
-  ctx.fillStyle = "#FBF4E4";
+  ctx.fillStyle = "#001505";
   rr(-5, -h * 0.5, 10, h * 0.92, 5); ctx.fill();
   // nose number
-  ctx.fillStyle = "#FFC93C";
+  ctx.fillStyle = "#C6FF4A";
   ctx.beginPath(); ctx.arc(0, -h * 0.27, 11, 0, 6.28); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = "#17130E"; ctx.font = "700 13px Fredoka, sans-serif";
+  ctx.fillStyle = "#001505"; ctx.font = "13px 'Share Tech Mono', monospace";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
-  ctx.fillText("1", 0, -h * 0.26);
+  ctx.fillText("J", 0, -h * 0.26);
 
-  // the Bagworker in the cockpit
+  // Jared in the cockpit
   const hr = w * 0.26;
-  ctx.fillStyle = "#FBF4E4";
+  ctx.fillStyle = "#001505";
   ctx.beginPath(); ctx.arc(0, h * 0.08, hr + 4, 0, 6.28); ctx.fill(); ctx.stroke();
   if (carImg && carImg.complete && carImg.naturalWidth) {
     ctx.save();
@@ -658,7 +661,7 @@ function drawCar(x, y) {
     ctx.beginPath(); ctx.arc(0, h * 0.08, hr, 0, 6.28); ctx.stroke();
   } else {
     ctx.font = Math.round(hr * 1.5) + "px serif";
-    ctx.fillText("😎", 0, h * 0.09);
+    ctx.fillText("👨‍💻", 0, h * 0.09);
   }
   ctx.restore();
 }
@@ -739,34 +742,37 @@ function scoreCard() {
   const c = document.createElement("canvas");
   c.width = 1000; c.height = 524;
   const x = c.getContext("2d");
-  x.fillStyle = "#F5C8DE"; x.fillRect(0, 0, 1000, 524);
-  x.fillStyle = "#FBF4E4";
+  x.fillStyle = "#030905"; x.fillRect(0, 0, 1000, 524);
+  // faint matrix columns
+  x.font = "22px monospace";
+  for (let i = 0; i < 46; i++) {
+    x.fillStyle = "rgba(0,255,65," + (0.05 + Math.random() * 0.12) + ")";
+    x.fillText(String((Math.random() * 2) | 0), 12 + i * 22, 20 + Math.random() * 500);
+  }
+  x.fillStyle = "#08130C";
   x.fillRect(24, 24, 952, 476);
-  x.strokeStyle = "#17130E"; x.lineWidth = 10;
+  x.strokeStyle = "#00FF41"; x.lineWidth = 4;
   x.strokeRect(24, 24, 952, 476);
-  x.textAlign = "center"; x.fillStyle = "#17130E";
-  x.font = "700 58px Fredoka, sans-serif";
-  x.fillText("PATTY DASH 🏁", 500, 110);
-  x.font = "700 150px Fredoka, sans-serif";
+  x.textAlign = "center"; x.fillStyle = "#00FF41";
+  x.font = "64px 'VT323', monospace";
+  x.fillText("MEMPOOL RUN ⚡", 500, 110);
+  x.font = "160px 'VT323', monospace";
   x.fillText((S.finalScore || 0).toLocaleString(), 500, 280);
-  x.font = "800 30px Nunito, sans-serif"; x.fillStyle = "#6E675C";
+  x.font = "26px 'Share Tech Mono', monospace"; x.fillStyle = "#63A377";
   x.fillText("🔥 " + S.streak + " streak · 💰 " + S.bagsRun + " bags · 😅 " + S.closeCalls + " close calls", 500, 350);
-  const g = x.createLinearGradient(0, 420, 0, 476);
-  g.addColorStop(0, "#FFE18A"); g.addColorStop(1, "#FFC93C");
-  x.fillStyle = g; x.fillRect(29, 415, 942, 80);
-  x.strokeStyle = "#17130E"; x.lineWidth = 5; x.strokeRect(29, 415, 942, 80);
-  x.fillStyle = "#17130E"; x.font = "600 34px Fredoka, sans-serif";
-  x.fillText("pattyprix.xyz · $PATTYICE", 500, 462);
+  x.fillStyle = "#00FF41"; x.fillRect(29, 415, 942, 80);
+  x.fillStyle = "#001505"; x.font = "34px 'Share Tech Mono', monospace";
+  x.fillText("$JARED · get in or get sandwiched 🥪", 500, 465);
   return c;
 }
 
 async function shareScore() {
-  const txt = "PATTY DASH 🏁 " + (S.finalScore || 0).toLocaleString() +
-    " pts (🔥 " + S.streak + " streak) — think you can beat the Bagworker? " +
-    "https://pattyprix.xyz/game.html $PATTYICE";
+  const txt = "MEMPOOL RUN ⚡ " + (S.finalScore || 0).toLocaleString() +
+    " pts (🔥 " + S.streak + " streak) — think you can out-extract Jared? " +
+    "https://pattyprix.xyz/game.html $JARED";
   try {
     const blob = await new Promise((res) => scoreCard().toBlob(res, "image/png"));
-    const file = new File([blob], "patty-dash-score.png", { type: "image/png" });
+    const file = new File([blob], "mempool-run-score.png", { type: "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({ files: [file], text: txt });
       return;
