@@ -1,0 +1,14 @@
+{
+  "name": "rug-or-moon",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Solana token safety + alpha scanner PWA for the Seeker dApp Store.",
+  "scripts": {
+    "test": "node test/scoring.test.mjs && node test/scan.test.mjs",
+    "smoke": "node test/ui.smoke.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}
