@@ -25,7 +25,7 @@ export const CONFIG = {
     "a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump",
     "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
   ],
-  siteUrl: "https://pattyprix.xyz/"
+  siteUrl: "https://jaredfromsubway.xyz/"
 };
 
 // token-pairs returns ALL pools of a token; the batch /tokens/v1

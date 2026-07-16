@@ -170,10 +170,11 @@
 
 <script>
 "use strict";
+const ON_SITE = /(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname);
 const CONFIG = {
   mint: "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump",
   airdropWallet: "JCphPSVpR9ddhuyvukbKcqyLwdTY6opLXujxGFEoDUDg",
-  statsApi: "https://pattyprix.xyz/api/stats"
+  statsApi: ON_SITE ? location.origin + "/api/stats" : "https://jaredfromsubway.xyz/api/stats"
 };
 document.getElementById("bubble").href = "https://app.bubblemaps.io/sol/token/" + CONFIG.mint;
 

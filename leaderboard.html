@@ -101,8 +101,8 @@
 
 <script>
 "use strict";
-const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz)$/.test(location.hostname);
-const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://pattyprix.xyz/api/leaderboard";
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname);
+const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://jaredfromsubway.xyz/api/leaderboard";
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 async function load() {

@@ -106,9 +106,14 @@ const CONFIG = {
     "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
   ],
   // keep the token list above in sync with index.html
-  statsApi: "https://pattyprix.xyz/api/stats",
-  visitsApi: "https://pattyprix.xyz/api/visits"
+  statsApi: "https://jaredfromsubway.xyz/api/stats",
+  visitsApi: "https://jaredfromsubway.xyz/api/visits"
 };
+// served from the site itself (any attached domain) → same-origin APIs
+if (/(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\.xyz)$/.test(location.hostname)) {
+  CONFIG.statsApi = location.origin + "/api/stats";
+  CONFIG.visitsApi = location.origin + "/api/visits";
+}
 const DEX = "https://api.dexscreener.com/token-pairs/v1/solana/";
 
 const $ = (id) => document.getElementById(id);

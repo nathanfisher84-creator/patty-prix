@@ -66,14 +66,18 @@ function getQuery(req) {
 let baseCache = null;
 async function baseImage() {
   if (baseCache) return baseCache;
-  try {
-    const r = await fetch("https://pattyprix.xyz/extractor-base.png", { redirect: "follow" });
-    const ct = r.headers.get("content-type") || "";
-    if (r.ok && ct.startsWith("image/")) {
-      baseCache = { mime: ct.split(";")[0], b64: Buffer.from(await r.arrayBuffer()).toString("base64") };
-      return baseCache;
-    }
-  } catch { /* fall through to the token icon */ }
+  // the site may answer on either domain while the move to
+  // jaredfromsubway.xyz completes — try both before the icon fallback
+  for (const url of ["https://jaredfromsubway.xyz/extractor-base.png", "https://pattyprix.xyz/extractor-base.png"]) {
+    try {
+      const r = await fetch(url, { redirect: "follow" });
+      const ct = r.headers.get("content-type") || "";
+      if (r.ok && ct.startsWith("image/")) {
+        baseCache = { mime: ct.split(";")[0], b64: Buffer.from(await r.arrayBuffer()).toString("base64") };
+        return baseCache;
+      }
+    } catch { /* try the next source */ }
+  }
   const pairs = await (await fetch("https://api.dexscreener.com/token-pairs/v1/solana/" + MINT)).json();
   const score = (p) => (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
   const best = (pairs || []).sort((a, b) => score(b) - score(a))[0];
