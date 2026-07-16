@@ -19,9 +19,10 @@ offer.
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Components, data flow, why the graph stays private | — |
 | [SECURITY.md](./SECURITY.md) | Threat model, what's enforced vs the audit scope | — |
 
-**To build next:** `@seeker-dm/crypto` (on-curve ed25519 stealth spend-authority)
-and the React Native app (Seeker UI, Mobile Wallet Adapter, Seed Vault key
-storage). See ARCHITECTURE.md → Build status.
+| [`packages/crypto`](./packages/crypto) | On-curve ed25519 stealth with **bound spend authority** (production replacement for the core's hash-commitment stealth) | ⚠️ written, **unverified here** — needs `npm install` (`@noble/curves`); run its test on a networked machine |
+
+**To build next:** the React Native app (Seeker UI, Mobile Wallet Adapter, Seed
+Vault key storage). See ARCHITECTURE.md → Build status.
 
 ## Try the backend
 

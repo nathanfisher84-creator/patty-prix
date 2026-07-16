@@ -1,0 +1,17 @@
+{
+  "name": "@seeker-dm/crypto",
+  "version": "0.1.0",
+  "description": "On-curve ed25519 stealth addresses (dual-key) with bound spend authority — production replacement for the core's hash-commitment stealth.",
+  "type": "module",
+  "main": "stealth.mjs",
+  "exports": {
+    ".": "./stealth.mjs"
+  },
+  "scripts": {
+    "test": "node stealth.test.mjs"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.6.0"
+  },
+  "license": "MIT"
+}

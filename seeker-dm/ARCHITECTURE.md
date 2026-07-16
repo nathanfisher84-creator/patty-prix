@@ -56,7 +56,7 @@ sender-session clustering; see SECURITY.md §3.
 | `@seeker-dm/core` protocol | built | ✅ unit + integration tests |
 | `@seeker-dm/relay` server + client | built | ✅ real-HTTP integration test (localhost) |
 | Audit docs (threat model) | written | n/a |
-| `@seeker-dm/crypto` on-curve stealth (ed25519) | **to build** | pending |
+| `@seeker-dm/crypto` on-curve stealth (ed25519, bound spend authority) | built | ⚠️ **unverified in sandbox** — `cd packages/crypto && npm install && npm test` on a networked machine (needs `@noble/curves`) |
 | React Native app (Seeker UI + MWA + Seed Vault key storage) | **to build** | pending (needs Android tooling + device) |
 | Push notifications / relay hosting | **to build** | operational |
 
