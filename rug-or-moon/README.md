@@ -2,10 +2,11 @@
 
 A **Solana token safety + alpha scanner** PWA for the Seeker dApp Store. Paste a
 token address → get a heuristic **safety score** (mint/freeze authority, holder
-concentration by *owner*, liquidity, age, wash-trading smell, plus **Token-2022
-honeypot vectors** — permanent delegate, transfer hook, transfer tax, freeze-by-
-default — and a can't-sell trading-shape check) plus **alpha signals** (smart
-money holding, buy/sell momentum) — the 5-second "should I ape this?" check.
+concentration by *owner*, liquidity, age, wash-trading smell, **LP-lock status**
+(is the liquidity locked/burned so the dev can't pull it — via RugCheck), plus
+**Token-2022 honeypot vectors** — permanent delegate, transfer hook, transfer
+tax, freeze-by-default — and a can't-sell trading-shape check) plus **alpha
+signals** (smart money holding, buy/sell momentum) — the "should I ape?" check.
 
 > Trust rule: the engine never certifies what it can't verify. An unknown fact
 > reads as "unknown" (never "revoked"), and hard danger signals **cap the verdict**
@@ -42,6 +43,12 @@ money holding, buy/sell momentum) — the 5-second "should I ape this?" check.
   through the same `scanToken()` pipeline, returning a gems→rugs board.
 - **`api/share.mjs`** — per-token Open Graph page so a pasted scan link unfurls
   the verdict in chat apps, then redirects humans into the app.
+- **LP-lock via RugCheck** — `api/scan.mjs` also calls RugCheck's keyless public
+  API (`api.rugcheck.xyz`) for the one thing we can't compute cheaply ourselves:
+  what % of the liquidity is locked/burned. Best-effort — if it's unavailable, no
+  signal is invented. Coded to RugCheck's documented schema; **sanity-check the
+  `lpLockedPct` against one real token after deploy** (it couldn't be verified
+  against live pools in the build sandbox).
 - **`scoring.mjs`** — the pure, tested scoring engine (shared by the API + tests).
 - **`watchlist.mjs`** — the pure, tested diff/alert + freemium logic (what counts
   as an alert-worthy change between two scans). The UI mirrors it client-side.

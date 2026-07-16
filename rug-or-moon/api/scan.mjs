@@ -39,15 +39,20 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
       }
     : null;
 
-  const [pairsRes, info, largest] = await Promise.all([
+  const [pairsRes, info, largest, lpReport] = await Promise.all([
     fetchFn("https://api.dexscreener.com/token-pairs/v1/solana/" + mint)
       .then(r => (r && r.ok === false ? [] : r.json())).catch(() => []),
     rpc ? rpc("getAccountInfo", [mint, { encoding: "jsonParsed" }]).catch(() => null) : null,
     rpc ? rpc("getTokenLargestAccounts", [mint, { commitment: "confirmed" }]).catch(() => null) : null,
+    // RugCheck (keyless public API) — the one thing we can't compute ourselves:
+    // is the liquidity locked/burned so the dev can't pull it? Best-effort.
+    fetchFn("https://api.rugcheck.xyz/v1/tokens/" + mint + "/report")
+      .then(r => (r && r.ok === false ? null : r.json())).catch(() => null),
   ]);
 
   const market = bestMarket(pairsRes);
   const mintInfo = parseMintInfo(info);
+  const lp = parseLpLock(lpReport);
 
   // Resolve the OWNERS of the top token accounts (always — used for both holder
   // classification and smart-money overlap). Best-effort: on failure we degrade.
@@ -78,6 +83,8 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     market,
     smartMoneyHolders: sm.count,
     smartMoneyLabels: sm.labels,
+    lpLockedPct: lp.lpLockedPct, // null when unknown
+    rugged: lp.rugged,
   };
 
   const result = scoreToken(raw);
@@ -86,6 +93,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     ...result,
     smartMoneyHolders: sm.count,
     smartMoneyReliable,
+    lpLockedPct: lp.lpLockedPct,
     market: market && {
       priceUsd: market.priceUsd, liquidityUsd: market.liquidityUsd, volume24h: market.volume24h,
       mcap: market.mcap, dexId: market.dexId, symbol: market.symbol, name: market.name, icon: market.icon,
@@ -117,6 +125,23 @@ function bestMarket(pairs) {
     websites: p.info?.websites?.map(w => w?.url).filter(Boolean) || [],
     socials: p.info?.socials?.map(s => s?.type || s?.platform).filter(Boolean) || [],
   };
+}
+
+// Pull LP-lock info out of a RugCheck report. We take the BEST-locked market
+// (max lpLockedPct) as the headline — a token is safe from an LP rug if any of
+// its real pools is locked/burned. `lpLockedPct` is a 0–100 percentage in
+// RugCheck's schema. Degrades to {lpLockedPct:null} on any missing/odd data, so
+// an unavailable RugCheck response never invents a signal.
+// NOTE: coded to RugCheck's documented schema; sanity-check against one real
+// token after deploy (this sandbox has no live network to verify against).
+function parseLpLock(report) {
+  if (!report || typeof report !== "object") return { lpLockedPct: null, rugged: false };
+  let pct = null;
+  for (const mk of (Array.isArray(report.markets) ? report.markets : [])) {
+    const p = mk?.lp?.lpLockedPct;
+    if (typeof p === "number" && isFinite(p)) pct = pct == null ? p : Math.max(pct, p);
+  }
+  return { lpLockedPct: pct, rugged: report.rugged === true };
 }
 
 function parseMintInfo(info) {

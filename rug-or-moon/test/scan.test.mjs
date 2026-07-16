@@ -15,8 +15,11 @@ const RAYDIUM = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j"; // recognized poo
 // A mocked backend: DexScreener pairs + Helius getAccountInfo / getTokenLargestAccounts
 // / getMultipleAccounts (owner resolution). `owners` maps token-account → owner.
 // `ext` injects Token-2022 extensions.
-const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext } = {}) => async (url, opts) => {
+const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
+  if (url.includes("rugcheck.xyz")) {
+    return j({ rugged: !!rugged, markets: lpLockedPct != null ? [{ lp: { lpLockedPct } }] : [] });
+  }
   if (url.includes("dexscreener.com")) {
     return j([{
       dexId: "raydium", priceUsd: "0.0000021", marketCap: 2_100_000,
@@ -94,9 +97,21 @@ check("permanent-delegate red flag", t22.flags.some(f => f.level === "red" && /P
 check("transfer-tax red flag", t22.flags.some(f => f.level === "red" && /tax/i.test(f.text)));
 check("honeypot forced to high-risk", t22.tier === "high-risk", `tier ${t22.tier}`);
 
+console.log("\n5c. LP lock (RugCheck) — unlocked flagged, locked reassures, rugged = high-risk");
+const unlocked = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, lpLockedPct: 10 }) });
+check("low LP lock → red flag", unlocked.flags.some(f => f.level === "red" && /Liquidity is just/.test(f.text)));
+check("low LP lock cannot be 'clean'", unlocked.tier !== "clean", `tier ${unlocked.tier}`);
+check("surfaces lpLockedPct in the result", unlocked.lpLockedPct === 10);
+const locked = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, lpLockedPct: 100 }) });
+check("locked/burned LP → green flag", locked.flags.some(f => f.level === "green" && /locked\/burned/.test(f.text)));
+check("locked LP token still clean", locked.tier === "clean", `tier ${locked.tier}`);
+const ruggedTok = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, rugged: true }) });
+check("RugCheck 'rugged' forces high-risk", ruggedTok.tier === "high-risk", `tier ${ruggedTok.tier}`);
+
 console.log("\n6. Honeypot trading shape — many buys, ~0 sells → not bullish alpha");
 const hp = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
+  if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [] });
   if (url.includes("dexscreener.com")) return j([{
     dexId: "raydium", priceUsd: "0.1", marketCap: 1e6, pairCreatedAt: Date.now() - 40 * 86_400_000,
     liquidity: { usd: 60_000 }, volume: { h24: 80_000 }, txns: { h24: { buys: 500, sells: 2 } },

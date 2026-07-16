@@ -33,6 +33,10 @@ const RUG = "RugP111111111111111111111111111111111111111"; // valid BASE58, → 
 // Deterministic mocked backend: CLEAN scores high, everything else looks risky.
 const backend = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
+  if (url.includes("rugcheck.xyz")) {
+    const mint = url.split("/tokens/")[1]?.split("/")[0];
+    return j({ rugged: false, markets: [{ lp: { lpLockedPct: mint === CLEAN ? 100 : 8 } }] });
+  }
   if (url.includes("token-boosts")) return j([
     { chainId: "solana", tokenAddress: CLEAN }, { chainId: "solana", tokenAddress: "So11111111111111111111111111111111111111112" },
     { chainId: "solana", tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },

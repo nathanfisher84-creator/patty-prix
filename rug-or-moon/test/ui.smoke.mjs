@@ -32,6 +32,7 @@ const MINT2 = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 // Mocked on-chain backend → a clean token (mint/freeze revoked, deep liquidity).
 const backend = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
+  if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [{ lp: { lpLockedPct: 100 } }] });
   if (url.includes("token-boosts")) return j([
     { chainId: "solana", tokenAddress: MINT }, { chainId: "solana", tokenAddress: MINT2 },
   ]);

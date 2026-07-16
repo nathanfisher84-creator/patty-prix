@@ -80,6 +80,16 @@ export function scoreToken(raw = {}) {
     else if (feeBps > 0) { add("yellow", "t22-fee", `Transfer tax ${(feeBps / 100).toFixed(1)}% on every trade`); }
   }
 
+  // 2c) Liquidity lock (from RugCheck) — can the dev pull the liquidity and rug?
+  // The single biggest rug lever, and the one thing we can't compute ourselves.
+  if (typeof raw.lpLockedPct === "number") {
+    const p = raw.lpLockedPct;
+    if (p >= 90) add("green", "lp-lock", `Liquidity ${Math.round(p)}% locked/burned — dev can't pull it`);
+    else if (p >= 50) add("yellow", "lp-lock", `Only ${Math.round(p)}% of liquidity is locked — partial rug risk`);
+    else { add("red", "lp-lock", `Liquidity is just ${Math.round(p)}% locked — dev can pull the rest and rug`); cap("caution"); }
+  }
+  if (raw.rugged) { add("red", "rugged", "RugCheck has flagged this token as already rugged"); cap("high-risk"); }
+
   // 3) Holder concentration — how much do non-pool, non-burn OWNERS control?
   const conc = concentration(raw);
   if (conc != null) {
