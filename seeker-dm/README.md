@@ -20,9 +20,11 @@ offer.
 | [SECURITY.md](./SECURITY.md) | Threat model, what's enforced vs the audit scope | — |
 
 | [`packages/crypto`](./packages/crypto) | On-curve ed25519 stealth with **bound spend authority** (production replacement for the core's hash-commitment stealth) | ⚠️ written, **unverified here** — needs `npm install` (`@noble/curves`); run its test on a networked machine |
+| [`app`](./app) | React Native / Expo Seeker client — identity in secure storage, wallet connect, relay wiring, minimal end-to-end flow | ⚠️ **scaffold** — not built/run; SDK & crypto-in-RN bindings must be verified (see [app/README.md](./app/README.md)) |
 
-**To build next:** the React Native app (Seeker UI, Mobile Wallet Adapter, Seed
-Vault key storage). See ARCHITECTURE.md → Build status.
+The code is now feature-complete to the **audit line**. What remains is the
+independent audit, then owner tasks: relay hosting, on-chain credit deposits,
+finishing the app UI, a privacy policy + ToS, and dApp Store publishing.
 
 ## Try the backend
 

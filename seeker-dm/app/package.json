@@ -1,0 +1,23 @@
+{
+  "name": "@seeker-dm/app",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Seeker (React Native / Expo) client for seeker-dm. SCAFFOLD — see README before building.",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo run:android"
+  },
+  "dependencies": {
+    "@seeker-dm/core": "0.1.0",
+    "@seeker-dm/relay": "0.1.0",
+    "expo": "*",
+    "expo-secure-store": "*",
+    "react": "*",
+    "react-native": "*",
+    "react-native-quick-crypto": "*",
+    "@solana-mobile/mobile-wallet-adapter-protocol-web3js": "*",
+    "@solana/web3.js": "*"
+  },
+  "_versionsNote": "Dependency versions are '*' placeholders. Pin them to the current releases when you install — the Solana Mobile SDK, Expo, and quick-crypto all move; this scaffold was written but NOT built/verified in-repo (no network/Android tooling). See README.md."
+}

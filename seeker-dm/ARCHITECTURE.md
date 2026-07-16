@@ -57,8 +57,8 @@ sender-session clustering; see SECURITY.md §3.
 | `@seeker-dm/relay` server + client | built | ✅ real-HTTP integration test (localhost) |
 | Audit docs (threat model) | written | n/a |
 | `@seeker-dm/crypto` on-curve stealth (ed25519, bound spend authority) | built | ⚠️ **unverified in sandbox** — `cd packages/crypto && npm install && npm test` on a networked machine (needs `@noble/curves`) |
-| React Native app (Seeker UI + MWA + Seed Vault key storage) | **to build** | pending (needs Android tooling + device) |
-| Push notifications / relay hosting | **to build** | operational |
+| React Native app (`app/`) — identity, wallet connect, relay wiring, e2e flow | **scaffold** | ⚠️ **not built/run** — needs Android tooling + device; SDK & crypto-in-RN bindings must be verified (see app/README.md) |
+| Push notifications / relay hosting / persistence | **to build** | operational |
 
 ## Run the backend locally
 
