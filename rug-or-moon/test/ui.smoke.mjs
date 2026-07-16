@@ -119,6 +119,18 @@ try {
   await page.waitForSelector(".verdict h2", { timeout: 4000 });
   await page.screenshot({ path: join(ROOT, "test", "ui-smoke.png") });
   console.log("  📸 screenshot: test/ui-smoke.png");
+
+  // --- Seeker Edition: launching at /?edition=seeker unlocks unlimited watching.
+  const seeker = await browser.newContext();
+  const sp = await seeker.newPage({ viewport: { width: 390, height: 780 } });
+  await sp.goto(base + "/?edition=seeker", { waitUntil: "networkidle" });
+  check("Seeker Edition badge shows in the header", /Seeker Edition/.test(await sp.textContent("header .tag")));
+  await sp.click('.tabs button[data-tab="watch"]');
+  await sp.waitForSelector("#tab-watch .quota", { timeout: 4000 });
+  const sQuota = await sp.textContent("#tab-watch .quota");
+  check("Seeker Edition shows unlimited (no 5-token cap)", /unlimited/i.test(sQuota) && !/\/5/.test(sQuota));
+  check("Seeker flag latches in localStorage", (await sp.evaluate(() => localStorage.getItem("rom.edition"))) === "seeker");
+  await seeker.close();
 } finally {
   await browser.close();
   server.close();

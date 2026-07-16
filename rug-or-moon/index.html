@@ -22,6 +22,7 @@
   header img{width:34px;height:34px}
   header h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.2px}
   header .tag{margin-left:auto;font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  header .tag.seeker{color:#04121a;border-color:transparent;background:linear-gradient(90deg,#8b7bff,#22b8ff);font-weight:800}
   .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:16px}
   .tabs button{flex:1;background:transparent;border:0;color:var(--dim);font-weight:700;font-size:13.5px;padding:9px 4px;border-radius:8px}
   .tabs button.on{background:var(--card2);color:var(--txt)}
@@ -139,12 +140,30 @@ const $$ = s => [...document.querySelectorAll(s)];
 // ---- config -----------------------------------------------------------------
 // Configure your Jupiter referral to earn a fee on swaps routed from the app.
 const JUP_REFERRAL = ""; // e.g. "?referrer=<yourRefKey>&feeBps=50"
-// Freemium: free users watch up to this many tokens. Premium (a future auth +
-// payment step) lifts it; there's no server enforcement yet — this is local.
+// Freemium: on the web, users watch up to this many tokens. The Seeker dApp
+// Store edition unlocks unlimited watching — that's the exclusive perk.
 const FREE_WATCH_LIMIT = 5;
 const SAFETY_DROP_ALERT = 20;
-const IS_PREMIUM = false;
 const WATCH_KEY = "rom.watch.v1";
+const EDITION_KEY = "rom.edition";
+
+// Seeker Edition detection. The TWA (the Android app on the Seeker dApp Store)
+// is configured to launch at /?edition=seeker, and Android TWAs also arrive with
+// an "android-app://" referrer. Either signal marks the installed app; we latch
+// it in localStorage so it survives later in-app navigations. This is a soft
+// unlock, not DRM — the real exclusivity is that the app ships only on the dApp
+// Store. Unlimited watching is the reward for installing it there.
+function detectSeeker(){
+  try{
+    if (localStorage.getItem(EDITION_KEY) === "seeker") return true;
+    const param = new URLSearchParams(location.search).get("edition");
+    const fromApp = (document.referrer || "").startsWith("android-app://");
+    if (param === "seeker" || fromApp){ localStorage.setItem(EDITION_KEY, "seeker"); return true; }
+  }catch{}
+  return false;
+}
+const IS_SEEKER = detectSeeker();
+const IS_PREMIUM = IS_SEEKER; // Seeker Edition == premium (unlimited watchlist)
 
 // ---- helpers ----------------------------------------------------------------
 const usd = n => n==null ? "—" : n>=1e9?"$"+(n/1e9).toFixed(2)+"B":n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(1)+"K":"$"+(+n).toFixed(2);
@@ -324,8 +343,9 @@ const wout = $("#wout");
 
 function renderWatch(items){
   const gate = canWatch(items.length);
-  const quota = IS_PREMIUM ? "" :
-    `<p class="quota">${items.length}/${FREE_WATCH_LIMIT} watched (free plan). Premium unlimited watching + push alerts is a planned upgrade.</p>`;
+  const quota = IS_SEEKER
+    ? `<p class="quota">✦ Seeker Edition — unlimited watching unlocked.</p>`
+    : `<p class="quota">${items.length}/${FREE_WATCH_LIMIT} watched. Unlimited watching + alerts are unlocked in the <b>Seeker dApp Store edition</b>.</p>`;
   if (!items.length){
     wout.innerHTML = `<div class="card msg">No tokens yet. Scan a token and tap ☆ Add to watchlist.</div>${quota}`;
     return;
@@ -415,6 +435,12 @@ q.addEventListener("keydown", e=>{ if(e.key==="Enter") scan(); });
 $("#tref").onclick = () => loadTrending(true);
 $("#wref").onclick = () => { ensureNotifyPermission(); rescanWatch(); };
 refreshWCount();
+
+// Badge the header when we're the Seeker Edition (unlimited watchlist unlocked).
+if (IS_SEEKER){
+  const tag = $("header .tag");
+  if (tag){ tag.textContent = "✦ Seeker Edition"; tag.classList.add("seeker"); }
+}
 
 // Deep-link support: /?token=... scans on load (great for shared links).
 const pre = new URLSearchParams(location.search).get("token");

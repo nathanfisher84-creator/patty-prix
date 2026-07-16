@@ -66,10 +66,12 @@ Deploy as its own **Vercel** project (root = `rug-or-moon/`):
 2. **Jupiter referral** — the "Buy on Jupiter" button routes swaps to Jupiter.
    Set `JUP_REFERRAL` in `index.html` to your referral params to earn a fee on
    every swap the app sends.
-3. **Freemium** — the watchlist + alerts layer is built: free users watch up to 5
-   tokens with safety-drop / smart-money-exit alerts; the upsell is unlimited
-   watching + push alerts. The limit is enforced client-side today — turning it
-   into paid unlock still needs **auth + payment** (the one owner step here).
+3. **Seeker-exclusive premium** — the watchlist caps at 5 tokens on the web, but
+   the **Seeker dApp Store edition unlocks unlimited watching**. The app detects
+   the installed edition via its launch URL (`/?edition=seeker`) or an
+   `android-app://` referrer and latches it in `localStorage` (see `detectSeeker`
+   in `index.html`). This is a soft unlock — the real exclusivity is that the APK
+   ships only on the dApp Store. A true paid tier would still need auth + payment.
 
 Honest ceiling: ~150k Seeker devices is niche scale — treat this as "ship a sharp
 useful app, plausibly earn a grant + modest referral revenue," not a unicorn.
@@ -84,14 +86,17 @@ Activity**. See <https://docs.solanamobile.com/dapp-store/publishing-a-web-app>.
    `icon.svg` via `node scripts/render-icons.mjs` (re-run it if you change the
    SVG). The maskable variant is full-bleed with the shield inside the safe zone.
 2. **Wrap the PWA** with Bubblewrap (`@bubblewrap/cli`) against your deployed URL
-   + `manifest.json` → a signed release APK.
+   + `manifest.json` → a signed release APK. **Set the TWA launch URL to
+   `https://your-app/?edition=seeker`** so the installed app unlocks the
+   Seeker-exclusive unlimited watchlist (Bubblewrap asks for the start URL during
+   `init`, or edit `startUrl` in the generated `twa-manifest.json`).
 3. **Publish** with the dApp Store CLI (`@solana-mobile/dapp-store-cli`): mint the
    Publisher, App, and Release NFTs (your keypair + a little SOL), then submit;
    review is ~3–5 business days.
-4. Provide listing assets (icon, screenshots, description) and a **privacy
-   policy** URL. The policy is built: `privacy.html` deploys at
-   `https://your-app/privacy.html` (linked from the app footer). Fill in the
-   `REPLACE_WITH_YOUR_CONTACT_EMAIL` placeholder before you submit.
+4. **Listing assets are prepared** in `store/`: four 1080×2340 screenshots
+   (regenerate with `node scripts/screenshots.mjs`) and ready-to-paste copy in
+   `store/LISTING.md`. The **privacy policy** is built (`privacy.html`, deployed at
+   `https://your-app/privacy.html`, linked from the app footer, contact email set).
 
 ## What's verified vs. yours
 
