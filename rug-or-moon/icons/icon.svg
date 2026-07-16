@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Rug or Moon">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b7bff"/>
+      <stop offset="1" stop-color="#22b8ff"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="#0b0f17"/>
+  <!-- shield -->
+  <path d="M256 84l132 44v128c0 96-58 152-132 188-74-36-132-92-132-188V128z"
+        fill="none" stroke="url(#g)" stroke-width="26" stroke-linejoin="round"/>
+  <!-- check / spark inside -->
+  <path d="M196 262l40 42 84-96" fill="none" stroke="#39d98a" stroke-width="26"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

@@ -1,0 +1,4 @@
+[
+  { "wallet": "REPLACE_WITH_A_WALLET_ADDRESS", "label": "Smart money #1" },
+  { "wallet": "ANOTHER_WALLET_ADDRESS", "label": "" }
+]

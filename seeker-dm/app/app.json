@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "seeker-dm",
+    "slug": "seeker-dm",
+    "version": "0.1.0",
+    "platforms": ["android"],
+    "android": {
+      "package": "app.seekerdm",
+      "permissions": ["INTERNET"]
+    },
+    "plugins": ["expo-secure-store"]
+  }
+}

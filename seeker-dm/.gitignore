@@ -1,0 +1,8 @@
+# dependencies (installed with npm; never committed)
+node_modules/
+**/node_modules/
+
+# lockfiles are fine to commit, but package installs are not
+.expo/
+dist/
+*.log
