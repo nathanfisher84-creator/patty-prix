@@ -3,78 +3,88 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Airdrop Fam HQ 🪂 — Patty Prix</title>
-<meta name="description" content="Every $PATTYICE airdrop wallet tracked: what they got, what they still hold, who's diamond and who folded." />
+<title>Airdrop Log 🪂 — $JARED</title>
+<meta name="description" content="Every $JARED airdrop wallet tracked: what they got, what they still hold, who's diamond and who folded." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%AA%82%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C;
-    --pill: #5F4BE0; --gold: #FFC93C; --fill: #7ED3F0;
-    --green: #3EBF6E; --red: #E4373F;
+    --bg: #030905; --card: #08130C; --edge: #1D5232; --ink: #CDFFD9; --sub: #63A377;
+    --pill: #C6FF4A; --gold: #00FF41;
+    --green: #00FF41; --red: #FF4655;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   body {
     background:
-      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
+      radial-gradient(800px 400px at 80% -80px, rgba(0,255,65,0.07), transparent 60%),
       var(--bg);
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
     color: var(--ink);
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
     padding: 24px 14px 60px;
   }
-  h1 {
-    font-family: 'Fredoka', sans-serif; font-weight: 700;
-    font-size: clamp(26px, 7vw, 40px);
-    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
-    text-align: center;
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
   }
-  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 20px; text-align: center; max-width: 420px; }
+  body > * { position: relative; z-index: 1; }
+  h1 {
+    font-family: 'VT323', monospace; font-weight: 400;
+    font-size: clamp(32px, 8vw, 48px);
+    color: var(--green);
+    text-shadow: 0 0 18px rgba(0,255,65,0.55);
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  .sub { font-size: 13px; color: var(--sub); margin: 6px 0 20px; text-align: center; max-width: 420px; }
   .tiles {
     width: min(760px, 100%);
     display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 14px; margin-bottom: 22px;
   }
   .tile {
-    background: var(--card); border: 3px solid var(--ink); border-radius: 16px;
-    box-shadow: 5px 5px 0 var(--ink); padding: 12px 14px; text-align: center;
+    background: var(--card); border: 2px solid var(--edge); border-radius: 10px;
+    padding: 12px 14px; text-align: center;
   }
-  .tile .l { font-weight: 800; font-size: 11.5px; color: var(--sub); letter-spacing: 0.4px; }
-  .tile .v { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; margin-top: 2px; }
-  .tile .s { font-weight: 800; font-size: 11px; color: var(--sub); }
+  .tile:hover { border-color: var(--green); }
+  .tile .l { font-size: 10.5px; color: var(--sub); letter-spacing: 0.8px; }
+  .tile .v { font-family: 'VT323', monospace; font-size: 28px; margin-top: 2px; color: var(--green); }
+  .tile .s { font-size: 10.5px; color: var(--sub); }
   .lookup { display: flex; gap: 8px; width: min(480px, 100%); margin-bottom: 12px; }
   #lkIn {
     flex: 1; min-width: 0;
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
-    border: 3px solid var(--ink); border-radius: 999px; background: #fff;
-    padding: 10px 16px; box-shadow: 3px 3px 0 var(--ink);
+    font-family: 'Share Tech Mono', monospace; font-size: 13.5px;
+    border: 2px solid var(--edge); border-radius: 8px; background: #04100A;
+    padding: 10px 16px;
     outline: none; color: var(--ink);
   }
+  #lkIn:focus { border-color: var(--green); }
   .btn.lk { font-size: 14px; padding: 10px 18px; }
   .lkcard {
     width: min(480px, 100%);
-    background: var(--card); border: 3px solid var(--ink); border-radius: 16px;
-    box-shadow: 5px 5px 0 var(--ink);
+    background: var(--card); border: 2px solid var(--edge); border-radius: 10px;
     padding: 14px 16px; margin-bottom: 20px;
-    font-weight: 800; font-size: 13.5px;
+    font-size: 13px; line-height: 1.5;
   }
-  .lkcard .big { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 20px; margin: 2px 0; }
-  .lkcard .dim { color: var(--sub); font-size: 12px; }
+  .lkcard .big { font-family: 'VT323', monospace; font-size: 24px; margin: 2px 0; color: var(--green); }
+  .lkcard .dim { color: var(--sub); font-size: 11.5px; }
   .lkcard .err { color: var(--red); }
   .lkcard a { color: var(--pill); }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
   .chip {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13.5px;
-    background: var(--card); border: 2.5px solid var(--ink); border-radius: 999px;
-    padding: 7px 14px; box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 13px;
+    background: var(--card); color: var(--ink);
+    border: 1.5px solid var(--edge); border-radius: 6px;
+    padding: 7px 14px; cursor: pointer;
   }
-  .chip.on { background: linear-gradient(160deg, #FFE18A, var(--gold)); }
+  .chip.on { background: var(--green); color: #001505; border-color: var(--green); }
   .board {
     width: min(760px, 100%);
-    background: var(--card); border: 3px solid var(--ink); border-radius: 20px;
-    box-shadow: 8px 8px 0 var(--ink);
+    background: var(--card); border: 2px solid var(--edge); border-radius: 12px;
+    box-shadow: 0 0 18px rgba(0,255,65,0.14);
     overflow: hidden;
   }
   .thead, .row {
@@ -82,35 +92,37 @@
     grid-template-columns: 1.5fr 1fr 1fr 0.9fr 1fr;
     gap: 8px; align-items: center;
     padding: 9px 14px;
-    font-weight: 800; font-size: 12.5px;
+    font-size: 12px;
   }
   .thead {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 12px;
-    border-bottom: 3px solid var(--ink);
+    font-size: 11px; letter-spacing: 1px; color: var(--green);
+    border-bottom: 2px solid var(--edge);
     position: sticky; top: 0; background: var(--card);
   }
   .rows { max-height: 65vh; overflow-y: auto; }
-  .row + .row { border-top: 2px dashed rgba(23,19,14,0.1); }
+  .row + .row { border-top: 1.5px dashed rgba(0,255,65,0.1); }
   .row a { color: var(--pill); text-decoration: none; }
   .row .kept-hi { color: var(--green); }
   .row .kept-lo { color: var(--red); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
-  .skeleton { padding: 40px 20px; text-align: center; font-weight: 800; color: var(--sub); }
+  .skeleton { padding: 40px 20px; text-align: center; color: var(--sub); }
   .links { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; justify-content: center; }
   .btn {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px;
-    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
-    border: 3px solid var(--ink); border-radius: 999px;
-    padding: 10px 20px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 14px;
+    background: var(--green); color: #001505;
+    border: 2px solid var(--green); border-radius: 8px;
+    padding: 10px 20px; cursor: pointer;
     text-decoration: none; display: inline-block;
+    box-shadow: 0 0 14px rgba(0,255,65,0.3);
   }
-  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
-  .btn.plain { background: var(--card); }
-  .note { margin-top: 10px; font-weight: 800; font-size: 11.5px; color: var(--sub); text-align: center; max-width: 420px; }
+  .btn:active { transform: translate(1px, 1px); }
+  .btn.plain { background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; }
+  .btn.plain:hover { border-color: var(--green); }
+  .note { margin-top: 10px; font-size: 11px; color: var(--sub); text-align: center; max-width: 420px; opacity: 0.85; }
 </style>
 </head>
 <body>
-  <h1>AIRDROP FAM HQ 🪂</h1>
+  <h1>AIRDROP LOG 🪂</h1>
   <div class="sub">every wallet the airdrop wallet has fed — what they got,
     what they're still holding, and who folded</div>
 
@@ -153,13 +165,13 @@
 
   <div class="links">
     <a class="btn" id="bubble" href="#" target="_blank" rel="noopener">🫧 HOLDER BUBBLE MAP</a>
-    <a class="btn plain" href="index.html">← back to the race</a>
+    <a class="btn plain" href="index.html">← back to $JARED</a>
   </div>
 
 <script>
 "use strict";
 const CONFIG = {
-  mint: "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+  mint: "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump",
   airdropWallet: "8CFVLmzq8Uo6N859y2qFUumrzP291VceztiEperzv941",
   statsApi: "https://pattyprix.xyz/api/stats"
 };
@@ -343,7 +355,7 @@ async function load() {
   }
 }
 
-// ── wallet lookup: paste any address, get its full $PATTYICE story ──
+// ── wallet lookup: paste any address, get its full $JARED story ──
 const B58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 
 function lookup() {
@@ -375,11 +387,11 @@ function lookup() {
   card.appendChild(head);
 
   if (famHit) {
-    line((famHit.cls.icon + " Airdrop Fam — " + famHit.cls.label).toUpperCase());
+    line((famHit.cls.icon + " Airdrop Log — " + famHit.cls.label).toUpperCase());
     line(fmtNum(famHit.amount) + " dropped " + Math.round(famHit.days) + "d ago · holds " +
       fmtNum(famHit.balance) + " (" + Math.round(Math.min(famHit.kept, 9.99) * 100) + "% kept)");
     const famRank = fam.indexOf(famHit) + 1;
-    line("fam bag rank #" + famRank + " of " + fam.length +
+    line("log bag rank #" + famRank + " of " + fam.length +
       (famHit.value != null ? " · bag worth " + fmtUsd(famHit.value) : ""), "dim");
     return;
   }
@@ -391,15 +403,15 @@ function lookup() {
     line("🤝 HOLDER — not from the airdrop");
     const b = line("");
     b.className = "big";
-    b.textContent = fmtNum(bal) + " $PATTYICE";
+    b.textContent = fmtNum(bal) + " $JARED";
     line("holder #" + rank.toLocaleString() + " of " + state.balances.size.toLocaleString() +
       (share != null ? " · " + (share >= 0.01 ? share.toFixed(2) : "<0.01") + "% of supply" : "") +
       (state.price != null ? " · worth " + fmtUsd(bal * state.price) : ""), "dim");
     return;
   }
 
-  line("👀 no $PATTYICE in this wallet (yet)");
-  line("not in the fam, not on the holder list — send them the chart", "dim");
+  line("👀 no $JARED in this wallet (yet)");
+  line("not in the log, not on the holder list — send them the chart", "dim");
 }
 
 document.getElementById("lkBtn").addEventListener("click", lookup);

@@ -6,7 +6,7 @@
 const GLOBAL_PER_DAY = Number(process.env.PRINT_GLOBAL || 200);
 const PER_VISITOR_PER_DAY = Number(process.env.PRINT_PER_VISITOR || 0); // 0 = unlimited
 const COST = Number(process.env.PRINT_COST || 0.067); // ~$/image, Gemini 3.1 Flash Image
-const SHUTOFF = process.env.PRINT_SHUTOFF || "2026-07-16T12:30:00Z";
+const SHUTOFF = process.env.PRINT_SHUTOFF || "off"; // "off" = no scheduled shutoff
 
 function kvEnv() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;

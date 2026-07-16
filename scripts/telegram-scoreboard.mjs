@@ -1,4 +1,4 @@
-// Patty Prix — Telegram pinned live scoreboard.
+// $JARED — Telegram pinned live scoreboard.
 //
 // Fetches the same DexScreener data as the website, renders the race as a
 // text scoreboard, and keeps a pinned Telegram message up to date:
@@ -13,7 +13,7 @@ import { pathToFileURL } from "url";
 
 // Keep these addresses in sync with the CONFIG block in index.html.
 export const CONFIG = {
-  challenger: "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+  challenger: "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump",
   rivals: [
     "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
     "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
@@ -102,7 +102,7 @@ export function buildMessage(byAddr, now = new Date()) {
   rows.sort((a, b) => b.pct - a.pct);
 
   const lines = [
-    "🏁 <b>PATTY PRIX — LIVE RACE</b>",
+    "🥪 <b>$JARED — LIVE SANDWICH TARGETS</b>",
     `<b>${esc(me.baseToken.name)}</b> ($${esc(me.baseToken.symbol)}) · MCAP ${fmtUsd(myMcap)}`,
     ""
   ];

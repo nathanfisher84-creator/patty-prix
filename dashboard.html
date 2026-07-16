@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Patty Mission Control 🛰</title>
+<title>Jared Mission Control 🛰</title>
 <meta name="robots" content="noindex" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%9B%B0%3C/text%3E%3C/svg%3E" />
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -53,7 +53,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Patty Mission Control 🛰</h1>
+  <h1>Jared Mission Control 🛰</h1>
   <div class="meta" id="meta">connecting…</div>
 
   <h2>Visitors</h2>
@@ -74,7 +74,7 @@
   </div>
   <div class="chart" id="chart" hidden></div>
 
-  <h2>$PATTYICE</h2>
+  <h2>$JARED</h2>
   <div class="tiles">
     <div class="tile"><div class="l">Price</div><div class="v" id="tPrice">—</div><div class="s" id="tChange"></div></div>
     <div class="tile"><div class="l">Market cap</div><div class="v" id="tMcap">—</div></div>
@@ -84,7 +84,7 @@
     <div class="tile"><div class="l">Holders</div><div class="v" id="tHolders">—</div></div>
   </div>
 
-  <h2>Grand Prix</h2>
+  <h2>Sandwich Targets</h2>
   <table>
     <thead><tr><th>#</th><th>Token</th><th class="num">MCAP</th><th>Progress</th><th class="num">Status</th></tr></thead>
     <tbody id="rows"><tr><td colspan="5">Loading…</td></tr></tbody>
@@ -93,7 +93,7 @@
 
 <script>
 const CONFIG = {
-  challenger: "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump",
+  challenger: "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump",
   rivals: [
     "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
     "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
@@ -180,7 +180,7 @@ async function refreshRace() {
       <td>${esc(r.name)} <span class="sym">$${esc(r.symbol)}</span></td>
       <td class="num">${fmtUsd(r.mcap)}</td>
       <td><div class="bar"><i class="${r.pct >= 100 ? "gold" : ""}" style="width:${Math.max(2, Math.min(r.pct, 100))}%"></i></div></td>
-      <td class="num">${r.pct >= 100 ? '<span class="flip">FLIPPED 👑</span>' : r.pct.toFixed(1) + "% · " + fmtMult(r.mult) + " to go"}</td>
+      <td class="num">${r.pct >= 100 ? '<span class="flip">SANDWICHED 🥪</span>' : r.pct.toFixed(1) + "% · " + fmtMult(r.mult) + " to go"}</td>
     </tr>`).join("");
   $("meta").textContent = "auto-refreshes every 30s · updated " + new Date().toLocaleTimeString();
 }

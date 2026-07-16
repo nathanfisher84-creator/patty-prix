@@ -3,107 +3,119 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>The Print Shop 🖨️ — Patty Prix</title>
-<meta name="description" content="Prompt the Bagworker into any fit — AI-printed, always the same blue guy." />
+<title>The Print Shop 🖨️ — $JARED</title>
+<meta name="description" content="Prompt Jared into any fit — the hacker is printing. Same extractor, whole new drip." />
 <!-- link previews (X / Discord / Telegram / iMessage). og:image must be
      an absolute URL — update the host here if the deployment is renamed. -->
 <meta property="og:type" content="website" />
-<meta property="og:site_name" content="Patty Prix" />
-<meta property="og:title" content="The Print Shop 🖨️ — dress the Bagworker" />
-<meta property="og:description" content="Type any fit and the Bagworker gets dressed — AI profile maker for $PATTYICE." />
+<meta property="og:site_name" content="$JARED" />
+<meta property="og:title" content="The Print Shop 🖨️ — dress the extractor" />
+<meta property="og:description" content="Type any fit and Jared gets dressed — AI profile maker for $JARED. The hacker is printing." />
 <meta property="og:url" content="https://patty-prix-zg21.vercel.app/" />
 <meta property="og:image" content="https://patty-prix-zg21.vercel.app/printshop-og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta name="twitter:card" content="summary_large_image" />
-<meta name="twitter:title" content="The Print Shop 🖨️ — dress the Bagworker" />
-<meta name="twitter:description" content="Type any fit and the Bagworker gets dressed — AI profile maker for $PATTYICE." />
+<meta name="twitter:title" content="The Print Shop 🖨️ — dress the extractor" />
+<meta name="twitter:description" content="Type any fit and Jared gets dressed — AI profile maker for $JARED. The hacker is printing." />
 <meta name="twitter:image" content="https://patty-prix-zg21.vercel.app/printshop-og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%96%A8%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #F5C8DE; --card: #FBF4E4; --ink: #17130E; --sub: #6E675C;
-    --pill: #5F4BE0; --gold: #FFC93C; --fill: #7ED3F0; --red: #E4373F;
+    --bg: #030905; --card: #08130C; --edge: #1D5232; --ink: #CDFFD9;
+    --sub: #63A377; --green: #00FF41; --lime: #C6FF4A; --red: #FF4655;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   body {
-    background:
-      radial-gradient(800px 400px at 80% -80px, rgba(255,255,255,0.5), transparent 60%),
-      var(--bg);
-    font-family: 'Nunito', sans-serif;
+    background: radial-gradient(800px 400px at 80% -80px, rgba(0,255,65,0.07), transparent 60%), var(--bg);
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
     color: var(--ink);
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
     padding: 24px 14px 60px;
   }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
+  }
+  body > * { position: relative; z-index: 1; }
   h1 {
-    font-family: 'Fredoka', sans-serif; font-weight: 700;
-    font-size: clamp(26px, 7vw, 40px);
-    text-shadow: 3px 3px 0 rgba(255,255,255,0.8), 5px 5px 0 rgba(23,19,14,0.15);
+    font-family: 'VT323', monospace; font-weight: 400;
+    font-size: clamp(32px, 8vw, 48px);
+    color: var(--green);
+    text-shadow: 0 0 18px rgba(0,255,65,0.55);
     text-align: center;
+    letter-spacing: 2px;
   }
-  .sub { font-weight: 800; font-size: 14px; color: var(--sub); margin: 6px 0 14px; text-align: center; max-width: 400px; }
+  .sub { font-size: 13px; color: var(--sub); margin: 6px 0 14px; text-align: center; max-width: 400px; }
   .countdown {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px;
-    color: var(--ink); background: linear-gradient(160deg, #FFE18A, var(--gold));
-    border: 3px solid var(--ink); border-radius: 999px;
-    padding: 8px 18px; box-shadow: 3px 3px 0 var(--ink); margin-bottom: 18px;
+    font-size: 13px; letter-spacing: 0.5px;
+    color: var(--lime); background: var(--card);
+    border: 2px solid var(--edge); border-radius: 8px;
+    padding: 8px 18px; margin-bottom: 18px;
   }
-  .countdown.closed { background: #e9e2d0; color: var(--sub); }
+  .countdown.closed { color: var(--sub); }
   .frame {
     position: relative;
     width: min(92vw, 420px); height: min(92vw, 420px);
-    border: 3px solid var(--ink); border-radius: 22px;
-    box-shadow: 8px 8px 0 var(--ink);
+    border: 2px solid var(--edge); border-radius: 14px;
+    box-shadow: 0 0 22px rgba(0,255,65,0.18);
     background: var(--card);
     overflow: hidden;
     display: flex; align-items: center; justify-content: center;
   }
   .frame img { width: 100%; height: 100%; object-fit: cover; }
-  .idle { text-align: center; padding: 24px; font-weight: 800; color: var(--sub); }
+  .idle { text-align: center; padding: 24px; color: var(--sub); }
   .idle .big { font-size: 56px; }
-  .printing { text-align: center; font-weight: 800; color: var(--sub); }
+  .printing { text-align: center; color: var(--sub); }
   .printing .spin { font-size: 46px; display: inline-block; animation: whirr 1s linear infinite; }
   @keyframes whirr { to { transform: rotate(360deg); } }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 10px; max-width: 440px; }
   .chip {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13px;
-    background: var(--card); border: 2.5px solid var(--ink); border-radius: 999px;
-    padding: 7px 13px; box-shadow: 3px 3px 0 var(--ink); cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 12.5px;
+    background: var(--card); color: var(--ink);
+    border: 1.5px solid var(--edge); border-radius: 6px;
+    padding: 7px 13px; cursor: pointer;
   }
-  .chip:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+  .chip:hover { border-color: var(--green); }
+  .chip:active { transform: translate(1px, 1px); }
   .bar { display: flex; gap: 8px; width: min(440px, 100%); }
   #prompt {
     flex: 1; min-width: 0;
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 15px;
-    border: 3px solid var(--ink); border-radius: 999px; background: #fff;
-    padding: 12px 18px; box-shadow: 3px 3px 0 var(--ink);
+    font-family: 'Share Tech Mono', monospace; font-size: 14px;
+    border: 2px solid var(--edge); border-radius: 8px; background: #04100A;
+    padding: 12px 18px;
     outline: none; color: var(--ink);
   }
+  #prompt:focus { border-color: var(--green); }
   .btn {
-    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px;
-    background: linear-gradient(160deg, #FFE18A, var(--gold)); color: var(--ink);
-    border: 3px solid var(--ink); border-radius: 999px;
-    padding: 12px 22px; box-shadow: 4px 4px 0 var(--ink); cursor: pointer;
+    font-family: 'Share Tech Mono', monospace; font-size: 15px;
+    background: var(--green); color: #001505;
+    border: 2px solid var(--green); border-radius: 8px;
+    padding: 12px 22px; cursor: pointer;
     text-decoration: none; display: inline-block;
+    box-shadow: 0 0 16px rgba(0,255,65,0.35);
   }
-  .btn:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
-  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: 2px 2px 0 var(--ink); }
-  .btn.blue { background: var(--fill); }
-  #msg { margin-top: 12px; font-weight: 800; font-size: 13.5px; color: var(--sub); text-align: center; max-width: 360px; }
+  .btn:active { transform: translate(1px, 1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.blue { background: var(--card); color: var(--lime); border-color: var(--lime); box-shadow: none; }
+  #msg { margin-top: 12px; font-size: 13px; color: var(--sub); text-align: center; max-width: 360px; }
   #msg.err { color: var(--red); }
   .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
-  .note { margin-top: 14px; font-weight: 800; font-size: 11.5px; color: var(--sub); text-align: center; max-width: 380px; }
+  .note { margin-top: 14px; font-size: 11px; color: var(--sub); text-align: center; max-width: 380px; opacity: 0.85; }
+  .note b { color: var(--green); font-weight: 400; }
   .links { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
-  .btn.plain { background: var(--card); font-size: 14px; }
+  .btn.plain { background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; font-size: 13px; }
+  .btn.plain:hover { border-color: var(--green); }
 </style>
 </head>
 <body>
   <h1>THE PRINT SHOP 🖨️</h1>
-  <div class="sub">prompt the Bagworker into any fit —
-    same blue guy, whole new drip. AI does the stitching.</div>
+  <div class="sub">the hacker is printing — prompt Jared into any fit.
+    same extractor, whole new drip.</div>
   <div class="countdown" id="countdown" hidden></div>
 
   <div class="frame" id="frame">
@@ -112,23 +124,23 @@
       type a fit below and hit PRINT
     </div>
     <div class="printing" id="printing" hidden>
-      <span class="spin">🖨️</span><br>printing the drip…<br>
-      <span style="font-size:11.5px">(takes ~10 seconds)</span>
+      <span class="spin">🖨️</span><br>compiling the drip…<br>
+      <span style="font-size:11px">(takes ~10 seconds)</span>
     </div>
-    <img id="result" alt="Bagworker print" hidden />
+    <img id="result" alt="Jared print" hidden />
   </div>
 
   <div class="chips" id="chips">
-    <button class="chip" data-p="black hoodie with 'STOP BEING POOR' white tee">hoodie drip</button>
-    <button class="chip" data-p="glowing super saiyan golden spiky hair, energy aura">super saiyan</button>
-    <button class="chip" data-p="big 70s afro and gold chain">afro funk</button>
-    <button class="chip" data-p="mullet, tactical vest and camo pants, action hero pose">commando</button>
-    <button class="chip" data-p="turned into a soft plush toy, photographed on a carpet">plushie</button>
-    <button class="chip" data-p="F1 racing suit with sponsor patches and a helmet under his arm">race day</button>
+    <button class="chip" data-p="wearing a Subway sandwich shop uniform with a green visor, holding a giant footlong sandwich">footlong 🥪</button>
+    <button class="chip" data-p="black leather trench coat and dark sunglasses, standing in digital rain like the Matrix">the matrix</button>
+    <button class="chip" data-p="wall street suit with a loosened tie, cigar, surrounded by stacks of cash">wall street</button>
+    <button class="chip" data-p="glowing super saiyan golden spiky hair bursting out of the hood, energy aura">super saiyan</button>
+    <button class="chip" data-p="white NASA astronaut suit, helmet under his arm, floating among stars">astronaut</button>
+    <button class="chip" data-p="turned into a soft plush toy, still with glowing green eyes, photographed on a desk">plushie</button>
   </div>
 
   <div class="bar">
-    <input id="prompt" maxlength="300" placeholder="describe the fit… e.g. pink fur coat" autocomplete="off" />
+    <input id="prompt" maxlength="300" placeholder="describe the fit… e.g. gold chains and a grill" autocomplete="off" />
     <button class="btn" id="go">PRINT</button>
   </div>
   <div id="msg" hidden></div>
@@ -138,13 +150,13 @@
     <button class="btn" id="again">PRINT ANOTHER 🖨️</button>
   </div>
 
-  <div class="note">every visitor gets a daily allowance of prints ·
-    the character stays the character — only the fit changes ·
+  <div class="note">the shop shares a daily allowance of prints ·
+    the extractor stays the extractor — only the fit changes ·
     on iPhone pick <b>Save Image</b> from the share sheet</div>
 
   <div class="links">
-    <a class="btn plain" href="https://x.com/Pattyice" target="_blank" rel="noopener">@Pattyice 🐦</a>
-    <a class="btn plain" href="https://pattyprix.xyz" target="_blank" rel="noopener">full site soon 🏁</a>
+    <a class="btn plain" href="https://x.com/jaredsmev" target="_blank" rel="noopener">@jaredsmev 🐦</a>
+    <a class="btn plain" href="https://pattyprix.xyz" target="_blank" rel="noopener">full site soon 👨‍💻</a>
   </div>
 
 <script>
@@ -170,9 +182,8 @@ const PENDING = "pp_pending";
 const pendingGet = () => { try { return JSON.parse(localStorage.getItem(PENDING) || "null"); } catch { return null; } };
 const pendingSet = (v) => v ? localStorage.setItem(PENDING, JSON.stringify(v)) : localStorage.removeItem(PENDING);
 
-// ── 48-hour countdown → the shop goes dark ──
-const SHUTOFF_FALLBACK = "2026-07-16T12:30:00Z";
-let deadline = Date.parse(SHUTOFF_FALLBACK);
+// ── optional scheduled shutoff (hidden unless the server sets one) ──
+let deadline = NaN;
 let closed = false;
 function fmtLeft(ms) {
   const s = Math.max(0, Math.floor(ms / 1000));
@@ -183,6 +194,7 @@ function fmtLeft(ms) {
 }
 function tick() {
   const cd = el("countdown");
+  if (!Number.isFinite(deadline)) { cd.hidden = true; return; }
   const left = deadline - Date.now();
   if (left <= 0) {
     closed = true;
@@ -194,6 +206,7 @@ function tick() {
     el("result").hidden = true; el("actions").hidden = true;
     return;
   }
+  cd.hidden = false;
   cd.className = "countdown";
   cd.textContent = "⏳ shop closes in " + fmtLeft(left);
 }
@@ -201,8 +214,7 @@ function tick() {
   try {
     const j = await (await fetch("/api/printstats")).json();
     if (j.shutoffAt && Number.isFinite(Date.parse(j.shutoffAt))) deadline = Date.parse(j.shutoffAt);
-  } catch { /* keep the fallback deadline */ }
-  el("countdown").hidden = false;
+  } catch { /* no shutoff info — shop stays open */ }
   tick();
   setInterval(tick, 1000);
 })();
@@ -225,7 +237,7 @@ function showResult(j) {
   el("result").src = j.image;
   el("result").hidden = false;
   el("actions").hidden = false;
-  say(j.left > 0 ? j.left + " prints left today" : "that was your last print today — back tomorrow!");
+  say(j.left > 0 ? j.left + " prints left today" : "that was the last print today — back tomorrow!");
 }
 
 async function print() {
@@ -321,19 +333,19 @@ el("again").addEventListener("click", () => {
   el("prompt").focus();
 });
 
-// same iOS-friendly save flow as the PFP maker
+// iOS-friendly save flow: share sheet first, download fallback
 el("save").addEventListener("click", async () => {
   if (!lastImage) return;
   try {
     const blob = await (await fetch(lastImage)).blob();
-    const file = new File([blob], "bagworker-print.png", { type: blob.type || "image/png" });
+    const file = new File([blob], "jared-print.png", { type: blob.type || "image/png" });
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
-      try { await navigator.share({ files: [file], title: "Bagworker Print" }); return; }
+      try { await navigator.share({ files: [file], title: "Jared Print" }); return; }
       catch (err) { if (err && err.name === "AbortError") return; }
     }
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.download = "bagworker-print.png";
+    a.download = "jared-print.png";
     a.href = url;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 5000);

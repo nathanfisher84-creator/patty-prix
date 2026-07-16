@@ -1,4 +1,4 @@
-// THE PRINT SHOP: prompt the Bagworker into any fit. Sends the base
+// THE PRINT SHOP: prompt Jared into any fit. Sends the base
 // character image + a strict consistency instruction + the user's
 // outfit prompt to Gemini's image model (server-side key, GEMINI_API_KEY
 // in Vercel env). Costs real money per image, so it's throttled hard:
@@ -8,7 +8,7 @@
 import { createHash } from "crypto";
 import { kvEnv, kvPipeline } from "./track.mjs";
 
-const MINT = "2jz9E5JrEbxLg1RhU68aaSikDvpQurCEZz9BBF9rpump";
+const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
 // Nano Banana Pro (Gemini 3 Pro Image) — ~13c/image at 1-2K. Override
 // the model or the spend caps from Vercel env without a redeploy.
 const MODEL = (process.env.PRINT_MODEL || "gemini-3.1-flash-image-preview").trim();
@@ -26,23 +26,24 @@ const DAY_TTL = 60 * 60 * 24 * 2;
 const HIST_TTL = 60 * 60 * 24 * 40; // keep daily totals for the dashboard
 const JOB_TTL = 60 * 15;            // recover a finished print for 15 min
 const SID_RE = /^[a-z0-9]{8,64}$/i; // client session id for recovery
-const SHUTOFF_DEFAULT = "2026-07-16T12:30:00Z"; // override/clear via PRINT_SHUTOFF env
+const SHUTOFF_DEFAULT = "off"; // no scheduled shutoff — set PRINT_SHUTOFF env to schedule one
 
 const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% " +
-  "consistent and instantly recognizable: same bright blue skin with darker blue dash markings, " +
-  "same long droopy nose, same forehead wrinkle lines, same iridescent blue shield sunglasses, " +
-  "same thick black outline sticker art style. You MAY change the pose, body position and camera " +
-  "angle so the requested outfit or scene looks natural and dynamic. Keep the background clean and " +
-  "simple unless the request implies a scene. Square 1:1 composition. Requested change: ";
+  "consistent and instantly recognizable: same pale-skinned man with a sly smug grin, same " +
+  "glowing bright green eyes, same dark navy hooded hoodie with the hood up, same green neon " +
+  "rim-lighting, same bold comic style with dark outlines. You MAY change the pose, body " +
+  "position and camera angle so the requested outfit or scene looks natural and dynamic. Keep " +
+  "the dark hacker / matrix-code mood of the background unless the request implies a different " +
+  "scene. Square 1:1 composition. Requested change: ";
 
 // the base art is fetched once per warm function: prefer a hi-res
-// bagworker-base.png committed to the site, fall back to the token's
+// extractor-base.png committed to the site, fall back to the token's
 // official DexScreener icon
 let baseCache = null;
 async function baseImage() {
   if (baseCache) return baseCache;
   try {
-    const r = await fetch("https://pattyprix.xyz/bagworker-base.png", { redirect: "follow" });
+    const r = await fetch("https://pattyprix.xyz/extractor-base.png", { redirect: "follow" });
     const ct = r.headers.get("content-type") || "";
     if (r.ok && ct.startsWith("image/")) {
       baseCache = { mime: ct.split(";")[0], b64: Buffer.from(await r.arrayBuffer()).toString("base64") };
