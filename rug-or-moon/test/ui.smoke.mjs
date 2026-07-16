@@ -47,8 +47,8 @@ const backend = async (url, opts) => {
   if (body.method === "getAccountInfo") return j({ result: { value: { data: { parsed: { info: {
     mintAuthority: null, freezeAuthority: null, decimals: 6, supply: "1000000000000000" } } } } } });
   if (body.method === "getTokenLargestAccounts") return j({ result: { value: [
-    { uiAmount: 400_000_000 }, { uiAmount: 30_000_000 }, { uiAmount: 20_000_000 }] } });
-  if (body.method === "getMultipleAccounts") return j({ result: { value: (body.params[0]||[]).map(a=>({data:{parsed:{info:{owner:"o-"+a}}}})) } });
+    { address: "pool", uiAmount: 400_000_000 }, { address: "h1", uiAmount: 30_000_000 }, { address: "h2", uiAmount: 20_000_000 }] } });
+  if (body.method === "getMultipleAccounts") return j({ result: { value: (body.params[0]||[]).map(a=>({data:{parsed:{info:{owner: a==="pool" ? "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j" : "o-"+a}}}})) } });
   return j({});
 };
 

@@ -9,6 +9,20 @@ import { scoreToken } from "../scoring.mjs";
 import { loadSmartMoney, matchSmartMoney } from "../smart-money.mjs";
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+const SYSTEM_PROGRAM = "11111111111111111111111111111111";
+
+// Owners that are NOT insiders — classify holders by OWNER, never by "biggest
+// account is the pool" (that hid a dev whale larger than the LP). Unrecognized
+// pools fall through to being counted (safe direction: over-warn, never
+// false-clean); scoring adds a "verify on Solscan" hint in that case.
+const POOL_OWNERS = new Set([
+  "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j", // Raydium AMM v4 authority (base/quote vaults)
+  // Extend with other AMM authorities as they're verified.
+]);
+const BURN_OWNERS = new Set([
+  "1nc1nerator11111111111111111111111111111111",
+  SYSTEM_PROGRAM,
+]);
 
 // Core, testable: gather → score. `fetchFn` and `smartMoney` injectable for tests.
 export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney } = {}) {
@@ -34,25 +48,32 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
 
   const market = bestMarket(pairsRes);
   const mintInfo = parseMintInfo(info);
-  const holders = parseHolders(largest, market);
 
-  // Resolve top-holder OWNERS and flag overlap with known smart money — the app's
-  // differentiator. Best-effort: on any failure, alpha falls back to momentum.
+  // Resolve the OWNERS of the top token accounts (always — used for both holder
+  // classification and smart-money overlap). Best-effort: on failure we degrade.
+  const addrs = (largest?.result?.value || []).map(v => v.address).filter(Boolean).slice(0, 20);
+  let owners = [];
+  let ownersReliable = false;
+  if (rpc && addrs.length) {
+    owners = await rpc("getMultipleAccounts", [addrs, { encoding: "jsonParsed" }])
+      .then(r => (r?.result?.value || []).map(a => a?.data?.parsed?.info?.owner))
+      .catch(() => []);
+    ownersReliable = owners.length === addrs.length && owners.every(Boolean);
+  }
+
+  const holders = parseHolders(largest, owners);
+
+  // Smart-money overlap — only trusted when owner resolution actually succeeded,
+  // so a transient RPC failure can't masquerade as "smart money exited".
   let sm = { count: 0, labels: [] };
-  if (rpc && smSet.set.size) {
-    try {
-      const addrs = (largest?.result?.value || []).map(v => v.address).filter(Boolean).slice(0, 20);
-      if (addrs.length) {
-        const owners = await rpc("getMultipleAccounts", [addrs, { encoding: "jsonParsed" }])
-          .then(r => (r?.result?.value || []).map(a => a?.data?.parsed?.info?.owner))
-          .catch(() => []);
-        sm = matchSmartMoney(owners, smSet);
-      }
-    } catch { /* fall back to momentum-only alpha */ }
+  let smartMoneyReliable = false;
+  if (rpc && smSet.set.size && ownersReliable) {
+    sm = matchSmartMoney(owners, smSet);
+    smartMoneyReliable = true;
   }
 
   const raw = {
-    mint: mintInfo || {},
+    mint: mintInfo, // null → authorities UNKNOWN (scoring says so, never "revoked")
     holders,
     market,
     smartMoneyHolders: sm.count,
@@ -64,18 +85,22 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     token: mint,
     ...result,
     smartMoneyHolders: sm.count,
+    smartMoneyReliable,
     market: market && {
       priceUsd: market.priceUsd, liquidityUsd: market.liquidityUsd, volume24h: market.volume24h,
       mcap: market.mcap, dexId: market.dexId, symbol: market.symbol, name: market.name, icon: market.icon,
+      websites: market.websites, socials: market.socials,
     },
-    dataComplete: !!mintInfo, // false when no Helius key: authority checks unknown
+    dataComplete: !!mintInfo, // false when authorities couldn't be read
     disclaimer: "Heuristic risk estimate from public on-chain data. Not financial advice. Always DYOR.",
   };
 }
 
 function bestMarket(pairs) {
   if (!Array.isArray(pairs) || !pairs.length) return null;
-  const score = p => (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
+  // Rank by liquidity depth; pumpswap only breaks ties (it used to override, so a
+  // $0 pumpswap pair could beat a $2M Raydium pair and mislabel a token as thin).
+  const score = p => (p.liquidity?.usd || 0) + (p.dexId === "pumpswap" ? 1 : 0);
   const p = pairs.reduce((a, b) => (score(b) > score(a) ? b : a));
   return {
     liquidityUsd: p.liquidity?.usd || 0,
@@ -89,36 +114,65 @@ function bestMarket(pairs) {
     symbol: p.baseToken?.symbol,
     name: p.baseToken?.name,
     icon: p.info?.imageUrl || null,
+    websites: p.info?.websites?.map(w => w?.url).filter(Boolean) || [],
+    socials: p.info?.socials?.map(s => s?.type || s?.platform).filter(Boolean) || [],
   };
 }
 
 function parseMintInfo(info) {
-  const parsed = info?.result?.value?.data?.parsed?.info;
+  const val = info?.result?.value;
+  const parsed = val?.data?.parsed?.info;
   if (!parsed) return null;
   const decimals = parsed.decimals ?? 0;
+
+  // Token-2022 honeypot levers live in `extensions` — read them.
+  let transferFeeBps = null, transferHook = null, permanentDelegate = null, defaultFrozen = false;
+  for (const e of (parsed.extensions || [])) {
+    if (e.extension === "transferFeeConfig") {
+      const fee = e.state?.newerTransferFee ?? e.state?.olderTransferFee ?? e.state;
+      transferFeeBps = fee?.transferFeeBasisPoints ?? transferFeeBps;
+    } else if (e.extension === "transferHook") {
+      transferHook = e.state?.programId ?? null;
+    } else if (e.extension === "permanentDelegate") {
+      permanentDelegate = e.state?.delegate ?? null;
+    } else if (e.extension === "defaultAccountState") {
+      defaultFrozen = e.state?.accountState === "frozen";
+    }
+  }
+
   return {
     mintAuthority: parsed.mintAuthority ?? null,   // null = revoked (good)
     freezeAuthority: parsed.freezeAuthority ?? null,
     decimals,
     supply: Number(parsed.supply) / Math.pow(10, decimals),
+    token2022: val?.data?.program === "spl-token-2022",
+    transferFeeBps,
+    transferHook,
+    permanentDelegate,
+    defaultFrozen,
   };
 }
 
-// Tag the largest token account as the LP pool ONLY when a real pool exists
-// (liquidity ≥ $10k) — for liquid tokens the top account is almost always the
-// LP, so counting it as an "insider" would false-flag legit projects. For
-// low-liquidity tokens we do NOT exclude it: there a dominant holder is a real
-// risk, and we lean toward flagging. Documented heuristic; the UI also shows raw
-// top-holder figures.
-function parseHolders(largest, market) {
+// Build holders keyed by OWNER (aggregating an owner split across accounts) and
+// classify pool / burn by owner. `owners[i]` aligns with the i-th largest
+// account. When owners are unavailable we key by account and treat all as
+// holders — the safe (over-count) direction.
+function parseHolders(largest, owners) {
   const vals = largest?.result?.value;
   if (!Array.isArray(vals) || !vals.length) return [];
-  const sorted = [...vals].sort((a, b) => (b.uiAmount || 0) - (a.uiAmount || 0));
-  const poolLikely = (market?.liquidityUsd || 0) >= 10_000;
-  return sorted.map((v, i) => ({
-    amount: v.uiAmount || 0,
-    kind: i === 0 && poolLikely ? "pool" : "holder",
-  }));
+  const byOwner = new Map();
+  vals.slice(0, 20).forEach((v, i) => {
+    const amount = Number(v.uiAmountString ?? v.uiAmount ?? 0) || 0;
+    const owner = owners[i] || null;
+    const key = owner || ("acct:" + (v.address || i));
+    const kind = owner && BURN_OWNERS.has(owner) ? "burn"
+      : owner && POOL_OWNERS.has(owner) ? "pool"
+      : "holder";
+    const cur = byOwner.get(key) || { amount: 0, kind, owner };
+    cur.amount += amount;
+    byOwner.set(key, cur);
+  });
+  return [...byOwner.values()];
 }
 
 export default async function handler(req, res) {

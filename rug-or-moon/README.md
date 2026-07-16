@@ -2,8 +2,14 @@
 
 A **Solana token safety + alpha scanner** PWA for the Seeker dApp Store. Paste a
 token address → get a heuristic **safety score** (mint/freeze authority, holder
-concentration, liquidity, age, wash-trading smell) plus **alpha signals** (smart
+concentration by *owner*, liquidity, age, wash-trading smell, plus **Token-2022
+honeypot vectors** — permanent delegate, transfer hook, transfer tax, freeze-by-
+default — and a can't-sell trading-shape check) plus **alpha signals** (smart
 money holding, buy/sell momentum) — the 5-second "should I ape this?" check.
+
+> Trust rule: the engine never certifies what it can't verify. An unknown fact
+> reads as "unknown" (never "revoked"), and hard danger signals **cap the verdict**
+> so a high sub-score can't produce a "clean" label on a dangerous token.
 
 > Heuristics from public on-chain data, **not financial advice** and not a
 > guarantee. A high score isn't a green light; a low score isn't proof of a

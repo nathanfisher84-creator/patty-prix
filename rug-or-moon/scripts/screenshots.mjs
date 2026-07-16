@@ -46,7 +46,9 @@ const backend = async (url, opts) => {
       liquidity: { usd: clean ? 250_000 : 1_800 }, volume: { h24: clean ? 300_000 : 90_000 },
       txns: { h24: { buys: clean ? 900 : 120, sells: clean ? 480 : 400 } },
       baseToken: { symbol: clean ? "BONK" : "SAFEMOON2", name: clean ? "Bonk" : "Definitely Legit" },
-      info: { imageUrl: "" },
+      info: clean
+        ? { imageUrl: "", websites: [{ url: "https://bonk.example" }], socials: [{ type: "twitter" }, { type: "telegram" }] }
+        : { imageUrl: "" },
     }]);
   }
   const body = JSON.parse(opts.body);
@@ -57,9 +59,9 @@ const backend = async (url, opts) => {
     freezeAuthority: clean ? null : "Dev1111111111111111111111111111111111111111",
     decimals: 6, supply: "1000000000000000" } } } } } });
   if (body.method === "getTokenLargestAccounts") return j({ result: { value: clean
-    ? [{ address: "p", uiAmount: 400_000_000 }, { address: "a", uiAmount: 30_000_000 }, { address: "b", uiAmount: 20_000_000 }]
+    ? [{ address: "pool", uiAmount: 400_000_000 }, { address: "a", uiAmount: 30_000_000 }, { address: "b", uiAmount: 20_000_000 }]
     : [{ address: "w", uiAmount: 900_000_000 }, { address: "x", uiAmount: 60_000_000 }] } });
-  if (body.method === "getMultipleAccounts") return j({ result: { value: (body.params[0] || []).map(a => ({ data: { parsed: { info: { owner: "o-" + a } } } })) } });
+  if (body.method === "getMultipleAccounts") return j({ result: { value: (body.params[0] || []).map(a => ({ data: { parsed: { info: { owner: a === "pool" ? "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j" : "o-" + a } } } })) } });
   return j({});
 };
 

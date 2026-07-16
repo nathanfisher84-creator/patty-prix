@@ -65,6 +65,9 @@
     border-radius:50%;animation:s .7s linear infinite;vertical-align:-3px}
   @keyframes s{to{transform:rotate(360deg)}}
   .warn{color:var(--yellow);font-size:12.5px;margin-top:10px}
+  .links{color:var(--dim);font-size:12px;margin-top:12px}
+  .links a{color:var(--accent);text-decoration:none}
+  .links .nolink{color:var(--yellow)}
   /* Compact list rows for Trending + Watchlist */
   .row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;
     padding:12px 14px;margin-top:10px;cursor:pointer;text-align:left;width:100%;color:var(--txt)}
@@ -169,7 +172,7 @@ const IS_PREMIUM = IS_SEEKER; // Seeker Edition == premium (unlimited watchlist)
 
 // ---- helpers ----------------------------------------------------------------
 const usd = n => n==null ? "—" : n>=1e9?"$"+(n/1e9).toFixed(2)+"B":n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(1)+"K":"$"+(+n).toFixed(2);
-const esc = s => String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const esc = s => String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const short = t => t ? t.slice(0,4)+"…"+t.slice(-4) : "token";
 const VERDICT = {
   clean:{emoji:"✅",label:"Looks clean",c:"var(--green)"},
@@ -199,7 +202,9 @@ function snapshot(d, token){
   return {
     token, symbol: d.market?.symbol || null, safety: d.safety, tier: d.tier,
     smartMoneyHolders: d.smartMoneyHolders ?? 0,
-    flags: (d.flags||[]).filter(f=>f.level==="red").map(f=>({level:"red",text:f.text})),
+    smartMoneyReliable: !!d.smartMoneyReliable,
+    dataComplete: d.dataComplete !== false,
+    flags: (d.flags||[]).filter(f=>f.level==="red").map(f=>({level:"red",id:f.id,text:f.text})),
     ts: Date.now(),
   };
 }
@@ -225,17 +230,26 @@ function toggleWatch(d, token){
 function diffScan(prev, curr){
   const alerts = [];
   if (!prev || !curr || curr.error) return alerts;
-  if (typeof prev.safety==="number" && typeof curr.safety==="number"){
-    const drop = prev.safety - curr.safety;
-    if (drop >= SAFETY_DROP_ALERT) alerts.push({level:"red",kind:"safety-drop",text:`Safety fell ${drop} pts (${prev.safety} → ${curr.safety})`});
+  // Score/tier/flag alerts only when both scans read the authorities (an
+  // incomplete scan inflates safety, so diffing it fires phantom alerts).
+  const bothComplete = prev.dataComplete!==false && curr.dataComplete!==false;
+  if (bothComplete){
+    if (typeof prev.safety==="number" && typeof curr.safety==="number"){
+      const drop = prev.safety - curr.safety;
+      if (drop >= SAFETY_DROP_ALERT) alerts.push({level:"red",kind:"safety-drop",text:`Safety fell ${drop} pts (${prev.safety} → ${curr.safety})`});
+    }
+    const pr = TIER_RANK[prev.tier], cr = TIER_RANK[curr.tier];
+    if (pr!=null && cr!=null && cr<pr) alerts.push({level:curr.tier==="high-risk"?"red":"yellow",kind:"tier-down",text:`Downgraded ${prev.tier} → ${curr.tier}`});
+    // Match new red flags by stable id — texts embed live $/% values.
+    const prevReds = new Set((prev.flags||[]).filter(f=>f.level==="red").map(f=>f.id).filter(Boolean));
+    for (const f of (curr.flags||[])) if (f.level==="red" && f.id && !prevReds.has(f.id)) alerts.push({level:"red",kind:"new-flag",text:`New red flag: ${f.text}`});
   }
-  const pr = TIER_RANK[prev.tier], cr = TIER_RANK[curr.tier];
-  if (pr!=null && cr!=null && cr<pr) alerts.push({level:curr.tier==="high-risk"?"red":"yellow",kind:"tier-down",text:`Downgraded ${prev.tier} → ${curr.tier}`});
-  const ps = prev.smartMoneyHolders??0, cs = curr.smartMoneyHolders??0;
-  if (ps>0 && cs<ps) alerts.push({level:"red",kind:"smart-money-exit",text: cs===0?`Smart money fully exited`:`Smart money trimming — ${ps-cs} of ${ps} exited`});
-  else if (cs>ps) alerts.push({level:"green",kind:"smart-money-in",text:`Smart money moved in — now ${cs} holding`});
-  const prevReds = new Set((prev.flags||[]).map(f=>f.text));
-  for (const f of (curr.flags||[])) if (f.level==="red" && !prevReds.has(f.text)) alerts.push({level:"red",kind:"new-flag",text:`New red flag: ${f.text}`});
+  // Smart money only when both scans reliably resolved owners.
+  if (prev.smartMoneyReliable && curr.smartMoneyReliable){
+    const ps = prev.smartMoneyHolders??0, cs = curr.smartMoneyHolders??0;
+    if (ps>0 && cs<ps) alerts.push({level:"red",kind:"smart-money-exit",text: cs===0?`Smart money fully exited`:`Smart money trimming — ${ps-cs} of ${ps} exited`});
+    else if (cs>ps) alerts.push({level:"green",kind:"smart-money-in",text:`Smart money moved in — now ${cs} holding`});
+  }
   return alerts;
 }
 
@@ -263,6 +277,13 @@ function renderScan(d, token){
   const sigs = (d.alpha?.signals||[]).map(s=>`<div class="sig">• ${esc(s)}</div>`).join("") || `<div class="sig" style="color:var(--dim)">No standout smart-money or momentum signals.</div>`;
   const jup = `https://jup.ag/swap/SOL-${encodeURIComponent(token)}${JUP_REFERRAL}`;
   const watching = isWatched(token);
+  // Socials presence (a "no website/socials" is a real risk signal) + a Solscan
+  // link so users can verify the numbers themselves — receipts build trust.
+  const w = m.websites||[], soc = m.socials||[];
+  const linkParts = [];
+  if (w.length) linkParts.push("🔗 website");
+  soc.slice(0,3).forEach(t=>linkParts.push(esc(t)));
+  const links = `<p class="links">${linkParts.length?linkParts.join(" · "):`<span class="nolink">No website or socials listed</span>`} · <a href="https://solscan.io/token/${encodeURIComponent(token)}" target="_blank" rel="noopener">Verify on Solscan ↗</a></p>`;
   out.innerHTML = `
     <div class="card">
       <div class="verdict">
@@ -278,7 +299,8 @@ function renderScan(d, token){
         <div>24h Vol<b>${usd(m.volume24h)}</b></div>
         <div>Mkt Cap<b>${usd(m.mcap)}</b></div>
       </div>`:""}
-      ${!d.dataComplete?`<p class="warn">⚠️ Authority checks unavailable (scanner not configured with an RPC key) — safety based on market data only.</p>`:""}
+      ${links}
+      ${!d.dataComplete?`<p class="warn">⚠️ Couldn't read the on-chain authorities (no RPC key or a temporary RPC error) — this verdict is capped at "caution" until they can be verified.</p>`:""}
       <ul class="flags">${flags||`<li class="yellow"><span class="dot"></span><span>Not enough data to assess.</span></li>`}</ul>
       <div class="alpha">
         <h3>Alpha signals · ${d.alpha?.score??0}/100</h3>

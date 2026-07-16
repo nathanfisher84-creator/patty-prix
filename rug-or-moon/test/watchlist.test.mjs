@@ -9,7 +9,8 @@ const check = (name, cond, extra = "") => {
 
 const scan = (o = {}) => ({
   token: "MintXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-  safety: 80, tier: "clean", smartMoneyHolders: 0, flags: [], symbol: "BONK", ...o,
+  safety: 80, tier: "clean", smartMoneyHolders: 0, smartMoneyReliable: true,
+  dataComplete: true, flags: [], symbol: "BONK", ...o,
 });
 
 console.log("\n1. No change → no alerts");
@@ -40,17 +41,24 @@ check("partial exit alerts (trimming)", /trimming/.test(trim.find(a => a.kind ==
 const arrive = diffScan(scan({ smartMoneyHolders: 0 }), scan({ smartMoneyHolders: 2 }));
 check("smart money arriving is a green alert", arrive.some(a => a.kind === "smart-money-in" && a.level === "green"));
 
-console.log("\n5. New red flags");
+console.log("\n5. New red flags (matched by stable id, not text)");
 const nf = diffScan(
-  scan({ flags: [{ level: "green", text: "all good" }] }),
-  scan({ flags: [{ level: "red", text: "Mint authority is ACTIVE — creator can mint unlimited tokens" }] }),
+  scan({ flags: [{ level: "green", id: "mint-authority", text: "all good" }] }),
+  scan({ flags: [{ level: "red", id: "mint-authority", text: "Mint authority is ACTIVE — creator can mint unlimited tokens" }] }),
 );
 check("a newly-appeared red flag alerts", nf.some(a => a.kind === "new-flag" && /Mint authority/.test(a.text)));
 const sameFlag = diffScan(
-  scan({ flags: [{ level: "red", text: "Low liquidity" }] }),
-  scan({ flags: [{ level: "red", text: "Low liquidity" }] }),
+  scan({ flags: [{ level: "red", id: "liquidity", text: "Low liquidity ($12K) — easy to rug or exit" }] }),
+  scan({ flags: [{ level: "red", id: "liquidity", text: "Low liquidity ($11K) — easy to rug or exit" }] }),
 );
-check("a pre-existing red flag does NOT re-alert", !sameFlag.some(a => a.kind === "new-flag"));
+check("same flag with drifting $ value does NOT re-alert (H5)", !sameFlag.some(a => a.kind === "new-flag"));
+
+console.log("\n5b. Incomplete / unreliable data suppresses false alarms");
+const incomplete = diffScan(scan({ safety: 82 }), scan({ safety: 50, tier: "high-risk", dataComplete: false }));
+check("incomplete scan → no false safety-drop (M1)", !incomplete.some(a => a.kind === "safety-drop"));
+check("incomplete scan → no false tier-down (M1)", !incomplete.some(a => a.kind === "tier-down"));
+const flaky = diffScan(scan({ smartMoneyHolders: 3 }), scan({ smartMoneyHolders: 0, smartMoneyReliable: false }));
+check("unreliable smart-money scan → no false 'exited' (H4)", !flaky.some(a => a.kind === "smart-money-exit"));
 
 console.log("\n6. Freemium limit");
 check(`free plan caps at ${FREE_WATCH_LIMIT}`, canWatch(FREE_WATCH_LIMIT).ok === false);

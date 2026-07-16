@@ -39,50 +39,50 @@ export function diffScan(prev, curr) {
   const alerts = [];
   if (!prev || !curr || curr.error) return alerts;
 
-  // Safety dropped materially.
-  if (typeof prev.safety === "number" && typeof curr.safety === "number") {
-    const drop = prev.safety - curr.safety;
-    if (drop >= SAFETY_DROP_ALERT) {
-      alerts.push({
-        level: "red", kind: "safety-drop",
-        text: `Safety fell ${drop} pts (${prev.safety} → ${curr.safety})`,
-      });
+  // Score/tier/flag alerts are only meaningful when BOTH scans actually read the
+  // on-chain authorities. An incomplete scan inflates safety (authorities show as
+  // "unknown", tier caps at caution), so diffing against it would fire phantom
+  // "safety fell" / "downgraded" alerts. Skip them unless both are complete.
+  const bothComplete = prev.dataComplete !== false && curr.dataComplete !== false;
+
+  if (bothComplete) {
+    // Safety dropped materially.
+    if (typeof prev.safety === "number" && typeof curr.safety === "number") {
+      const drop = prev.safety - curr.safety;
+      if (drop >= SAFETY_DROP_ALERT) {
+        alerts.push({ level: "red", kind: "safety-drop", text: `Safety fell ${drop} pts (${prev.safety} → ${curr.safety})` });
+      }
+    }
+    // Tier downgraded (clean → caution → high-risk).
+    const pr = TIER_RANK[prev.tier], cr = TIER_RANK[curr.tier];
+    if (pr != null && cr != null && cr < pr) {
+      alerts.push({ level: curr.tier === "high-risk" ? "red" : "yellow", kind: "tier-down", text: `Downgraded ${prev.tier} → ${curr.tier}` });
+    }
+    // A new RED flag appeared that wasn't there before. Matched by stable flag
+    // `id` — texts embed live $/% values, so text-matching re-alerts on every
+    // tiny price wiggle ("Low liquidity ($12K)" → "($11K)").
+    const prevReds = new Set((prev.flags || []).filter(f => f.level === "red").map(f => f.id).filter(Boolean));
+    for (const f of (curr.flags || [])) {
+      if (f.level === "red" && f.id && !prevReds.has(f.id)) {
+        alerts.push({ level: "red", kind: "new-flag", text: `New red flag: ${f.text}` });
+      }
     }
   }
 
-  // Tier downgraded (clean → caution → high-risk).
-  const pr = TIER_RANK[prev.tier], cr = TIER_RANK[curr.tier];
-  if (pr != null && cr != null && cr < pr) {
-    alerts.push({
-      level: curr.tier === "high-risk" ? "red" : "yellow", kind: "tier-down",
-      text: `Downgraded ${prev.tier} → ${curr.tier}`,
-    });
-  }
-
-  // Smart money exited — a wallet we track no longer holds.
-  const ps = prev.smartMoneyHolders ?? 0, cs = curr.smartMoneyHolders ?? 0;
-  if (ps > 0 && cs < ps) {
-    const gone = ps - cs;
-    alerts.push({
-      level: "red", kind: "smart-money-exit",
-      text: cs === 0
-        ? `Smart money fully exited (${ps} wallet${ps > 1 ? "s" : ""} gone)`
-        : `Smart money trimming — ${gone} of ${ps} tracked wallet${ps > 1 ? "s" : ""} exited`,
-    });
-  } else if (cs > ps) {
-    // The one good-news alert worth pushing: tracked smart money arrived.
-    alerts.push({
-      level: "green", kind: "smart-money-in",
-      text: `Smart money moved in — now ${cs} tracked wallet${cs > 1 ? "s" : ""} holding`,
-    });
-  }
-
-  // A new RED flag appeared that wasn't there before (e.g. authority re-enabled,
-  // liquidity pulled). Matched by flag text so we don't re-alert on old ones.
-  const prevReds = new Set((prev.flags || []).filter(f => f.level === "red").map(f => f.text));
-  for (const f of (curr.flags || [])) {
-    if (f.level === "red" && !prevReds.has(f.text)) {
-      alerts.push({ level: "red", kind: "new-flag", text: `New red flag: ${f.text}` });
+  // Smart-money movement — only when BOTH scans reliably resolved owners, so a
+  // transient RPC failure (which zeroes the count) can't fake "smart money exited".
+  if (prev.smartMoneyReliable && curr.smartMoneyReliable) {
+    const ps = prev.smartMoneyHolders ?? 0, cs = curr.smartMoneyHolders ?? 0;
+    if (ps > 0 && cs < ps) {
+      const gone = ps - cs;
+      alerts.push({
+        level: "red", kind: "smart-money-exit",
+        text: cs === 0
+          ? `Smart money fully exited (${ps} wallet${ps > 1 ? "s" : ""} gone)`
+          : `Smart money trimming — ${gone} of ${ps} tracked wallet${ps > 1 ? "s" : ""} exited`,
+      });
+    } else if (cs > ps) {
+      alerts.push({ level: "green", kind: "smart-money-in", text: `Smart money moved in — now ${cs} tracked wallet${cs > 1 ? "s" : ""} holding` });
     }
   }
 

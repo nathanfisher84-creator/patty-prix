@@ -10,23 +10,27 @@ const check = (name, cond, extra = "") => {
 };
 
 const MINT = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
+const RAYDIUM = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j"; // recognized pool owner
 
 // A mocked backend: DexScreener pairs + Helius getAccountInfo / getTokenLargestAccounts
 // / getMultipleAccounts (owner resolution). `owners` maps token-account → owner.
-const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners } = {}) => async (url, opts) => {
+// `ext` injects Token-2022 extensions.
+const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("dexscreener.com")) {
     return j([{
       dexId: "raydium", priceUsd: "0.0000021", marketCap: 2_100_000,
       pairCreatedAt: Date.now() - 40 * 86_400_000,
       liquidity: { usd: liq }, volume: { h24: 300_000 }, txns: { h24: { buys: 800, sells: 500 } },
-      baseToken: { symbol: "BONK", name: "Bonk" }, info: { imageUrl: "http://img" },
+      baseToken: { symbol: "BONK", name: "Bonk" },
+      info: { imageUrl: "http://img", websites: [{ url: "http://x" }], socials: [{ type: "twitter" }] },
     }]);
   }
   const body = JSON.parse(opts.body);
   if (body.method === "getAccountInfo")
-    return j({ result: { value: { data: { parsed: { info: {
+    return j({ result: { value: { data: { program: ext ? "spl-token-2022" : "spl-token", parsed: { info: {
       mintAuthority: mintAuth, freezeAuthority: freezeAuth, decimals: 6, supply: "1000000000000000",
+      ...(ext ? { extensions: ext } : {}),
     } } } } } }); // supply raw = 1e15 / 1e6 = 1e9 ui
   if (body.method === "getTokenLargestAccounts")
     return j({ result: { value: holders ?? [
@@ -41,43 +45,88 @@ const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, o
   return j({});
 };
 
-console.log("\n1. Clean token — full scan");
-const clean = await scanToken(MINT, { heliusKey: "k", fetchFn: backend() });
+console.log("\n1. Clean token — full scan (LP owner recognized → excluded)");
+const clean = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM } }) });
 check("returns the scored result", typeof clean.safety === "number" && clean.tier);
 check("clean tier", clean.tier === "clean", `tier ${clean.tier} safety ${clean.safety}`);
 check("market surfaced (symbol/liquidity)", clean.market.symbol === "BONK" && clean.market.liquidityUsd === 250_000);
+check("surfaces socials/websites (was thrown away)", clean.market.socials.includes("twitter") && clean.market.websites.length === 1);
 check("dataComplete true with Helius key", clean.dataComplete === true);
-check("largest holder tagged as pool (liquid) → low concentration", clean.concentration <= 0.06, `conc ${clean.concentration}`);
+check("recognized LP excluded → low concentration", clean.concentration <= 0.06, `conc ${clean.concentration}`);
 
 console.log("\n2. Rug token — active authorities + low liquidity");
 const rug = await scanToken(MINT, {
   heliusKey: "k",
   fetchFn: backend({ liq: 1_500, mintAuth: "Dev11111111111111111111111111111111111111", freezeAuth: "Dev11111111111111111111111111111111111111",
-    holders: [{ uiAmount: 800_000_000 }, { uiAmount: 100_000_000 }] }),
+    holders: [{ address: "r1", uiAmount: 800_000_000 }, { address: "r2", uiAmount: 100_000_000 }] }),
 });
 check("high-risk tier", rug.tier === "high-risk", `tier ${rug.tier} safety ${rug.safety}`);
 check("mint authority red flag", rug.flags.some(f => f.level === "red" && /Mint authority is ACTIVE/.test(f.text)));
 check("low-liq token does NOT hide the top holder (counted)", rug.concentration >= 0.8, `conc ${rug.concentration}`);
 
-console.log("\n3. No Helius key — degrades gracefully");
+console.log("\n3. No Helius key — authorities UNKNOWN, never faked as revoked (C1)");
 const noKey = await scanToken(MINT, { fetchFn: backend() });
 check("still returns market-based result", typeof noKey.safety === "number");
 check("dataComplete false (authorities unknown)", noKey.dataComplete === false);
-check("flags distribution/authority as unknown, not crash", Array.isArray(noKey.flags));
+check("does NOT claim 'revoked' when unknown", !noKey.flags.some(f => /revoked/i.test(f.text)));
+check("flags authority as unknown", noKey.flags.some(f => f.level === "yellow" && /unknown/i.test(f.text)));
+check("unknown authorities cannot score 'clean'", noKey.tier !== "clean", `tier ${noKey.tier}`);
 
-console.log("\n4. Input validation");
+console.log("\n4. Dev whale LARGER than the pool is not hidden as 'pool' (C2 exploit)");
+const whale = await scanToken(MINT, {
+  heliusKey: "k",
+  fetchFn: backend({ liq: 250_000,
+    holders: [{ address: "whale", uiAmount: 600_000_000 }, { address: "pool", uiAmount: 400_000_000 }],
+    owners: { pool: RAYDIUM, whale: "owner-whale" } }),
+});
+check("the dev whale is counted, not excluded", whale.concentration >= 0.5, `conc ${whale.concentration}`);
+check("majority-held token cannot be 'clean'", whale.tier !== "clean", `tier ${whale.tier}`);
+
+console.log("\n5. Token-2022 honeypot — permanent delegate + 100% transfer fee (C3)");
+const t22 = await scanToken(MINT, {
+  heliusKey: "k",
+  fetchFn: backend({ ext: [
+    { extension: "permanentDelegate", state: { delegate: "Dev11111111111111111111111111111111111111" } },
+    { extension: "transferFeeConfig", state: { newerTransferFee: { transferFeeBasisPoints: 10000 } } },
+  ], owners: { "acct-pool": RAYDIUM } }),
+});
+check("permanent-delegate red flag", t22.flags.some(f => f.level === "red" && /Permanent delegate/.test(f.text)));
+check("transfer-tax red flag", t22.flags.some(f => f.level === "red" && /tax/i.test(f.text)));
+check("honeypot forced to high-risk", t22.tier === "high-risk", `tier ${t22.tier}`);
+
+console.log("\n6. Honeypot trading shape — many buys, ~0 sells → not bullish alpha");
+const hp = async (url, opts) => {
+  const j = o => ({ ok: true, json: async () => o });
+  if (url.includes("dexscreener.com")) return j([{
+    dexId: "raydium", priceUsd: "0.1", marketCap: 1e6, pairCreatedAt: Date.now() - 40 * 86_400_000,
+    liquidity: { usd: 60_000 }, volume: { h24: 80_000 }, txns: { h24: { buys: 500, sells: 2 } },
+    baseToken: { symbol: "TRAP", name: "Trap" }, info: {},
+  }]);
+  const body = JSON.parse(opts.body);
+  if (body.method === "getAccountInfo") return j({ result: { value: { data: { program: "spl-token", parsed: { info: {
+    mintAuthority: null, freezeAuthority: null, decimals: 6, supply: "1000000000000000" } } } } } });
+  if (body.method === "getTokenLargestAccounts") return j({ result: { value: [{ address: "p", uiAmount: 1e8 }] } });
+  if (body.method === "getMultipleAccounts") return j({ result: { value: body.params[0].map(() => ({ data: { parsed: { info: { owner: RAYDIUM } } } })) } });
+  return j({});
+};
+const trap = await scanToken(MINT, { heliusKey: "k", fetchFn: hp });
+check("honeypot red flag on no-sells", trap.flags.some(f => f.level === "red" && /honeypot/i.test(f.text)));
+check("no-sells NOT scored as buy pressure", !/Buy pressure/.test(trap.alpha.signals.join(" ")));
+check("honeypot forced to high-risk", trap.tier === "high-risk", `tier ${trap.tier}`);
+
+console.log("\n7. Input validation");
 check("rejects a bad address", (await scanToken("not-a-mint", {})).error != null);
 
-console.log("\n5. Disclaimer always present");
+console.log("\n8. Disclaimer always present");
 check("carries the not-financial-advice disclaimer", /Not financial advice/.test(clean.disclaimer));
 
-console.log("\n6. Smart-money alpha — resolves holder owners + flags overlap");
+console.log("\n9. Smart-money alpha — resolves holder owners + flags overlap");
 const sm = parseSmartMoney([{ wallet: "owner-acct-1", label: "Cupsey" }, { wallet: "owner-acct-2", label: "Whale2" }]);
-const withSM = await scanToken(MINT, { heliusKey: "k", fetchFn: backend(), smartMoney: sm });
+const withSM = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM } }), smartMoney: sm });
 check("alpha counts the smart-money holders", /2 tracked smart-money wallets holding/.test(withSM.alpha.signals.join(" ")), withSM.alpha.signals.join(" | "));
 check("names the wallets from labels", /Cupsey/.test(withSM.alpha.signals.join(" ")));
-check("alpha score elevated by smart money", withSM.alpha.score >= 40, `got ${withSM.alpha.score}`);
-const noSM = await scanToken(MINT, { heliusKey: "k", fetchFn: backend(), smartMoney: parseSmartMoney([]) });
+check("marks smart money reliable when owners resolved", withSM.smartMoneyReliable === true);
+const noSM = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM } }), smartMoney: parseSmartMoney([]) });
 check("no smart-money list → no smart-money signal", !/smart-money wallet/.test(noSM.alpha.signals.join(" ")));
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
