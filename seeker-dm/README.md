@@ -19,7 +19,7 @@ offer.
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | Components, data flow, why the graph stays private | — |
 | [SECURITY.md](./SECURITY.md) | Threat model, what's enforced vs the audit scope | — |
 
-| [`packages/crypto`](./packages/crypto) | On-curve ed25519 stealth with **bound spend authority** (production replacement for the core's hash-commitment stealth) | ⚠️ written, **unverified here** — needs `npm install` (`@noble/curves`); run its test on a networked machine |
+| [`packages/crypto`](./packages/crypto) | On-curve ed25519 stealth with **bound spend authority** (production replacement for the core's hash-commitment stealth) | ✅ tested (`npm install && npm test` — asserts the recipient derives a key controlling the stealth point, and non-recipients can't); pending audit |
 | [`app`](./app) | React Native / Expo Seeker client — identity in secure storage, wallet connect, relay wiring, minimal end-to-end flow | ⚠️ **scaffold** — not built/run; SDK & crypto-in-RN bindings must be verified (see [app/README.md](./app/README.md)) |
 
 The code is now feature-complete to the **audit line**. What remains is the

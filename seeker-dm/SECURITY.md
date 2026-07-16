@@ -42,17 +42,17 @@ everyone outside a conversation; we do not hide participants from each other.
 
 These are **intentionally unfinished** and must be resolved before production:
 
-1. **On-curve spend authority (highest priority).** *Implemented in
-   `packages/crypto` (`@seeker-dm/crypto`) but UNVERIFIED in this repo's sandbox
-   — it needs `@noble/curves` via `npm install`, which the build sandbox can't
-   run.* The module derives real ed25519 stealth points `P = S + H(shared)·G`
-   with a recipient-derivable private key `p = s + H(shared)` (the test asserts
-   `G·p == P`), binding spend authority. **Before any value is received at these
-   addresses:** (a) run `packages/crypto` tests on a networked machine, and
-   (b) have the audit confirm the scheme, the noble binding, scalar reduction /
-   bias, and domain separation. The tested `@seeker-dm/core` still uses the
-   hash-commitment stealth (detectability only) and must be swapped for this
-   module in production.
+1. **On-curve spend authority (highest priority).** *Implemented and
+   functionally tested in `packages/crypto` (`@seeker-dm/crypto`).* The module
+   derives real ed25519 stealth points `P = S + H(shared)·G` with a
+   recipient-derivable private key `p = s + H(shared)`; the passing test asserts
+   `G·p == P` (the recipient controls the point) and that a non-recipient
+   cannot. **Still required before production:** an independent audit of the
+   scheme and its `@noble/curves` binding — specifically scalar reduction / bias,
+   domain separation, point-validation of untrusted inputs (reject small-order /
+   non-canonical points on `fromRaw`), and constant-time considerations. Also:
+   the tested `@seeker-dm/core` still uses the hash-commitment stealth
+   (detectability only) and must be swapped for this module in production.
 2. **No forward secrecy / post-compromise security.** Keys are long-lived; a
    leaked view key retroactively decrypts all past notes for that identity.
    Consider a ratchet (X3DH + Double Ratchet) for real conversations.

@@ -56,7 +56,7 @@ sender-session clustering; see SECURITY.md §3.
 | `@seeker-dm/core` protocol | built | ✅ unit + integration tests |
 | `@seeker-dm/relay` server + client | built | ✅ real-HTTP integration test (localhost) |
 | Audit docs (threat model) | written | n/a |
-| `@seeker-dm/crypto` on-curve stealth (ed25519, bound spend authority) | built | ⚠️ **unverified in sandbox** — `cd packages/crypto && npm install && npm test` on a networked machine (needs `@noble/curves`) |
+| `@seeker-dm/crypto` on-curve stealth (ed25519, bound spend authority) | built | ✅ tested (`@noble/curves` installs from npm; test asserts `G·p == P` — spend authority binds — and non-recipients can't derive it). Still requires independent audit before production. |
 | React Native app (`app/`) — identity, wallet connect, relay wiring, e2e flow | **scaffold** | ⚠️ **not built/run** — needs Android tooling + device; SDK & crypto-in-RN bindings must be verified (see app/README.md) |
 | Push notifications / relay hosting / persistence | **to build** | operational |
 
