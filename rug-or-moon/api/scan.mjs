@@ -63,6 +63,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
   return {
     token: mint,
     ...result,
+    smartMoneyHolders: sm.count,
     market: market && {
       priceUsd: market.priceUsd, liquidityUsd: market.liquidityUsd, volume24h: market.volume24h,
       mcap: market.mcap, dexId: market.dexId, symbol: market.symbol, name: market.name, icon: market.icon,

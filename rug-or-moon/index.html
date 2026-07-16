@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title>Rug or Moon — Solana token safety scanner</title>
-<meta name="description" content="Scan any Solana token for rug red flags and smart-money signals before you ape. Not financial advice." />
+<meta name="description" content="Scan any Solana token for rug red flags and smart-money signals before you ape. Watch tokens for safety drops. Not financial advice." />
 <meta name="theme-color" content="#0b0f17" />
 <link rel="manifest" href="manifest.json" />
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
@@ -18,10 +18,14 @@
   body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     padding:max(16px,env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom))}
   .wrap{max-width:var(--w);margin:0 auto}
-  header{display:flex;align-items:center;gap:10px;margin:6px 0 18px}
+  header{display:flex;align-items:center;gap:10px;margin:6px 0 14px}
   header img{width:34px;height:34px}
   header h1{font-size:20px;margin:0;font-weight:800;letter-spacing:.2px}
   header .tag{margin-left:auto;font-size:11px;color:var(--dim);border:1px solid var(--line);border-radius:999px;padding:3px 9px}
+  .tabs{display:flex;gap:6px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:5px;margin-bottom:16px}
+  .tabs button{flex:1;background:transparent;border:0;color:var(--dim);font-weight:700;font-size:13.5px;padding:9px 4px;border-radius:8px}
+  .tabs button.on{background:var(--card2);color:var(--txt)}
+  .tabs button .n{font-size:10px;color:var(--accent);font-weight:800}
   .search{display:flex;gap:8px}
   .search input{flex:1;background:var(--card);border:1px solid var(--line);color:var(--txt);border-radius:12px;
     padding:14px 14px;font-size:15px;outline:none}
@@ -35,6 +39,7 @@
   .ring::before{content:"";position:absolute;inset:8px;border-radius:50%;background:var(--card)}
   .ring b{position:relative;font-size:26px;font-weight:800}
   .ring small{position:relative;color:var(--dim);font-size:10px;display:block;text-align:center;margin-top:-4px}
+  .verdict .v{flex:1}
   .verdict .v h2{margin:0;font-size:22px}
   .verdict .v p{margin:4px 0 0;color:var(--dim);font-size:13.5px}
   .sym{font-weight:700}
@@ -50,12 +55,34 @@
   .alpha .sig{font-size:14px;padding:6px 0;color:var(--txt)}
   .buy{display:block;text-align:center;background:linear-gradient(90deg,#39d98a,#22b8ff);color:#04121a;
     font-weight:800;border-radius:12px;padding:14px;margin-top:16px;text-decoration:none}
+  .watch{display:block;width:100%;text-align:center;background:transparent;border:1px solid var(--line);color:var(--txt);
+    font-weight:700;border-radius:12px;padding:12px;margin-top:10px;font-size:14px}
+  .watch.on{border-color:var(--accent);color:var(--accent)}
   .disc{color:var(--dim);font-size:11.5px;margin-top:16px;line-height:1.5}
   .msg{color:var(--dim);text-align:center;padding:30px 10px}
   .spin{display:inline-block;width:18px;height:18px;border:2px solid var(--line);border-top-color:var(--accent);
     border-radius:50%;animation:s .7s linear infinite;vertical-align:-3px}
   @keyframes s{to{transform:rotate(360deg)}}
   .warn{color:var(--yellow);font-size:12.5px;margin-top:10px}
+  /* Compact list rows for Trending + Watchlist */
+  .row{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:12px 14px;margin-top:10px;cursor:pointer;text-align:left;width:100%;color:var(--txt)}
+  .row .pill{width:44px;height:44px;border-radius:50%;flex:0 0 44px;display:grid;place-items:center;font-weight:800;font-size:15px;
+    background:conic-gradient(var(--c,var(--dim)) calc(var(--p,0)*1%), #26314a 0);position:relative}
+  .row .pill::before{content:"";position:absolute;inset:5px;border-radius:50%;background:var(--card)}
+  .row .pill b{position:relative;font-size:15px}
+  .row .info{flex:1;min-width:0}
+  .row .info .t{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .info .s{color:var(--dim);font-size:12.5px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .row .rt{font-size:11px;color:var(--dim);text-align:right;flex:0 0 auto}
+  .row .rt .em{font-size:18px}
+  .alert{color:var(--red);font-size:12px;margin-top:3px}
+  .alert.green{color:var(--green)}
+  .bar{display:flex;align-items:center;gap:10px;margin:2px 0 4px}
+  .bar h2{font-size:16px;margin:0;flex:1}
+  .bar button{background:var(--card2);border:1px solid var(--line);color:var(--txt);border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700}
+  .quota{color:var(--dim);font-size:12px;margin:8px 2px 0}
+  .rm{background:transparent;border:0;color:var(--dim);font-size:20px;line-height:1;padding:0 2px;flex:0 0 auto}
 </style>
 </head>
 <body>
@@ -66,29 +93,126 @@
     <span class="tag">Solana</span>
   </header>
 
-  <div class="search">
-    <input id="q" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false"
-      placeholder="Paste a token address…" />
-    <button id="go">Scan</button>
-  </div>
-  <p class="hint">Check rug red flags + smart-money signals before you ape. Heuristic, not advice.</p>
+  <nav class="tabs">
+    <button data-tab="scan" class="on">🔍 Scan</button>
+    <button data-tab="trending">🔥 Trending</button>
+    <button data-tab="watch">👀 Watchlist <span class="n" id="wcount"></span></button>
+  </nav>
 
-  <div id="out"></div>
+  <!-- Scan tab -->
+  <section id="tab-scan">
+    <div class="search">
+      <input id="q" inputmode="text" autocapitalize="off" autocomplete="off" spellcheck="false"
+        placeholder="Paste a token address…" />
+      <button id="go">Scan</button>
+    </div>
+    <p class="hint">Check rug red flags + smart-money signals before you ape. Heuristic, not advice.</p>
+    <div id="out"></div>
+  </section>
+
+  <!-- Trending tab -->
+  <section id="tab-trending" hidden>
+    <div class="bar"><h2>🔥 Trending today</h2><button id="tref">Refresh</button></div>
+    <p class="hint">Today's trending tokens, auto-scanned — safe gems up top, rugs at the bottom.</p>
+    <div id="tout"></div>
+  </section>
+
+  <!-- Watchlist tab -->
+  <section id="tab-watch" hidden>
+    <div class="bar"><h2>👀 Watchlist</h2><button id="wref">Re-scan</button></div>
+    <p class="hint" id="whint">Save tokens to watch. We re-check them and alert you when safety drops or smart money exits.</p>
+    <div id="wout"></div>
+  </section>
 </div>
 
 <script type="module">
 const $ = s => document.querySelector(s);
-const out = $("#out"), q = $("#q"), go = $("#go");
+const $$ = s => [...document.querySelectorAll(s)];
 
+// ---- config -----------------------------------------------------------------
 // Configure your Jupiter referral to earn a fee on swaps routed from the app.
 const JUP_REFERRAL = ""; // e.g. "?referrer=<yourRefKey>&feeBps=50"
+// Freemium: free users watch up to this many tokens. Premium (a future auth +
+// payment step) lifts it; there's no server enforcement yet — this is local.
+const FREE_WATCH_LIMIT = 5;
+const SAFETY_DROP_ALERT = 20;
+const IS_PREMIUM = false;
+const WATCH_KEY = "rom.watch.v1";
 
+// ---- helpers ----------------------------------------------------------------
 const usd = n => n==null ? "—" : n>=1e9?"$"+(n/1e9).toFixed(2)+"B":n>=1e6?"$"+(n/1e6).toFixed(2)+"M":n>=1e3?"$"+(n/1e3).toFixed(1)+"K":"$"+(+n).toFixed(2);
+const esc = s => String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const short = t => t ? t.slice(0,4)+"…"+t.slice(-4) : "token";
 const VERDICT = {
   clean:{emoji:"✅",label:"Looks clean",c:"var(--green)"},
   caution:{emoji:"⚠️",label:"Caution",c:"var(--yellow)"},
   "high-risk":{emoji:"🚩",label:"High risk",c:"var(--red)"},
 };
+const TIER_RANK = { clean:2, caution:1, "high-risk":0 };
+
+async function scanApi(token){
+  const r = await fetch("/api/scan?token="+encodeURIComponent(token));
+  return r.json();
+}
+
+// ---- watchlist store (localStorage) ----------------------------------------
+function loadWatch(){ try{ return JSON.parse(localStorage.getItem(WATCH_KEY)) || []; }catch{ return []; } }
+function saveWatch(list){ localStorage.setItem(WATCH_KEY, JSON.stringify(list)); refreshWCount(); }
+function isWatched(token){ return loadWatch().some(w => w.token === token); }
+function refreshWCount(){ const n = loadWatch().length; $("#wcount").textContent = n ? "("+n+")" : ""; }
+
+function canWatch(count){
+  if (IS_PREMIUM) return { ok:true, remaining:Infinity };
+  return { ok: count < FREE_WATCH_LIMIT, remaining: Math.max(0, FREE_WATCH_LIMIT - count) };
+}
+
+// Snapshot only the fields the diff needs, plus display bits.
+function snapshot(d, token){
+  return {
+    token, symbol: d.market?.symbol || null, safety: d.safety, tier: d.tier,
+    smartMoneyHolders: d.smartMoneyHolders ?? 0,
+    flags: (d.flags||[]).filter(f=>f.level==="red").map(f=>({level:"red",text:f.text})),
+    ts: Date.now(),
+  };
+}
+
+function toggleWatch(d, token){
+  let list = loadWatch();
+  if (list.some(w=>w.token===token)){
+    list = list.filter(w=>w.token!==token);
+    saveWatch(list);
+    return { watching:false };
+  }
+  const gate = canWatch(list.length);
+  if (!gate.ok){
+    return { watching:false, blocked:true,
+      reason:`Free plan watches up to ${FREE_WATCH_LIMIT} tokens. Remove one or upgrade for unlimited.` };
+  }
+  list.push(snapshot(d, token));
+  saveWatch(list);
+  return { watching:true };
+}
+
+// ---- diff logic (mirrors watchlist.mjs, kept in sync) ----------------------
+function diffScan(prev, curr){
+  const alerts = [];
+  if (!prev || !curr || curr.error) return alerts;
+  if (typeof prev.safety==="number" && typeof curr.safety==="number"){
+    const drop = prev.safety - curr.safety;
+    if (drop >= SAFETY_DROP_ALERT) alerts.push({level:"red",kind:"safety-drop",text:`Safety fell ${drop} pts (${prev.safety} → ${curr.safety})`});
+  }
+  const pr = TIER_RANK[prev.tier], cr = TIER_RANK[curr.tier];
+  if (pr!=null && cr!=null && cr<pr) alerts.push({level:curr.tier==="high-risk"?"red":"yellow",kind:"tier-down",text:`Downgraded ${prev.tier} → ${curr.tier}`});
+  const ps = prev.smartMoneyHolders??0, cs = curr.smartMoneyHolders??0;
+  if (ps>0 && cs<ps) alerts.push({level:"red",kind:"smart-money-exit",text: cs===0?`Smart money fully exited`:`Smart money trimming — ${ps-cs} of ${ps} exited`});
+  else if (cs>ps) alerts.push({level:"green",kind:"smart-money-in",text:`Smart money moved in — now ${cs} holding`});
+  const prevReds = new Set((prev.flags||[]).map(f=>f.text));
+  for (const f of (curr.flags||[])) if (f.level==="red" && !prevReds.has(f.text)) alerts.push({level:"red",kind:"new-flag",text:`New red flag: ${f.text}`});
+  return alerts;
+}
+
+// ---- Scan tab ---------------------------------------------------------------
+const out = $("#out"), q = $("#q"), go = $("#go");
 
 async function scan(){
   const token = q.value.trim();
@@ -96,21 +220,21 @@ async function scan(){
   out.innerHTML = `<div class="card msg"><span class="spin"></span> Scanning on-chain…</div>`;
   history.replaceState(null,"",location.pathname+"?token="+encodeURIComponent(token));
   try{
-    const r = await fetch("/api/scan?token="+encodeURIComponent(token));
-    const d = await r.json();
-    if(d.error){ out.innerHTML = `<div class="card msg">⚠️ ${d.error}</div>`; return; }
-    render(d, token);
+    const d = await scanApi(token);
+    if(d.error){ out.innerHTML = `<div class="card msg">⚠️ ${esc(d.error)}</div>`; return; }
+    renderScan(d, token);
   }catch(e){
     out.innerHTML = `<div class="card msg">Couldn't reach the scanner. Try again.</div>`;
   }
 }
 
-function render(d, token){
+function renderScan(d, token){
   const v = VERDICT[d.tier] || VERDICT.caution;
   const m = d.market || {};
   const flags = (d.flags||[]).map(f=>`<li class="${f.level}"><span class="dot"></span><span>${esc(f.text)}</span></li>`).join("");
   const sigs = (d.alpha?.signals||[]).map(s=>`<div class="sig">• ${esc(s)}</div>`).join("") || `<div class="sig" style="color:var(--dim)">No standout smart-money or momentum signals.</div>`;
   const jup = `https://jup.ag/swap/SOL-${encodeURIComponent(token)}${JUP_REFERRAL}`;
+  const watching = isWatched(token);
   out.innerHTML = `
     <div class="card">
       <div class="verdict">
@@ -133,13 +257,157 @@ function render(d, token){
         ${sigs}
       </div>
       <a class="buy" href="${jup}" target="_blank" rel="noopener">Buy on Jupiter ↗</a>
+      <button class="watch ${watching?"on":""}" id="watchBtn">${watching?"★ Watching — tap to remove":"☆ Add to watchlist"}</button>
       <p class="disc">${esc(d.disclaimer||"Heuristic estimate. Not financial advice.")}</p>
     </div>`;
+  $("#watchBtn").onclick = async () => {
+    const res = toggleWatch(d, token);
+    if (res.blocked){ alert(res.reason); return; }
+    if (res.watching) await ensureNotifyPermission();
+    renderScan(d, token); // reflect the new state
+  };
 }
 
-const esc = s => String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+// ---- Trending tab -----------------------------------------------------------
+const tout = $("#tout");
+let trendingLoaded = false;
+
+async function loadTrending(force){
+  if (trendingLoaded && !force) return;
+  trendingLoaded = true;
+  tout.innerHTML = `<div class="card msg"><span class="spin"></span> Scanning trending tokens…</div>`;
+  try{
+    const r = await fetch("/api/trending?limit=12");
+    const d = await r.json();
+    if (!d.tokens || !d.tokens.length){ tout.innerHTML = `<div class="card msg">No trending data right now. Try Refresh.</div>`; return; }
+    tout.innerHTML = d.tokens.map(t => rowHtml(t)).join("");
+    wireRows(tout, d.tokens);
+  }catch(e){
+    tout.innerHTML = `<div class="card msg">Couldn't load trending. Try Refresh.</div>`;
+    trendingLoaded = false;
+  }
+}
+
+function rowHtml(t, alert){
+  const v = VERDICT[t.tier] || VERDICT.caution;
+  const m = t.market || {};
+  const sub = `${m.liquidityUsd!=null?usd(m.liquidityUsd)+" liq":""}${t.alpha?.score?` · alpha ${t.alpha.score}`:""}`;
+  const alertHtml = alert && alert.length
+    ? `<div class="alert ${alert[0].level==="green"?"green":""}">${esc(alert[0].text)}</div>` : "";
+  return `<button class="row" data-token="${esc(t.token)}">
+      <div class="pill" style="--p:${t.safety};--c:${v.c}"><b>${t.safety}</b></div>
+      <div class="info">
+        <div class="t">${m.symbol?"$"+esc(m.symbol):short(t.token)}</div>
+        <div class="s">${esc(sub||short(t.token))}</div>
+        ${alertHtml}
+      </div>
+      <div class="rt"><div class="em">${v.emoji}</div>${t.trendingRank?"#"+t.trendingRank:""}</div>
+    </button>`;
+}
+
+// Tapping a row jumps to the Scan tab and runs a fresh scan for that token.
+function wireRows(container){
+  container.querySelectorAll(".row").forEach(btn => {
+    btn.onclick = () => { q.value = btn.dataset.token; showTab("scan"); scan(); };
+  });
+}
+
+// ---- Watchlist tab ----------------------------------------------------------
+const wout = $("#wout");
+
+function renderWatch(items){
+  const gate = canWatch(items.length);
+  const quota = IS_PREMIUM ? "" :
+    `<p class="quota">${items.length}/${FREE_WATCH_LIMIT} watched (free plan). Premium unlimited watching + push alerts is a planned upgrade.</p>`;
+  if (!items.length){
+    wout.innerHTML = `<div class="card msg">No tokens yet. Scan a token and tap ☆ Add to watchlist.</div>${quota}`;
+    return;
+  }
+  wout.innerHTML = items.map(w => `
+    <div class="row" data-token="${esc(w.token)}">
+      <div class="pill" style="--p:${w.safety};--c:${(VERDICT[w.tier]||VERDICT.caution).c}"><b>${w.safety}</b></div>
+      <div class="info">
+        <div class="t">${w.symbol?"$"+esc(w.symbol):short(w.token)}</div>
+        <div class="s">${(VERDICT[w.tier]||VERDICT.caution).label}${w.smartMoneyHolders?` · ${w.smartMoneyHolders} smart-money`:""}</div>
+        ${w._alerts&&w._alerts.length?`<div class="alert ${w._alerts[0].level==="green"?"green":""}">${esc(w._alerts[0].text)}</div>`:""}
+      </div>
+      <button class="rm" data-rm="${esc(w.token)}" title="Remove">×</button>
+    </div>`).join("") + quota;
+  // Row tap → scan; × → remove.
+  wout.querySelectorAll(".row").forEach(row => {
+    row.onclick = e => {
+      if (e.target.dataset.rm != null) return;
+      q.value = row.dataset.token; showTab("scan"); scan();
+    };
+  });
+  wout.querySelectorAll("[data-rm]").forEach(x => {
+    x.onclick = e => { e.stopPropagation(); saveWatch(loadWatch().filter(w=>w.token!==x.dataset.rm)); renderWatch(loadWatch()); };
+  });
+}
+
+// Re-scan every watched token, diff against the stored snapshot, surface alerts,
+// and fire a single local notification summarizing anything alert-worthy.
+async function rescanWatch(){
+  const list = loadWatch();
+  if (!list.length){ renderWatch(list); return; }
+  wout.innerHTML = `<div class="card msg"><span class="spin"></span> Re-checking ${list.length} watched token${list.length>1?"s":""}…</div>`;
+  const hits = [];
+  const updated = [];
+  for (const w of list){
+    try{
+      const d = await scanApi(w.token);
+      if (d.error){ updated.push(w); continue; }
+      const fresh = snapshot(d, w.token);
+      const alerts = diffScan(w, fresh);
+      fresh._alerts = alerts;
+      updated.push(fresh);
+      if (alerts.length) hits.push({ token:w.token, symbol:fresh.symbol, alerts });
+    }catch{ updated.push(w); }
+  }
+  saveWatch(updated.map(({_alerts, ...w})=>w)); // persist fresh snapshots, drop transient alerts
+  // Keep alerts on the in-memory copy for this render.
+  const byToken = Object.fromEntries(updated.map(w=>[w.token,w]));
+  renderWatch(loadWatch().map(w=>({ ...w, _alerts: byToken[w.token]?._alerts || [] })));
+  notifySummary(hits);
+}
+
+// ---- notifications ----------------------------------------------------------
+async function ensureNotifyPermission(){
+  if (!("Notification" in window)) return false;
+  if (Notification.permission === "granted") return true;
+  if (Notification.permission === "denied") return false;
+  try{ return (await Notification.requestPermission()) === "granted"; }catch{ return false; }
+}
+
+function notifySummary(hits){
+  if (!hits.length) return;
+  const red = hits.some(h => h.alerts.some(a => a.level==="red"));
+  const word = hits.length>1 ? "tokens" : "token";
+  const title = red ? `🚩 ${hits.length} watched ${word} need attention` : `👀 ${hits.length} watched ${word} changed`;
+  const body = hits.slice(0,4).map(h => `${h.symbol||short(h.token)}: ${h.alerts[0].text}`).join("\n") + (hits.length>4?`\n+${hits.length-4} more`:"");
+  if ("Notification" in window && Notification.permission === "granted"){
+    try{ new Notification(title, { body, icon:"icons/icon.svg" }); return; }catch{}
+  }
+  // Fallback if notifications aren't permitted: an inline banner is enough.
+}
+
+// ---- tabs -------------------------------------------------------------------
+function showTab(name){
+  $$(".tabs button").forEach(b => b.classList.toggle("on", b.dataset.tab===name));
+  $("#tab-scan").hidden = name!=="scan";
+  $("#tab-trending").hidden = name!=="trending";
+  $("#tab-watch").hidden = name!=="watch";
+  if (name==="trending") loadTrending(false);
+  if (name==="watch") renderWatch(loadWatch().map(w=>({...w})));
+}
+$$(".tabs button").forEach(b => b.onclick = () => showTab(b.dataset.tab));
+
+// ---- wiring -----------------------------------------------------------------
 go.onclick = scan;
 q.addEventListener("keydown", e=>{ if(e.key==="Enter") scan(); });
+$("#tref").onclick = () => loadTrending(true);
+$("#wref").onclick = () => { ensureNotifyPermission(); rescanWatch(); };
+refreshWCount();
 
 // Deep-link support: /?token=... scans on load (great for shared links).
 const pre = new URLSearchParams(location.search).get("token");
