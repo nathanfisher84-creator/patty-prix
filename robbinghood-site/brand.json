@@ -1,0 +1,80 @@
+{
+  "_readme": [
+    "Single source of truth for the site's brand. Edit this file, then run",
+    "`node scripts/apply-brand.mjs` (the brand.yml workflow does it automatically",
+    "on push) to stamp every page, API function and OG image.",
+    "`_applied` is machine-managed bookkeeping — the script rewrites it; don't edit."
+  ],
+  "token": {
+    "name": "Robbinghood",
+    "shortName": "Robbinghood",
+    "ticker": "ROBBINGHOOD",
+    "mint": "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
+    "pairAddress": "8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V"
+  },
+  "wallets": {
+    "airdrop": "DxQ1iNidsGap2kr14VdEzA8NheqXabfh6fRkvZQbnZVY"
+  },
+  "links": {
+    "xHandle": "Sizeyon"
+  },
+  "theme": {
+    "bg": "#060A04",
+    "card": "#0B140A",
+    "stripe": "#101D0C",
+    "edge": "#2A5220",
+    "ink": "#DDFFD2",
+    "sub": "#7BA86B",
+    "accent": "#00C805",
+    "accent2": "#C6E829",
+    "red": "#FF4655",
+    "fontDisplay": "VT323",
+    "fontBody": "Share Tech Mono"
+  },
+  "copy": {
+    "gameName": "GETAWAY RUN",
+    "gameOver": "BUY BUTTON DISABLED 🚫",
+    "catchphraseA": "he's got the bag",
+    "catchphraseB": "the buy button is disabled",
+    "banners": [
+      "BUY $ROBBINGHOOD 💰",
+      "HE'S GOT THE BAG 💰",
+      "THE BUY BUTTON IS DISABLED 🚫",
+      "HOLD THE LINE 💎🙌"
+    ],
+    "loreHtml": [
+      "<p><b>Suit on. Bag packed. Buy button off.</b></p>",
+      "<p>Straight out of the <b>r/wallstreetbets</b> GME saga — the friendly free-trading app that turned off the buy button, sold the order flow and walked off with the hood's bag. Robbinghood is the getaway car, immortalized on-chain: the robbery becomes the ticker.</p>",
+      "<p class=\"lore-tag\">$ROBBINGHOOD is the ticker. He's got the bag. The buy button is disabled.</p>"
+    ],
+    "whoTitle": "WHO_IS_ROBBINGHOOD 💰"
+  },
+  "ai": {
+    "baseImage": "robbinghood-base.png",
+    "characterPrompt": "same scruffy cartoon man with shaggy dark brown hair, tired half-lidded eyes, thin stubble goatee, wearing a rumpled black suit with white shirt and black tie, sneaking hunched over with a big green money sack slung over his shoulder marked with a light-green feather logo, loose green dollar bills spilling out behind him, same simple flat cartoon style with bold dark outlines",
+    "scenePrompt": "Keep the flat bright chartreuse-green background and heist / getaway mood unless the request implies a different scene."
+  },
+  "og": {
+    "headline": "$ROBBINGHOOD",
+    "sub1": "ROBBINGHOOD — he's got the bag",
+    "sub2": "born on r/wallstreetbets, GME 2021",
+    "badge": ">> BUY $ROBBINGHOOD",
+    "prompt": "> the buy button is disabled. he's got the bag_",
+    "printSub1": "THE PRINT SHOP — dress the robber",
+    "printSub2": "AI prints. same robber, any fit.",
+    "printBadge": ">> PRINT NOW"
+  },
+  "_applied": {
+    "name": "Robbinghood",
+    "shortName": "Robbinghood",
+    "ticker": "ROBBINGHOOD",
+    "gameName": "GETAWAY RUN",
+    "gameOver": "BUY BUTTON DISABLED 🚫",
+    "catchphraseA": "he's got the bag",
+    "catchphraseB": "the buy button is disabled",
+    "baseImage": "robbinghood-base.png",
+    "fontDisplay": "VT323",
+    "fontBody": "Share Tech Mono",
+    "whoTitle": "WHO_IS_ROBBINGHOOD 💰"
+  }
+}

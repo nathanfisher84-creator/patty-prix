@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Robbinghood Mission Control 🛰</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%9B%B0%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #17130E; --card: #221C14; --ink: #FBF4E4; --sub: #B4A992;
+    --line: #3A3226; --blue: #7ED3F0; --pink: #E570CD; --purple: #8B7BF0;
+    --gold: #FFC93C; --green: #5BCF7F; --red: #F0716B; --salmon: #F0908C;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font-family: 'Nunito', sans-serif;
+    padding: 22px 16px 60px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; }
+  h1 { font-family: 'Fredoka', sans-serif; font-size: 26px; font-weight: 700; }
+  .meta { color: var(--sub); font-size: 13px; font-weight: 700; margin: 4px 0 22px; }
+  h2 {
+    font-family: 'Fredoka', sans-serif; font-size: 15px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 1.5px; color: var(--sub);
+    margin: 26px 0 10px;
+  }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+  .tile .l { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; }
+  .tile .v { font-family: 'Fredoka', sans-serif; font-size: 21px; font-weight: 600; }
+  .tile .s { font-size: 11.5px; font-weight: 700; color: var(--sub); margin-top: 3px; }
+  .up { color: var(--green); } .down { color: var(--red); }
+  table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; font-size: 13.5px; border-bottom: 1px solid var(--line); }
+  th { font-size: 10.5px; text-transform: uppercase; letter-spacing: 1px; color: var(--sub); }
+  tr:last-child td { border-bottom: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .sym { color: var(--sub); font-weight: 700; font-size: 12px; }
+  .flip { color: var(--gold); font-weight: 800; }
+  .bar { height: 7px; background: var(--line); border-radius: 99px; overflow: hidden; min-width: 90px; }
+  .bar i { display: block; height: 100%; background: var(--blue); border-radius: 99px; }
+  .bar i.gold { background: var(--gold); }
+  .chart { display: flex; align-items: flex-end; gap: 4px; height: 72px; background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px; }
+  .chart div { flex: 1; background: var(--purple); border-radius: 3px 3px 0 0; min-height: 2px; }
+  .note { color: var(--sub); font-size: 13px; font-weight: 700; background: var(--card); border: 1px dashed var(--line); border-radius: 12px; padding: 12px 14px; }
+  .err { color: var(--red); }
+  @media (max-width: 560px) { th:nth-child(4), td:nth-child(4) { display: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Robbinghood Mission Control 🛰</h1>
+  <div class="meta" id="meta">connecting…</div>
+
+  <h2>Visitors</h2>
+  <div class="tiles" id="visitTiles" hidden>
+    <div class="tile"><div class="l">Views today</div><div class="v" id="vToday">—</div></div>
+    <div class="tile"><div class="l">Uniques today</div><div class="v" id="vUnique">—</div></div>
+    <div class="tile"><div class="l">Views all-time</div><div class="v" id="vTotal">—</div></div>
+    <div class="tile"><div class="l">🎮 Game views today</div><div class="v" id="gToday">—</div><div class="s" id="gUnique"></div></div>
+    <div class="tile"><div class="l">🎮 Runs today</div><div class="v" id="gRuns">—</div></div>
+    <div class="tile"><div class="l">🎮 Game all-time</div><div class="v" id="gTotal">—</div><div class="s" id="gRunsTotal"></div></div>
+    <div class="tile"><div class="l">🕶️ PFP views today</div><div class="v" id="pToday">—</div><div class="s" id="pUnique"></div></div>
+    <div class="tile"><div class="l">🕶️ Downloads today</div><div class="v" id="pDls">—</div></div>
+    <div class="tile"><div class="l">🕶️ PFP all-time</div><div class="v" id="pTotal">—</div><div class="s" id="pDlsTotal"></div></div>
+  </div>
+  <div class="note" id="visitNote" hidden>
+    Visit tracking isn't wired up yet — in Vercel: project → <b>Storage</b> → create a free
+    <b>Upstash Redis</b> → connect it to patty-prix → redeploy. Counters start immediately.
+  </div>
+  <div class="chart" id="chart" hidden></div>
+
+  <h2>$ROBBINGHOOD</h2>
+  <div class="tiles">
+    <div class="tile"><div class="l">Price</div><div class="v" id="tPrice">—</div><div class="s" id="tChange"></div></div>
+    <div class="tile"><div class="l">Market cap</div><div class="v" id="tMcap">—</div></div>
+    <div class="tile"><div class="l">Liquidity</div><div class="v" id="tLiq">—</div></div>
+    <div class="tile"><div class="l">24h volume</div><div class="v" id="tVol">—</div></div>
+    <div class="tile"><div class="l">ATH</div><div class="v" id="tAth">—</div><div class="s" id="tAthSub"></div></div>
+    <div class="tile"><div class="l">Holders</div><div class="v" id="tHolders">—</div></div>
+  </div>
+
+  <h2>Heist Targets</h2>
+  <table>
+    <thead><tr><th>#</th><th>Token</th><th class="num">MCAP</th><th>Progress</th><th class="num">Status</th></tr></thead>
+    <tbody id="rows"><tr><td colspan="5">Loading…</td></tr></tbody>
+  </table>
+</div>
+
+<script>
+const CONFIG = {
+  challenger: "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
+  rivals: [
+    "9cRCn9rGT8V2imeM2BaKs13yhMEais3ruM3rPvTGpump",
+    "6baGyq4HLbUn93MQUGFqBktpXP8BRjpoxSsAap4ppump",
+    "CFPkPq1eYPR8GLzEo59wUbbMioX4bshaTQiSGzTSpump",
+    "5pYB12kEhfhSFXJjZ7JtyqDpt6uUqhsF6iu6Ee9spump",
+    "DdPrHYqM8Ueovnk9kAnAgoGhswkuaTqmxcoZzU3Zpump",
+    "4U4U8oXwDyVXGeTffMXds4NAgBgLFwq3wNvTCRTSpump",
+    "9E2Q4KKxLS5Y4bu6RKvjg5wQ2kzaLkiVsMt7zwMZpump",
+    "a3W4qutoEJA4232T2gwZUfgYJTetr96pU4SJMwppump",
+    "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
+  ],
+  // keep the token list above in sync with index.html
+  statsApi: "https://robbinghood.xyz/api/stats",
+  visitsApi: "https://robbinghood.xyz/api/visits"
+};
+// served from the site itself (any attached domain) → same-origin APIs
+if (/(\.vercel\.app|(^|\.)robbinghood\.xyz)$/.test(location.hostname)) {
+  CONFIG.statsApi = location.origin + "/api/stats";
+  CONFIG.visitsApi = location.origin + "/api/visits";
+}
+const DEX = "https://api.dexscreener.com/token-pairs/v1/solana/";
+
+const $ = (id) => document.getElementById(id);
+function fmtUsd(n) {
+  if (n == null || isNaN(n)) return "—";
+  if (n >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+  if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
+  return "$" + n.toFixed(0);
+}
+function fmtPrice(p) {
+  if (p == null || isNaN(p)) return "—";
+  if (p >= 1) return "$" + p.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const s = p.toPrecision(4);
+  return "$" + (s.includes("e") ? Number(s).toFixed(10).replace(/0+$/, "") : s);
+}
+function fmtMult(x) {
+  if (x >= 1000) return Math.round(x).toLocaleString() + "x";
+  if (x >= 100) return Math.round(x) + "x";
+  if (x >= 10) return x.toFixed(0) + "x";
+  return x.toFixed(1) + "x";
+}
+function esc(s) { return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function pairScore(p) { return (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0); }
+function bestPairs(pairs, addresses) {
+  const map = {};
+  const wanted = new Set(addresses.map(a => a.toLowerCase()));
+  for (const p of pairs || []) {
+    const addr = p.baseToken?.address?.toLowerCase();
+    if (!addr || !wanted.has(addr)) continue;
+    if (!map[addr] || pairScore(p) > pairScore(map[addr])) map[addr] = p;
+  }
+  return map;
+}
+
+async function refreshRace() {
+  const all = [CONFIG.challenger, ...CONFIG.rivals];
+  const results = await Promise.all(all.map(a =>
+    fetch(DEX + a).then(r => (r.ok ? r.json() : [])).catch(() => [])
+  ));
+  const byAddr = bestPairs(results.flat(), all);
+  const me = byAddr[CONFIG.challenger.toLowerCase()];
+  const myMcap = me && (me.marketCap ?? me.fdv);
+  if (!myMcap) throw new Error("challenger not found");
+
+  $("tPrice").textContent = fmtPrice(Number(me.priceUsd));
+  const chg = me.priceChange?.h24;
+  $("tChange").innerHTML = chg == null ? "" :
+    `<span class="${chg >= 0 ? "up" : "down"}">${chg >= 0 ? "▲" : "▼"} ${Math.abs(chg).toFixed(1)}% 24h</span>`;
+  $("tMcap").textContent = fmtUsd(myMcap);
+  $("tLiq").textContent = fmtUsd(me.liquidity?.usd);
+  $("tVol").textContent = fmtUsd(me.volume?.h24);
+
+  const rows = [];
+  for (const addr of CONFIG.rivals) {
+    const p = byAddr[addr.toLowerCase()];
+    const mcap = p && (p.marketCap ?? p.fdv);
+    if (!mcap) continue;
+    rows.push({
+      name: p.baseToken.name || p.baseToken.symbol,
+      symbol: p.baseToken.symbol,
+      mcap, pct: Math.min(myMcap / mcap * 100, 100), mult: mcap / myMcap
+    });
+  }
+  rows.sort((a, b) => b.pct - a.pct);
+  $("rows").innerHTML = rows.map((r, i) => `
+    <tr>
+      <td>${i + 1}</td>
+      <td>${esc(r.name)} <span class="sym">$${esc(r.symbol)}</span></td>
+      <td class="num">${fmtUsd(r.mcap)}</td>
+      <td><div class="bar"><i class="${r.pct >= 100 ? "gold" : ""}" style="width:${Math.max(2, Math.min(r.pct, 100))}%"></i></div></td>
+      <td class="num">${r.pct >= 100 ? '<span class="flip">BUY BUTTON DISABLED 🚫</span>' : r.pct.toFixed(1) + "% · " + fmtMult(r.mult) + " to go"}</td>
+    </tr>`).join("");
+  $("meta").textContent = "auto-refreshes every 30s · updated " + new Date().toLocaleTimeString();
+}
+
+async function refreshStats() {
+  try {
+    const d = await (await fetch(CONFIG.statsApi + "?q=ath")).json();
+    if (d?.athPrice) {
+      $("tAth").textContent = fmtPrice(d.athPrice);
+      $("tAthSub").textContent = new Date(d.athTime * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    }
+  } catch { /* leave dashes */ }
+  try {
+    const owners = new Set();
+    let page = 1, more = true;
+    while (more && page <= 20) {
+      const data = await (await fetch(CONFIG.statsApi + "?q=holders&page=" + page)).json();
+      const accs = data?.result?.token_accounts || [];
+      for (const a of accs) if (Number(a.amount) > 0) owners.add(a.owner);
+      more = accs.length === 1000;
+      page++;
+    }
+    if (owners.size) $("tHolders").textContent = owners.size.toLocaleString();
+  } catch { /* leave dashes */ }
+}
+
+async function refreshVisits() {
+  try {
+    const res = await fetch(CONFIG.visitsApi);
+    if (res.status === 501) { $("visitNote").hidden = false; return; }
+    if (!res.ok) throw new Error(res.status);
+    const v = await res.json();
+    $("vToday").textContent = v.today.views.toLocaleString();
+    $("vUnique").textContent = "~" + v.today.uniques.toLocaleString();
+    $("vTotal").textContent = v.total.toLocaleString();
+    if (v.game) {
+      $("gToday").textContent = v.game.today.views.toLocaleString();
+      $("gUnique").textContent = "~" + v.game.today.uniques.toLocaleString() + " players";
+      $("gRuns").textContent = v.game.today.runs.toLocaleString();
+      $("gTotal").textContent = v.game.total.toLocaleString();
+      $("gRunsTotal").textContent = v.game.runsTotal.toLocaleString() + " runs total";
+    }
+    if (v.pfp) {
+      $("pToday").textContent = v.pfp.today.views.toLocaleString();
+      $("pUnique").textContent = "~" + v.pfp.today.uniques.toLocaleString() + " visitors";
+      $("pDls").textContent = v.pfp.today.downloads.toLocaleString();
+      $("pTotal").textContent = v.pfp.total.toLocaleString();
+      $("pDlsTotal").textContent = v.pfp.dlTotal.toLocaleString() + " downloads total";
+    }
+    $("visitTiles").hidden = false;
+    const max = Math.max(1, ...v.days.map(d => d.views));
+    $("chart").innerHTML = v.days.map(d =>
+      `<div style="height:${Math.max(3, d.views / max * 100)}%" title="${d.day}: ${d.views}"></div>`).join("");
+    $("chart").hidden = false;
+  } catch (e) {
+    $("visitNote").hidden = false;
+    $("visitNote").innerHTML = '<span class="err">Couldn\'t load visit stats (' + esc(e.message) + ')</span>';
+  }
+}
+
+function tick() {
+  refreshRace().catch(err => { $("meta").innerHTML = '<span class="err">' + esc(err.message) + "</span>"; });
+  refreshVisits();
+}
+tick();
+refreshStats();
+setInterval(tick, 30 * 1000);
+setInterval(refreshStats, 5 * 60 * 1000);
+</script>
+</body>
+</html>

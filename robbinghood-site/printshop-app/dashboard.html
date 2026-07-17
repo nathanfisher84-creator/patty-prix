@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Print Shop — control</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%96%A8%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#14161c; --card:#1d212b; --line:#2c3140; --ink:#EAF0FA; --sub:#8B93A7; --gold:#FFC93C; --green:#3EBF6E; --red:#E4373F; --blue:#7ED3F0; }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  [hidden] { display:none !important; }
+  body { background:var(--bg); color:var(--ink); font-family:'Nunito',sans-serif; min-height:100vh; padding:22px 14px 60px; display:flex; flex-direction:column; align-items:center; }
+  h1 { font-family:'Fredoka',sans-serif; font-weight:700; font-size:clamp(22px,6vw,32px); }
+  .sub { color:var(--sub); font-weight:800; font-size:13px; margin:4px 0 20px; }
+  .grid { width:min(760px,100%); display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; }
+  .tile { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:14px 16px; }
+  .tile .l { font-weight:800; font-size:11px; color:var(--sub); letter-spacing:.5px; text-transform:uppercase; }
+  .tile .v { font-family:'Fredoka',sans-serif; font-weight:700; font-size:30px; margin-top:3px; }
+  .tile .s { font-weight:800; font-size:11.5px; color:var(--sub); }
+  .v.gold { color:var(--gold); } .v.green { color:var(--green); } .v.blue { color:var(--blue); } .v.red { color:var(--red); }
+  .card { width:min(760px,100%); background:var(--card); border:1px solid var(--line); border-radius:18px; padding:18px; margin-top:16px; }
+  .card h2 { font-family:'Fredoka',sans-serif; font-weight:600; font-size:15px; margin-bottom:14px; }
+  .chart { display:flex; align-items:flex-end; gap:5px; height:150px; }
+  .chart .bar { flex:1; background:linear-gradient(180deg,var(--gold),#c9971f); border-radius:4px 4px 0 0; min-height:2px; position:relative; }
+  .chart .bar span { position:absolute; top:-16px; left:0; right:0; text-align:center; font-size:10px; font-weight:800; color:var(--sub); }
+  .chart .bar small { position:absolute; bottom:-16px; left:0; right:0; text-align:center; font-size:9px; color:var(--sub); }
+  .meta { color:var(--sub); font-weight:800; font-size:11.5px; margin-top:26px; text-align:center; }
+  .barwrap { padding:18px 2px 20px; }
+  a { color:var(--blue); }
+  .note { color:var(--sub); font-weight:800; text-align:center; margin-top:40px; }
+</style>
+</head>
+<body>
+  <h1>🖨️ PRINT SHOP · CONTROL</h1>
+  <div class="sub">live usage &amp; spend · refreshes every 60s</div>
+
+  <div class="grid" id="tiles" hidden>
+    <div class="tile"><div class="l">Prints today</div><div class="v gold" id="today">—</div><div class="s" id="todaySub"></div></div>
+    <div class="tile"><div class="l">Left today</div><div class="v green" id="left">—</div><div class="s" id="leftSub"></div></div>
+    <div class="tile"><div class="l">Spend today</div><div class="v" id="spendToday">—</div><div class="s" id="costSub"></div></div>
+    <div class="tile"><div class="l">All-time prints</div><div class="v blue" id="alltime">—</div></div>
+    <div class="tile"><div class="l">All-time spend</div><div class="v" id="spendAll">—</div><div class="s">est.</div></div>
+    <div class="tile"><div class="l">Per-visitor / day</div><div class="v" id="perVisitor">—</div><div class="s" id="perVisitorSub">daily allowance</div></div>
+    <div class="tile"><div class="l">Goes dark in</div><div class="v red" id="closesIn">—</div><div class="s" id="closesSub"></div></div>
+  </div>
+
+  <div class="card" id="chartCard" hidden>
+    <h2>📈 Last 14 days</h2>
+    <div class="barwrap"><div class="chart" id="chart"></div></div>
+  </div>
+
+  <div class="note" id="note" hidden></div>
+  <div class="meta" id="meta"></div>
+
+<script>
+"use strict";
+const API = "/api/printstats";
+const el = (id) => document.getElementById(id);
+
+let deadline = null;
+function fmtLeft(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return (d ? d + "d " : "") + String(h).padStart(2, "0") + "h " + String(m).padStart(2, "0") + "m " + String(ss).padStart(2, "0") + "s";
+}
+function tickCd() {
+  if (deadline == null) return;
+  const left = deadline - Date.now();
+  el("closesIn").textContent = left <= 0 ? "CLOSED" : fmtLeft(left);
+  el("closesSub").textContent = left <= 0 ? "shop is dark" : new Date(deadline).toUTCString().slice(5, 22) + " UTC";
+}
+setInterval(tickCd, 1000);
+
+async function load() {
+  try {
+    const j = await (await fetch(API)).json();
+    if (j.error) { el("note").hidden = false; el("note").textContent = j.error; return; }
+    el("today").textContent = j.today.toLocaleString();
+    el("todaySub").textContent = "of " + j.globalCap + " cap";
+    el("left").textContent = j.remainingToday.toLocaleString();
+    el("leftSub").textContent = "before daily cap";
+    el("spendToday").textContent = "$" + j.spendToday.toFixed(2);
+    el("costSub").textContent = "~$" + j.costPerImage.toFixed(3) + "/print";
+    el("alltime").textContent = j.alltime.toLocaleString();
+    el("spendAll").textContent = "$" + j.spendAllTime.toFixed(2);
+    el("perVisitor").textContent = j.perVisitorCap > 0 ? j.perVisitorCap : "∞";
+    el("perVisitorSub").textContent = j.perVisitorCap > 0 ? "daily allowance" : "no per-person limit";
+    if (j.shutoffAt && Number.isFinite(Date.parse(j.shutoffAt))) { deadline = Date.parse(j.shutoffAt); tickCd(); }
+    el("tiles").hidden = false;
+
+    const max = Math.max(1, ...j.days.map(d => d.prints));
+    const chart = el("chart");
+    chart.textContent = "";
+    for (const d of j.days) {
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      bar.style.height = Math.round(d.prints / max * 100) + "%";
+      bar.title = d.day + ": " + d.prints + " prints";
+      const v = document.createElement("span"); v.textContent = d.prints || "";
+      const lbl = document.createElement("small"); lbl.textContent = d.day.slice(5);
+      bar.append(v, lbl);
+      chart.appendChild(bar);
+    }
+    el("chartCard").hidden = false;
+    el("meta").textContent = "updated " + new Date().toLocaleTimeString();
+  } catch {
+    el("note").hidden = false;
+    el("note").textContent = "stats unreachable — retrying…";
+  }
+}
+load();
+setInterval(load, 60000);
+window.__pd = { load };
+</script>
+</body>
+</html>

@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Print Shop 🖨️ — $ROBBINGHOOD</title>
+<meta name="description" content="Prompt Robbinghood into any fit — the buy button is disabled. Same robber, whole new drip." />
+<!-- link previews (X / Discord / Telegram / iMessage). og:image must be
+     an absolute URL — update the host here if the deployment is renamed. -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="$ROBBINGHOOD" />
+<meta property="og:title" content="The Print Shop 🖨️ — dress the robber" />
+<meta property="og:description" content="Type any fit and Robbinghood gets dressed — AI profile maker for $ROBBINGHOOD. The buy button is disabled." />
+<meta property="og:url" content="https://patty-prix-zg21.vercel.app/" />
+<meta property="og:image" content="https://patty-prix-zg21.vercel.app/printshop-og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="The Print Shop 🖨️ — dress the robber" />
+<meta name="twitter:description" content="Type any fit and Robbinghood gets dressed — AI profile maker for $ROBBINGHOOD. The buy button is disabled." />
+<meta name="twitter:image" content="https://patty-prix-zg21.vercel.app/printshop-og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%96%A8%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* brand:theme */
+    --bg: #060A04; --card: #0B140A; --stripe: #101D0C; --edge: #2A5220;
+    --ink: #DDFFD2; --sub: #7BA86B; --accent: #00C805; --accent2: #C6E829;
+    --red: #FF4655; --accent-rgb: 0, 200, 5; --accent2-rgb: 198, 232, 41;
+/* /brand:theme */
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    background: radial-gradient(800px 400px at 80% -80px, rgba(var(--accent-rgb),0.07), transparent 60%), var(--bg);
+    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 24px 14px 60px;
+  }
+  body::before {
+    content: "";
+    position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
+  }
+  body > * { position: relative; z-index: 1; }
+  h1 {
+    font-family: 'VT323', monospace; font-weight: 400;
+    font-size: clamp(32px, 8vw, 48px);
+    color: var(--accent);
+    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
+    text-align: center;
+    letter-spacing: 2px;
+  }
+  .sub { font-size: 13px; color: var(--sub); margin: 6px 0 14px; text-align: center; max-width: 400px; }
+  .countdown {
+    font-size: 13px; letter-spacing: 0.5px;
+    color: var(--accent2); background: var(--card);
+    border: 2px solid var(--edge); border-radius: 8px;
+    padding: 8px 18px; margin-bottom: 18px;
+  }
+  .countdown.closed { color: var(--sub); }
+  .frame {
+    position: relative;
+    width: min(92vw, 420px); height: min(92vw, 420px);
+    border: 2px solid var(--edge); border-radius: 14px;
+    box-shadow: 0 0 22px rgba(var(--accent-rgb),0.18);
+    background: var(--card);
+    overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .frame img { width: 100%; height: 100%; object-fit: cover; }
+  .idle { text-align: center; padding: 24px; color: var(--sub); }
+  .idle .big { font-size: 56px; }
+  .printing { text-align: center; color: var(--sub); }
+  .printing .spin { font-size: 46px; display: inline-block; animation: whirr 1s linear infinite; }
+  @keyframes whirr { to { transform: rotate(360deg); } }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin: 16px 0 10px; max-width: 440px; }
+  .chip {
+    font-family: 'Share Tech Mono', monospace; font-size: 12.5px;
+    background: var(--card); color: var(--ink);
+    border: 1.5px solid var(--edge); border-radius: 6px;
+    padding: 7px 13px; cursor: pointer;
+  }
+  .chip:hover { border-color: var(--accent); }
+  .chip:active { transform: translate(1px, 1px); }
+  .bar { display: flex; gap: 8px; width: min(440px, 100%); }
+  #prompt {
+    flex: 1; min-width: 0;
+    font-family: 'Share Tech Mono', monospace; font-size: 14px;
+    border: 2px solid var(--edge); border-radius: 8px; background: #04100A;
+    padding: 12px 18px;
+    outline: none; color: var(--ink);
+  }
+  #prompt:focus { border-color: var(--accent); }
+  .btn {
+    font-family: 'Share Tech Mono', monospace; font-size: 15px;
+    background: var(--accent); color: #001505;
+    border: 2px solid var(--accent); border-radius: 8px;
+    padding: 12px 22px; cursor: pointer;
+    text-decoration: none; display: inline-block;
+    box-shadow: 0 0 16px rgba(var(--accent-rgb),0.35);
+  }
+  .btn:active { transform: translate(1px, 1px); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+  .btn.blue { background: var(--card); color: var(--accent2); border-color: var(--accent2); box-shadow: none; }
+  #msg { margin-top: 12px; font-size: 13px; color: var(--sub); text-align: center; max-width: 360px; }
+  #msg.err { color: var(--red); }
+  .actions { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; justify-content: center; }
+  .note { margin-top: 14px; font-size: 11px; color: var(--sub); text-align: center; max-width: 380px; opacity: 0.85; }
+  .note b { color: var(--accent); font-weight: 400; }
+  .links { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
+  .btn.plain { background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; font-size: 13px; }
+  .btn.plain:hover { border-color: var(--accent); }
+</style>
+</head>
+<body>
+  <h1>THE PRINT SHOP 🖨️</h1>
+  <div class="sub">the buy button is disabled — prompt Robbinghood into any fit.
+    same robber, whole new drip.</div>
+  <div class="countdown" id="countdown" hidden></div>
+
+  <div class="frame" id="frame">
+    <div class="idle" id="idle">
+      <div class="big">🖨️</div>
+      type a fit below and hit PRINT
+    </div>
+    <div class="printing" id="printing" hidden>
+      <span class="spin">🖨️</span><br>compiling the drip…<br>
+      <span style="font-size:11px">(takes ~10 seconds)</span>
+    </div>
+    <img id="result" alt="Robbinghood print" hidden />
+  </div>
+
+  <div class="chips" id="chips">
+    <button class="chip" data-p="wearing a classic green Robin Hood outfit with a feather cap, aiming a bow and arrow">robin hood 🏹</button>
+    <button class="chip" data-p="black leather trench coat and dark sunglasses, standing in digital rain like the Matrix">the matrix</button>
+    <button class="chip" data-p="wall street suit with a loosened tie, cigar, surrounded by stacks of cash">wall street</button>
+    <button class="chip" data-p="glowing super saiyan golden spiky hair, energy aura">super saiyan</button>
+    <button class="chip" data-p="white NASA astronaut suit, helmet under his arm, floating among stars">astronaut</button>
+    <button class="chip" data-p="turned into a soft plush toy, still lugging the little green money sack, photographed on a desk">plushie</button>
+  </div>
+
+  <div class="bar">
+    <input id="prompt" maxlength="300" placeholder="describe the fit… e.g. gold chains and a grill" autocomplete="off" />
+    <button class="btn" id="go">PRINT</button>
+  </div>
+  <div id="msg" hidden></div>
+
+  <div class="actions" id="actions" hidden>
+    <button class="btn blue" id="save">SAVE PIC ⬇️</button>
+    <button class="btn" id="again">PRINT ANOTHER 🖨️</button>
+  </div>
+
+  <div class="note">the shop shares a daily allowance of prints ·
+    the robber stays the robber — only the fit changes ·
+    on iPhone pick <b>Save Image</b> from the share sheet</div>
+
+  <div class="links">
+    <a class="btn plain" href="https://x.com/Sizeyon" target="_blank" rel="noopener">@Sizeyon 🐦</a>
+    <a class="btn plain" href="https://robbinghood.xyz" target="_blank" rel="noopener">robbinghood.xyz 💰</a>
+  </div>
+
+<script>
+"use strict";
+// standalone deployment — the generate function lives at this same origin
+const API = "/api/generate";
+
+const el = (id) => document.getElementById(id);
+let lastImage = null;
+let busy = false;
+
+// stable per-device id so a print interrupted by backgrounding the tab can
+// be recovered (the server caches each finished print under this id)
+function sid() {
+  let s = localStorage.getItem("pp_sid");
+  if (!s) {
+    s = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2)).replace(/[^a-z0-9]/gi, "");
+    localStorage.setItem("pp_sid", s);
+  }
+  return s;
+}
+const PENDING = "pp_pending";
+const pendingGet = () => { try { return JSON.parse(localStorage.getItem(PENDING) || "null"); } catch { return null; } };
+const pendingSet = (v) => v ? localStorage.setItem(PENDING, JSON.stringify(v)) : localStorage.removeItem(PENDING);
+
+// ── optional scheduled shutoff (hidden unless the server sets one) ──
+let deadline = NaN;
+let closed = false;
+function fmtLeft(ms) {
+  const s = Math.max(0, Math.floor(ms / 1000));
+  const d = Math.floor(s / 86400), h = Math.floor((s % 86400) / 3600),
+        m = Math.floor((s % 3600) / 60), ss = s % 60;
+  return (d ? d + "d " : "") + String(h).padStart(2, "0") + "h " +
+    String(m).padStart(2, "0") + "m " + String(ss).padStart(2, "0") + "s";
+}
+function tick() {
+  const cd = el("countdown");
+  if (!Number.isFinite(deadline)) { cd.hidden = true; return; }
+  const left = deadline - Date.now();
+  if (left <= 0) {
+    closed = true;
+    cd.className = "countdown closed";
+    cd.textContent = "🌙 the print shop has gone dark — thanks for playing";
+    el("go").disabled = true;
+    document.querySelectorAll(".chip").forEach((c) => (c.disabled = true));
+    el("idle").innerHTML = '<div class="big">🌙</div>the shop has closed';
+    el("result").hidden = true; el("actions").hidden = true;
+    return;
+  }
+  cd.hidden = false;
+  cd.className = "countdown";
+  cd.textContent = "⏳ shop closes in " + fmtLeft(left);
+}
+(async () => {
+  try {
+    const j = await (await fetch("/api/printstats")).json();
+    if (j.shutoffAt && Number.isFinite(Date.parse(j.shutoffAt))) deadline = Date.parse(j.shutoffAt);
+  } catch { /* no shutoff info — shop stays open */ }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+function say(msg, isErr) {
+  el("msg").hidden = !msg;
+  el("msg").textContent = msg || "";
+  el("msg").className = isErr ? "err" : "";
+}
+
+function showPrinting() {
+  el("idle").hidden = true;
+  el("result").hidden = true;
+  el("actions").hidden = true;
+  el("printing").hidden = false;
+}
+function showResult(j) {
+  el("printing").hidden = true;
+  lastImage = j.image;
+  el("result").src = j.image;
+  el("result").hidden = false;
+  el("actions").hidden = false;
+  say(j.left > 0 ? j.left + " prints left today" : "that was the last print today — back tomorrow!");
+}
+
+async function print() {
+  if (busy) return;
+  if (closed) return say("the print shop has closed 🌙", true);
+  const prompt = el("prompt").value.trim();
+  if (prompt.length < 3) return say("describe the fit first — a few words will do", true);
+  busy = true;
+  el("go").disabled = true;
+  showPrinting();
+  say("");
+  // remember a print is in flight so we can recover it if the tab is
+  // backgrounded (mobile aborts the request but the server finishes it)
+  pendingSet({ ts: Date.now(), prompt });
+  try {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ prompt, sid: sid() })
+    });
+    const j = await r.json();
+    if (!r.ok || !j.image) {
+      pendingSet(null);
+      el("printing").hidden = true;
+      el("idle").hidden = false;
+      return say(j.error || "print failed — try again", true);
+    }
+    pendingSet(null);
+    showResult(j);
+  } catch {
+    // request dropped (usually: tab backgrounded mid-print). Leave the
+    // pending marker + spinner up — recovery will grab it when we return
+    if (pendingGet()) {
+      say("hang tight — finishing your print…");
+      recover(0);
+    } else {
+      el("printing").hidden = true;
+      el("idle").hidden = false;
+      say("print shop unreachable — try again in a minute", true);
+    }
+  } finally {
+    busy = false;
+    if (!closed) el("go").disabled = false;
+  }
+}
+
+// pull a finished-but-interrupted print back from the server. Polls a few
+// times because the generation may still be wrapping up server-side.
+let recovering = false;
+async function recover(attempt) {
+  const p = pendingGet();
+  if (!p || closed) return;
+  // give up on stale markers (past the server's 15-min recovery window)
+  if (Date.now() - p.ts > 15 * 60 * 1000) { pendingSet(null); return; }
+  if (attempt === 0 && recovering) return;
+  recovering = true;
+  showPrinting();
+  try {
+    const r = await fetch(API + "?sid=" + encodeURIComponent(sid()), { cache: "no-store" });
+    if (r.ok) {
+      const j = await r.json();
+      if (j && j.image) { pendingSet(null); recovering = false; showResult(j); return; }
+    }
+  } catch { /* keep polling */ }
+  if ((attempt || 0) < 12) {
+    setTimeout(() => recover((attempt || 0) + 1), 3000);
+  } else {
+    recovering = false;
+    pendingSet(null);
+    el("printing").hidden = true;
+    el("idle").hidden = false;
+    say("couldn't recover that print — give it another go", true);
+  }
+}
+
+// when the tab comes back to the foreground (or on load), resume any print
+// that was cut off while backgrounded
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && !busy && pendingGet()) recover(0);
+});
+window.addEventListener("pageshow", () => { if (!busy && pendingGet()) recover(0); });
+
+el("go").addEventListener("click", print);
+el("prompt").addEventListener("keydown", (e) => { if (e.key === "Enter") print(); });
+el("chips").addEventListener("click", (e) => {
+  const c = e.target.closest(".chip");
+  if (!c) return;
+  el("prompt").value = c.dataset.p;
+  print();
+});
+el("again").addEventListener("click", () => {
+  el("prompt").value = "";
+  el("prompt").focus();
+});
+
+// iOS-friendly save flow: share sheet first, download fallback
+el("save").addEventListener("click", async () => {
+  if (!lastImage) return;
+  try {
+    const blob = await (await fetch(lastImage)).blob();
+    const file = new File([blob], "robbinghood-print.png", { type: blob.type || "image/png" });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: "Robbinghood Print" }); return; }
+      catch (err) { if (err && err.name === "AbortError") return; }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.download = "robbinghood-print.png";
+    a.href = url;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  } catch { say("couldn't save that one — long-press the image instead", true); }
+});
+
+window.__print = { print, get last() { return lastImage; } };
+</script>
+</body>
+</html>
