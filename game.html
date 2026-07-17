@@ -99,15 +99,7 @@
   .lb .row + .row { border-top: 1.5px dashed rgba(0,255,65,0.12); }
   .lb .row.head { color: var(--green); letter-spacing: 1px; }
   .lb .row.me { color: var(--pill); }
-  #nameInput {
-    font-family: 'Share Tech Mono', monospace; font-size: 15px;
-    border: 2px solid var(--edge); border-radius: 8px; background: #04100A;
-    padding: 10px 16px; width: min(280px, 88%);
-    outline: none; color: var(--ink); text-align: center;
-  }
-  #nameInput:focus { border-color: var(--green); }
   .name-note { font-size: 12px; color: var(--sub); max-width: 300px; }
-  #nameErr { font-size: 12.5px; color: var(--red); max-width: 300px; }
   #lbMsg { font-size: 13px; color: var(--sub); max-width: 300px; }
   .overlay { overflow-y: auto; }
   a.btn { text-decoration: none; }
@@ -126,11 +118,8 @@
     <h1>MEMPOOL RUN ⚡</h1>
     <p>Tap <b>left / right</b> to change lanes.<br>
        Dodge 🕯 red candles &amp; 🧻 paper hands · extract 💰 bags · ⚡ boost.</p>
-    <input id="nameInput" maxlength="30" placeholder="pick your extractor name" autocomplete="off" spellcheck="false" />
-    <p class="name-note">3-30 characters · names are first come, first served —
-      your weekly best posts under it</p>
-    <p id="nameErr" hidden></p>
     <button class="btn" id="startBtn">DEPLOY BOT ⚡</button>
+    <p class="name-note" id="botTag"></p>
     <p id="menuBest"></p>
     <div class="lb" id="daily" hidden></div>
     <div class="lb" id="menuLb" hidden></div>
@@ -150,7 +139,7 @@
     <button class="btn small" onclick="location.href='index.html'">← back to $JARED</button>
   </div>
 </div>
-<div class="beta-note">BETA — pick an extractor name · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">$JARED</a></div>
+<div class="beta-note">BETA — tap and play · weekly rewards TBA. <a href="leaderboard.html">leaderboard</a> · <a href="index.html">$JARED</a></div>
 
 <script>
 "use strict";
@@ -165,16 +154,13 @@ const TRACKED_HOST = /(\.vercel\.app|(^|\.)pattyprix\.xyz|(^|\.)jaredfromsubway\
 if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
 const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
 
-// weekly leaderboard — racers pick a username, first come, first
-// served. A random claim token lives in this browser; the server keeps
-// its hash so nobody else can post under the same name. The GitHub
-// Pages mirror talks to the live API cross-origin.
+// weekly leaderboard — zero friction: every browser gets an
+// auto-assigned bot tag (derived from its random claim token) and
+// scores post under it automatically. The server keeps the token's
+// hash so nobody else can post under the same tag. The GitHub Pages
+// mirror talks to the live API cross-origin.
 const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://jaredfromsubway.xyz/api/leaderboard";
 const NAME_RE = /^[A-Za-z0-9 _.\-]{3,30}$/;
-const getName = () => {
-  const n = localStorage.getItem("dash_name") || "";
-  return NAME_RE.test(n) ? n : "";
-};
 const getToken = () => {
   let t = localStorage.getItem("dash_token");
   if (!t) {
@@ -184,6 +170,29 @@ const getToken = () => {
   }
   return t;
 };
+const getName = () => {
+  const n = localStorage.getItem("dash_name") || "";
+  if (NAME_RE.test(n)) return n;
+  const tag = "bot-" + getToken().replace(/[^a-z0-9]/gi, "").slice(0, 6);
+  localStorage.setItem("dash_name", tag);
+  return tag;
+};
+// reserve the tag once, quietly; on the off-chance it's taken, add
+// entropy and try again. Failure never blocks playing.
+async function claimTag() {
+  for (let i = 0; i < 2; i++) {
+    try {
+      const r = await fetch(LB_API, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name: getName(), token: getToken(), claim: true })
+      });
+      if (r.status !== 409) return;
+      localStorage.setItem("dash_name",
+        ("bot-" + getToken().replace(/[^a-z0-9]/gi, "").slice(0, 6) + Math.random().toString(36).slice(2, 6)).slice(0, 30));
+    } catch { return; }
+  }
+}
 const shortName = (n) => n.length > 18 ? n.slice(0, 16) + "…" : n;
 let lbWeek = "", lbTop = [];
 
@@ -706,36 +715,6 @@ function start() {
   document.getElementById("lbMsg").hidden = true;
 }
 
-// the name gate: pick a valid racer name (and claim it) before racing
-async function tryStart() {
-  const input = document.getElementById("nameInput");
-  const err = document.getElementById("nameErr");
-  const name = input.value.trim();
-  if (!NAME_RE.test(name)) {
-    err.hidden = false;
-    err.textContent = "3-30 characters — letters, numbers, spaces or _ . -";
-    input.focus();
-    return;
-  }
-  err.hidden = true;
-  // reserve the name before the race; if the API is unreachable
-  // (offline, mirror without a backend) just race — posting can wait
-  try {
-    const r = await fetch(LB_API, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ name, token: getToken(), claim: true })
-    });
-    if (r.status === 409) {
-      err.hidden = false;
-      err.textContent = "that name's taken — pick another";
-      input.focus();
-      return;
-    }
-  } catch { /* race on */ }
-  localStorage.setItem("dash_name", name);
-  start();
-}
 
 // the share card: a clean score graphic for the X post
 function scoreCard() {
@@ -788,9 +767,10 @@ function renderMenuBest() {
     "💰 <b>" + bagsTotal.toLocaleString() + "</b> bags stacked";
 }
 
-document.getElementById("startBtn").addEventListener("click", tryStart);
+document.getElementById("startBtn").addEventListener("click", start);
 document.getElementById("retryBtn").addEventListener("click", start);
-document.getElementById("nameInput").value = getName();
+document.getElementById("botTag").textContent = "your scores post as " + getName();
+claimTag();
 renderMenuBest();
 renderDaily();
 
