@@ -181,7 +181,7 @@ const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { me
 // scores post under it automatically. The server keeps the token's
 // hash so nobody else can post under the same tag. The GitHub Pages
 // mirror talks to the live API cross-origin.
-const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://robbinghood-site.vercel.app/api/leaderboard";
+const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://robbinghood-kappa.vercel.app/api/leaderboard";
 const NAME_RE = /^[A-Za-z0-9 _.\-]{3,30}$/;
 const getToken = () => {
   let t = localStorage.getItem("dash_token");
@@ -770,7 +770,7 @@ function scoreCard() {
 async function shareScore() {
   const txt = "GETAWAY RUN ⚡ " + (S.finalScore || 0).toLocaleString() +
     " pts (🔥 " + S.streak + " streak) — think you can catch Robbinghood? " +
-    "https://robbinghood-site.vercel.app/game.html $ROBBINGHOOD";
+    "https://robbinghood-kappa.vercel.app/game.html $ROBBINGHOOD";
   try {
     const blob = await new Promise((res) => scoreCard().toBlob(res, "image/png"));
     const file = new File([blob], "getaway-run-score.png", { type: "image/png" });
