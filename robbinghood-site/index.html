@@ -884,8 +884,10 @@ document.getElementById("refreshBtn").addEventListener("click", () => refresh())
 const RPCS = [
   "https://api.mainnet-beta.solana.com",
   "https://solana-rpc.publicnode.com",
-  "https://solana.drpc.org",
-  "https://rpc.ankr.com/solana"
+  "https://solana.blockpi.network/v1/rpc/public",
+  "https://endpoints.omniatech.io/v1/sol/mainnet/public",
+  "https://rpc.ankr.com/solana",
+  "https://solana.drpc.org"
 ];
 let rpcIdx = 0;
 async function rpc(method, params) {
@@ -903,20 +905,31 @@ async function rpc(method, params) {
       rpcIdx = i;
       return j;
     } catch { /* next endpoint */ }
+    await new Promise((res) => setTimeout(res, 250));
   }
   throw new Error("all RPCs unreachable");
 }
 
+// One shared largest-accounts + supply fetch feeds both the whale tile
+// and the crew map, spaced out to stay under public-RPC rate limits.
+let chainCache = null;
+async function chainData() {
+  if (chainCache && Date.now() - chainCache.ts < 4 * 60 * 1000) return chainCache;
+  const largest = await rpc("getTokenLargestAccounts", [CONFIG.challenger]);
+  await new Promise((res) => setTimeout(res, 400));
+  const supply = await rpc("getTokenSupply", [CONFIG.challenger]);
+  chainCache = {
+    ts: Date.now(),
+    accs: (largest?.result?.value || []).slice(0, 20),
+    total: Number(supply?.result?.value?.amount)
+  };
+  return chainCache;
+}
+
 async function refreshWhale() {
   try {
-    const [largest, supply] = await Promise.all([
-      rpc("getTokenLargestAccounts", [CONFIG.challenger]),
-      rpc("getTokenSupply", [CONFIG.challenger])
-    ]);
-    const total = Number(supply?.result?.value?.amount);
-    const top10 = (largest?.result?.value || [])
-      .slice(0, 10)
-      .reduce((s, a) => s + Number(a.amount), 0);
+    const { accs, total } = await chainData();
+    const top10 = accs.slice(0, 10).reduce((s, a) => s + Number(a.amount), 0);
     if (!total || !top10) return;
     document.getElementById("tWhale").textContent = (top10 / total * 100).toFixed(1) + "%";
     document.getElementById("tileWhale").hidden = false;
@@ -981,13 +994,9 @@ function setText(id, text) { document.getElementById(id).textContent = text; }
 const spiderNodes = [];
 async function refreshSpider() {
   try {
-    const [largest, supply] = await Promise.all([
-      rpc("getTokenLargestAccounts", [CONFIG.challenger]),
-      rpc("getTokenSupply", [CONFIG.challenger])
-    ]);
-    const total = Number(supply?.result?.value?.amount);
-    const accs = (largest?.result?.value || []).slice(0, 20);
+    const { accs, total } = await chainData();
     if (!total || !accs.length) return;
+    await new Promise((res) => setTimeout(res, 400));
     const owners = {};
     try {
       const info = await rpc("getMultipleAccounts", [accs.map(a => a.address), { encoding: "jsonParsed" }]);
