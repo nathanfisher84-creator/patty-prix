@@ -7,9 +7,9 @@
 <meta name="description" content="Born on r/wallstreetbets — the app turned off the buy button and walked off with the bag. Live stats, the getaway game and the top-20 crew map." />
 <meta name="theme-color" content="#060A04" />
 <meta name="color-scheme" content="dark" />
-<link rel="canonical" href="https://robbinghood.vercel.app/" />
-<meta property="og:url" content="https://robbinghood.vercel.app/" />
-<meta property="og:image" content="https://robbinghood.vercel.app/og.png" />
+<link rel="canonical" href="https://robbinghood-heist.vercel.app/" />
+<meta property="og:url" content="https://robbinghood-heist.vercel.app/" />
+<meta property="og:image" content="https://robbinghood-heist.vercel.app/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:title" content="$ROBBINGHOOD — Robbinghood 💰" />
@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="$ROBBINGHOOD — Robbinghood 💰" />
 <meta name="twitter:description" content="Born on r/wallstreetbets. He's got the bag — the buy button is disabled." />
-<meta name="twitter:image" content="https://robbinghood.vercel.app/og.png" />
+<meta name="twitter:image" content="https://robbinghood-heist.vercel.app/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
 <script>
   // Vercel Web Analytics + visit beacon — only on Vercel-served
@@ -703,7 +703,9 @@ const CONFIG = {
   // Stats API — Vercel serverless proxy (api/stats.mjs) that holds the
   // Helius key server-side. Powers the HOLDERS tile.
   // Leave "" to hide those sections.
-  statsApi: ON_SITE ? "/api/stats" : "https://robbinghood.vercel.app/api/stats",
+  statsApi: ON_SITE ? "/api/stats" : "https://robbinghood-heist.vercel.app/api/stats",
+  // top-20 holders via the site's own cached proxy (see api/top20.mjs)
+  top20Api: ON_SITE ? "/api/top20" : "https://robbinghood-heist.vercel.app/api/top20",
 
 };
 /* ================================================================ */
@@ -910,28 +912,51 @@ async function rpc(method, params) {
   throw new Error("all RPCs unreachable");
 }
 
-// One shared largest-accounts + supply fetch feeds both the whale tile
-// and the crew map, spaced out to stay under public-RPC rate limits.
-let chainCache = null;
-async function chainData() {
-  if (chainCache && Date.now() - chainCache.ts < 4 * 60 * 1000) return chainCache;
+// One shared top-20 fetch feeds both the whale tile and the crew map.
+// The site's own cached proxy goes first (immune to browser-IP blocks);
+// direct public RPC is the fallback, spaced to dodge rate limits.
+let top20Cache = null;
+async function top20Data() {
+  if (top20Cache && Date.now() - top20Cache.ts < 4 * 60 * 1000) return top20Cache;
+  try {
+    const r = await fetch(CONFIG.top20Api);
+    if (r.ok) {
+      const d = await r.json();
+      if (d?.holders?.length) {
+        top20Cache = { ts: Date.now(), holders: d.holders };
+        return top20Cache;
+      }
+    }
+  } catch { /* fall through to direct RPC */ }
   const largest = await rpc("getTokenLargestAccounts", [CONFIG.challenger]);
   await new Promise((res) => setTimeout(res, 400));
   const supply = await rpc("getTokenSupply", [CONFIG.challenger]);
-  chainCache = {
+  const total = Number(supply?.result?.value?.amount);
+  const accs = (largest?.result?.value || []).slice(0, 20);
+  if (!total || !accs.length) throw new Error("no chain data");
+  await new Promise((res) => setTimeout(res, 400));
+  const owners = {};
+  try {
+    const info = await rpc("getMultipleAccounts", [accs.map(a => a.address), { encoding: "jsonParsed" }]);
+    (info?.result?.value || []).forEach((v, i) => {
+      owners[accs[i].address] = v?.data?.parsed?.info?.owner || accs[i].address;
+    });
+  } catch { /* fall back to token-account addresses */ }
+  top20Cache = {
     ts: Date.now(),
-    accs: (largest?.result?.value || []).slice(0, 20),
-    total: Number(supply?.result?.value?.amount)
+    holders: accs
+      .map(a => ({ addr: owners[a.address] || a.address, pct: Number(a.amount) / total * 100 }))
+      .sort((a, b) => b.pct - a.pct)
   };
-  return chainCache;
+  return top20Cache;
 }
 
 async function refreshWhale() {
   try {
-    const { accs, total } = await chainData();
-    const top10 = accs.slice(0, 10).reduce((s, a) => s + Number(a.amount), 0);
-    if (!total || !top10) return;
-    document.getElementById("tWhale").textContent = (top10 / total * 100).toFixed(1) + "%";
+    const { holders } = await top20Data();
+    const top10 = holders.slice(0, 10).reduce((s, h) => s + h.pct, 0);
+    if (!top10) return;
+    document.getElementById("tWhale").textContent = top10.toFixed(1) + "%";
     document.getElementById("tileWhale").hidden = false;
   } catch { /* keep the tile hidden */ }
 }
@@ -994,19 +1019,8 @@ function setText(id, text) { document.getElementById(id).textContent = text; }
 const spiderNodes = [];
 async function refreshSpider() {
   try {
-    const { accs, total } = await chainData();
-    if (!total || !accs.length) return;
-    await new Promise((res) => setTimeout(res, 400));
-    const owners = {};
-    try {
-      const info = await rpc("getMultipleAccounts", [accs.map(a => a.address), { encoding: "jsonParsed" }]);
-      (info?.result?.value || []).forEach((v, i) => {
-        owners[accs[i].address] = v?.data?.parsed?.info?.owner || accs[i].address;
-      });
-    } catch { /* fall back to token-account addresses */ }
-    const holders = accs
-      .map(a => ({ addr: owners[a.address] || a.address, pct: Number(a.amount) / total * 100 }))
-      .sort((a, b) => b.pct - a.pct);
+    const { holders } = await top20Data();
+    if (!holders.length) return;
     drawSpider(holders);
     document.getElementById("spiderNote").textContent =
       "top 20 holders · " + holders.reduce((s, h) => s + h.pct, 0).toFixed(1) +
