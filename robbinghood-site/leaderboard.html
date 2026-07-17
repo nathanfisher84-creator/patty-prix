@@ -105,7 +105,7 @@
 <script>
 "use strict";
 const TRACKED_HOST = /(\.vercel\.app|(^|\.)robbinghood\.xyz)$/.test(location.hostname);
-const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://robbinghood-heist.vercel.app/api/leaderboard";
+const LB_API = TRACKED_HOST ? "/api/leaderboard" : "https://robbinghood.vercel.app/api/leaderboard";
 const MEDALS = ["🥇", "🥈", "🥉"];
 
 async function load() {
