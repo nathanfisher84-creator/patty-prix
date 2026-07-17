@@ -878,12 +878,34 @@ document.getElementById("refreshBtn").addEventListener("click", () => refresh())
 // Top-10 holder share straight from Solana public RPC (approximate:
 // the largest token accounts include liquidity pools). Tile stays
 // hidden if the RPC is unreachable or rate-limits us.
-const rpc = (method, params) =>
-  fetch("https://api.mainnet-beta.solana.com", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
-  }).then(r => r.json());
+// Public RPC endpoints, tried in order — the flagship one 403s many
+// datacenter/VPN IPs, so keep a few fallbacks on hand. The first one
+// that answers gets remembered for the session.
+const RPCS = [
+  "https://api.mainnet-beta.solana.com",
+  "https://solana-rpc.publicnode.com",
+  "https://solana.drpc.org",
+  "https://rpc.ankr.com/solana"
+];
+let rpcIdx = 0;
+async function rpc(method, params) {
+  for (let t = 0; t < RPCS.length; t++) {
+    const i = (rpcIdx + t) % RPCS.length;
+    try {
+      const r = await fetch(RPCS[i], {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j.error) continue;
+      rpcIdx = i;
+      return j;
+    } catch { /* next endpoint */ }
+  }
+  throw new Error("all RPCs unreachable");
+}
 
 async function refreshWhale() {
   try {
