@@ -9,7 +9,7 @@
 <meta name="color-scheme" content="dark" />
 <link rel="canonical" href="https://jaredfromsubway.xyz/" />
 <meta property="og:url" content="https://jaredfromsubway.xyz/" />
-<meta property="og:image" content="https://jaredfromsubway.xyz/og-jared.png" />
+<meta property="og:image" content="https://jaredfromsubway.xyz/og.png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
 <meta property="og:title" content="$JARED — Jared From Subway 🥪" />
@@ -18,7 +18,7 @@
 <meta name="twitter:card" content="summary_large_image" />
 <meta name="twitter:title" content="$JARED — Jared From Subway 🥪" />
 <meta name="twitter:description" content="The MEV extractor. Get in or get sandwiched — the hacker is printing." />
-<meta name="twitter:image" content="https://jaredfromsubway.xyz/og-jared.png" />
+<meta name="twitter:image" content="https://jaredfromsubway.xyz/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%A5%AA%3C/text%3E%3C/svg%3E" />
 <script>
   // Vercel Web Analytics + visit beacon — only on Vercel-served
@@ -37,18 +37,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #030905;
-    --card: #08130C;
-    --card-stripe: #0B1A10;
-    --edge: #1D5232;          /* card borders */
-    --ink: #CDFFD9;           /* main text */
-    --sub: #63A377;           /* secondary text */
-    --green: #00FF41;         /* THE green */
-    --green-dim: #0BAF3C;
-    --lime: #C6FF4A;          /* accent (was gold) */
-    --red: #FF4655;
+    /* brand:theme */
+    --bg: #030905; --card: #08130C; --stripe: #0B1A10; --edge: #1D5232;
+    --ink: #CDFFD9; --sub: #63A377; --accent: #00FF41; --accent2: #C6FF4A;
+    --red: #FF4655; --accent-rgb: 0, 255, 65; --accent2-rgb: 198, 255, 74;
+/* /brand:theme */
     --radius: 14px;
-    --glow: 0 0 14px rgba(0,255,65,0.22);
+    --glow: 0 0 14px rgba(var(--accent-rgb), 0.22);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -60,8 +55,8 @@
     min-height: 100vh;
     padding: 24px 16px 70px;
     background:
-      radial-gradient(900px 500px at 80% -120px, rgba(0,255,65,0.07), transparent 60%),
-      radial-gradient(700px 420px at -80px 40%, rgba(0,255,65,0.045), transparent 60%),
+      radial-gradient(900px 500px at 80% -120px, rgba(var(--accent-rgb),0.07), transparent 60%),
+      radial-gradient(700px 420px at -80px 40%, rgba(var(--accent-rgb),0.045), transparent 60%),
       var(--bg);
     background-attachment: fixed;
   }
@@ -83,8 +78,8 @@
       rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
   }
 
-  ::selection { background: var(--green); color: #001505; }
-  button:focus-visible, a:focus-visible { outline: 2px dashed var(--green); outline-offset: 3px; }
+  ::selection { background: var(--accent); color: #001505; }
+  button:focus-visible, a:focus-visible { outline: 2px dashed var(--accent); outline-offset: 3px; }
 
   .wrap { max-width: 760px; margin: 0 auto; position: relative; z-index: 2; }
 
@@ -131,8 +126,8 @@
   .ticker:hover .ticker-track { animation-play-state: paused; }
   @keyframes ticker-scroll { to { transform: translateX(-50%); } }
   .ticker .ti { font-size: 15px; padding: 0 10px; }
-  .ticker .sep { color: var(--green); padding: 0 6px; }
-  .up { color: var(--green); }
+  .ticker .sep { color: var(--accent); padding: 0 6px; }
+  .up { color: var(--accent); }
   .down { color: var(--red); }
 
   /* ---------- token hero ---------- */
@@ -145,7 +140,7 @@
   .hero-icon {
     width: 96px; height: 96px;
     border-radius: 12px;
-    border: 2px solid var(--green);
+    border: 2px solid var(--accent);
     background: #000;
     object-fit: cover;
     box-shadow: var(--glow);
@@ -156,8 +151,8 @@
     font-weight: 400;
     font-size: clamp(38px, 9vw, 58px);
     line-height: 0.95;
-    color: var(--green);
-    text-shadow: 0 0 18px rgba(0,255,65,0.55);
+    color: var(--accent);
+    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
     text-transform: uppercase;
   }
   .hero-ca {
@@ -188,15 +183,15 @@
     cursor: pointer;
     transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
   }
-  .btn:hover { border-color: var(--green); box-shadow: var(--glow); }
+  .btn:hover { border-color: var(--accent); box-shadow: var(--glow); }
   .btn:active { transform: translate(1px, 1px); }
   a.btn { display: inline-block; text-decoration: none; color: var(--ink); }
   .btn.buy {
-    background: var(--green);
+    background: var(--accent);
     color: #001505;
-    border-color: var(--green);
+    border-color: var(--accent);
     font-weight: 700;
-    box-shadow: 0 0 18px rgba(0,255,65,0.4);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb),0.4);
   }
   .btn.buy:hover { background: #4CFF7A; }
   .play-cta {
@@ -205,11 +200,11 @@
     font-size: clamp(16px, 4.2vw, 21px);
     padding: 16px 20px;
     background: linear-gradient(160deg, #0E2A17, #071A0E);
-    border: 2px solid var(--green);
+    border: 2px solid var(--accent);
     border-radius: 12px;
     margin: -8px 2px 36px;
     box-shadow: var(--glow);
-    color: var(--green);
+    color: var(--accent);
   }
   .play-cta:hover { background: #10331B; }
   .lb-cta {
@@ -231,13 +226,13 @@
   }
   .lore-icon {
     width: 110px; height: 110px; flex: none;
-    border-radius: 10px; border: 2px solid var(--green);
+    border-radius: 10px; border: 2px solid var(--accent);
     box-shadow: var(--glow);
     object-fit: cover; background: #000;
   }
   .lore-text p { font-size: 14px; margin: 0 0 8px; line-height: 1.45; }
   .lore-text p:last-child { margin-bottom: 0; }
-  .lore-text b { color: var(--green); font-weight: 400; }
+  .lore-text b { color: var(--accent); font-weight: 400; }
   .lore-tag { color: var(--sub); font-size: 12.5px !important; }
   .howto {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -248,14 +243,14 @@
     border: 2px solid var(--edge); border-radius: 10px;
     padding: 14px 16px; font-size: 13px; line-height: 1.4;
   }
-  .step b { color: var(--green); font-weight: 400; font-size: 15px; display: block; margin-bottom: 4px; }
+  .step b { color: var(--accent); font-weight: 400; font-size: 15px; display: block; margin-bottom: 4px; }
   .step p { margin: 0; color: var(--sub); }
-  .step a { color: var(--lime); }
+  .step a { color: var(--accent2); }
   .step-n {
     float: right;
     font-family: 'VT323', monospace; font-size: 22px;
     width: 32px; height: 32px; line-height: 28px; text-align: center;
-    color: var(--green);
+    color: var(--accent);
     border: 2px solid var(--edge); border-radius: 6px;
   }
   @media (max-width: 520px) {
@@ -264,7 +259,7 @@
   .beta-pill {
     font-size: 10px;
     letter-spacing: 1px;
-    background: var(--green);
+    background: var(--accent);
     color: #001505;
     border-radius: 4px;
     padding: 2px 8px;
@@ -278,12 +273,12 @@
     display: inline-block;
     background: var(--card);
     border: 2px solid var(--edge);
-    border-left: 4px solid var(--green);
+    border-left: 4px solid var(--accent);
     border-radius: 6px;
     padding: 8px 18px;
     font-family: 'VT323', monospace;
     font-size: 24px;
-    color: var(--green);
+    color: var(--accent);
     margin-bottom: 22px;
     letter-spacing: 1px;
   }
@@ -301,7 +296,7 @@
     background: var(--card);
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  .tile:hover { border-color: var(--green); box-shadow: var(--glow); }
+  .tile:hover { border-color: var(--accent); box-shadow: var(--glow); }
   .tile .t-label {
     font-size: 10px;
     letter-spacing: 1px;
@@ -312,11 +307,11 @@
   .tile .t-value {
     font-family: 'VT323', monospace;
     font-size: clamp(20px, 4vw, 27px);
-    color: var(--green);
+    color: var(--accent);
   }
   .tile .t-sub { font-size: 11px; margin-top: 4px; color: var(--sub); }
   .t-red .t-value { color: var(--red); }
-  .t-lime .t-value { color: var(--lime); }
+  .t-lime .t-value { color: var(--accent2); }
   .t-wide { grid-column: 1 / -1; }
   .tile-big .t-value { font-size: clamp(30px, 7vw, 42px); }
   .tile-big .t-sub { font-size: 12.5px; }
@@ -328,7 +323,7 @@
     gap: 12px;
     background: var(--card);
     border: 2px solid var(--edge);
-    border-left: 4px solid var(--green);
+    border-left: 4px solid var(--accent);
     border-radius: 8px;
     padding: 12px 22px;
     margin-bottom: 14px;
@@ -337,7 +332,7 @@
     font-family: 'VT323', monospace;
     font-weight: 400;
     font-size: clamp(26px, 6vw, 38px);
-    color: var(--green);
+    color: var(--accent);
     letter-spacing: 1px;
   }
   .tagline {
@@ -345,7 +340,7 @@
     color: var(--sub);
     margin: 2px 4px 0;
   }
-  .tagline b { color: var(--green); font-weight: 400; }
+  .tagline b { color: var(--accent); font-weight: 400; }
 
   .live-dot {
     display: inline-flex;
@@ -357,14 +352,14 @@
     border: 1.5px solid var(--edge);
     border-radius: 6px;
     padding: 7px 14px;
-    color: var(--green);
+    color: var(--accent);
   }
   .live-dot::before {
     content: "";
     width: 9px; height: 9px;
     border-radius: 50%;
-    background: var(--green);
-    box-shadow: 0 0 8px var(--green);
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
     animation: blink 1.4s ease-in-out infinite;
   }
   @keyframes blink { 50% { opacity: 0.25; } }
@@ -378,8 +373,8 @@
     margin-bottom: 30px;
     transition: border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  .race-card:hover { border-color: var(--green); box-shadow: var(--glow); }
-  .race-card.flipped { border-color: var(--lime); background: linear-gradient(160deg, #0D2210, #08130C); }
+  .race-card:hover { border-color: var(--accent); box-shadow: var(--glow); }
+  .race-card.flipped { border-color: var(--accent2); background: linear-gradient(160deg, #0D2210, #08130C); }
 
   .card-top {
     display: flex;
@@ -393,7 +388,7 @@
   .multiplier {
     margin-left: auto;
     background: #04100A;
-    color: var(--green);
+    color: var(--accent);
     border: 1.5px solid var(--edge);
     font-size: clamp(12px, 3vw, 15px);
     padding: 7px 16px;
@@ -402,7 +397,7 @@
     transition: transform 0.25s ease;
   }
   .multiplier.bump { transform: scale(1.12); }
-  .multiplier.done { background: var(--green); color: #001505; border-color: var(--green); }
+  .multiplier.done { background: var(--accent); color: #001505; border-color: var(--accent); }
 
   /* track */
   .track {
@@ -413,14 +408,14 @@
     background:
       repeating-linear-gradient(90deg,
         #060F09 0 46px,
-        var(--card-stripe) 46px 92px);
+        var(--stripe) 46px 92px);
     overflow: visible;
   }
   .track::before {
     content: "";
     position: absolute;
     left: 26px; right: 26px; top: 50%;
-    border-top: 2px dashed rgba(0,255,65,0.15);
+    border-top: 2px dashed rgba(var(--accent-rgb),0.15);
     transform: translateY(-50%);
     pointer-events: none;
   }
@@ -428,10 +423,10 @@
     position: absolute;
     left: 0; top: 0; bottom: 0;
     background-image:
-      repeating-linear-gradient(-55deg, rgba(0,255,65,0.16) 0 12px, rgba(0,0,0,0) 12px 24px),
+      repeating-linear-gradient(-55deg, rgba(var(--accent-rgb),0.16) 0 12px, rgba(0,0,0,0) 12px 24px),
       linear-gradient(180deg, #0E4B24, #0A3319);
     border-radius: 6px 0 0 6px;
-    border-right: 2px solid var(--green);
+    border-right: 2px solid var(--accent);
     min-width: 30px;
     transition: width 1.6s cubic-bezier(.3,.9,.3,1);
     animation: chug 1.4s linear infinite;
@@ -439,9 +434,9 @@
   @keyframes chug { to { background-position: 34px 0, 0 0; } }
   .race-card.flipped .track-fill {
     background-image:
-      repeating-linear-gradient(-55deg, rgba(198,255,74,0.2) 0 12px, rgba(0,0,0,0) 12px 24px),
+      repeating-linear-gradient(-55deg, rgba(var(--accent2-rgb),0.2) 0 12px, rgba(0,0,0,0) 12px 24px),
       linear-gradient(180deg, #3A5C10, #2A430B);
-    border-right-color: var(--lime);
+    border-right-color: var(--accent2);
   }
   .car {
     position: absolute;
@@ -449,12 +444,12 @@
     transform: translate(-50%, -50%);
     width: 54px; height: 54px;
     border-radius: 10px;
-    border: 2px solid var(--green);
+    border: 2px solid var(--accent);
     background: #000;
     object-fit: cover;
     z-index: 2;
     transition: left 1.6s cubic-bezier(.3,.9,.3,1);
-    box-shadow: 0 0 12px rgba(0,255,65,0.5);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb),0.5);
   }
   .car.vroom { animation: vroom 0.7s ease; }
   @keyframes vroom {
@@ -498,20 +493,20 @@
     position: absolute;
     left: 0; top: 0; bottom: 0;
     background: linear-gradient(180deg, #0E4B24, #0A3319); /* our side: green */
-    border-right: 1.5px solid var(--green);
+    border-right: 1.5px solid var(--accent);
     min-width: 6px;
     transition: width 1.2s cubic-bezier(.3,.9,.3,1);
   }
   .hstat { margin-top: 6px; font-size: 12px; color: var(--sub); }
-  .hstat b { color: var(--green); font-weight: 400; }
+  .hstat b { color: var(--accent); font-weight: 400; }
 
   .status {
     margin-top: 16px;
     font-size: clamp(13px, 3.4vw, 16px);
     color: var(--sub);
   }
-  .status b { color: var(--green); font-weight: 400; }
-  .status::before { content: "$ "; color: var(--green-dim); }
+  .status b { color: var(--accent); font-weight: 400; }
+  .status::before { content: "$ "; color: var(--sub); }
 
   /* skeleton + error */
   .skeleton {
@@ -531,7 +526,7 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background: linear-gradient(90deg, transparent, rgba(0,255,65,0.08), transparent);
+    background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb),0.08), transparent);
     animation: shimmer 1.6s ease-in-out infinite;
   }
   @keyframes shimmer { to { transform: translateX(100%); } }
@@ -630,13 +625,11 @@
   <div class="lore-card">
     <img class="lore-icon" id="loreIcon" alt="Jared From Subway" hidden />
     <div class="lore-text">
+      <!-- brand:lore -->
       <p><b>Hood up. Eyes glowing. Mempool open.</b></p>
-      <p>Launched by <b>jaredfromsubway.eth</b> — the wallet behind the world's
-        highest-earning MEV bot. He doesn't trade — he <b>extracts</b>. Front slice,
-        back slice, your order is the filling. The most ruthless profit-maxxing
-        meme token ever deployed.</p>
-      <p class="lore-tag">$JARED is the ticker. Get in or get sandwiched.
-        The hacker is printing.</p>
+      <p>Launched by <b>jaredfromsubway.eth</b> — the wallet behind the world's highest-earning MEV bot. He doesn't trade — he <b>extracts</b>. Front slice, back slice, your order is the filling. The most ruthless profit-maxxing meme token ever deployed.</p>
+      <p class="lore-tag">$JARED is the ticker. Get in or get sandwiched. The hacker is printing.</p>
+<!-- /brand:lore -->
     </div>
   </div>
 
@@ -735,10 +728,15 @@ const CONFIG = {
 };
 /* ================================================================ */
 
-// ── matrix rain ──
+// ── matrix rain (colors come from the page theme) ──
 (() => {
   const cv = document.getElementById("rain");
   const cx = cv.getContext("2d");
+  const T = getComputedStyle(document.documentElement);
+  const hex = (n) => parseInt(T.getPropertyValue(n).trim().slice(1), 16);
+  const rgba = (n, a) => { const v = hex(n); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
+  const mixW = (n, f) => { const v = hex(n); const c = (s) => Math.round(((v >> s) & 255) * (1 - f) + 255 * f); return `rgb(${c(16)},${c(8)},${c(0)})`; };
+  const FADE = rgba("--bg", 0.16), DROP = rgba("--accent", 0.55), BRIGHT = mixW("--accent", 0.7);
   const GLYPHS = "アイウエオカキクケコサシスセソタチツテト0123456789$JARED<>#";
   let cols = [], fs = 16;
   function size() {
@@ -752,13 +750,13 @@ const CONFIG = {
   function step(ts) {
     if (ts - lastT > 66) {          // ~15fps is plenty for rain
       lastT = ts;
-      cx.fillStyle = "rgba(3,9,5,0.16)";
+      cx.fillStyle = FADE;
       cx.fillRect(0, 0, cv.width, cv.height);
       cx.font = fs + "px monospace";
       for (let i = 0; i < cols.length; i++) {
         const y = cols[i] * fs;
         const ch = GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        cx.fillStyle = Math.random() < 0.08 ? "#B4FFC6" : "rgba(0,255,65,0.55)";
+        cx.fillStyle = Math.random() < 0.08 ? BRIGHT : DROP;
         cx.fillText(ch, i * fs, y);
         cols[i] = y > cv.height && Math.random() > 0.975 ? 0 : cols[i] + 1;
       }

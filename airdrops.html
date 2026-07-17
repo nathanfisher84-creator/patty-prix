@@ -9,15 +9,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #030905; --card: #08130C; --edge: #1D5232; --ink: #CDFFD9; --sub: #63A377;
-    --pill: #C6FF4A; --gold: #00FF41;
-    --green: #00FF41; --red: #FF4655;
+    /* brand:theme */
+    --bg: #030905; --card: #08130C; --stripe: #0B1A10; --edge: #1D5232;
+    --ink: #CDFFD9; --sub: #63A377; --accent: #00FF41; --accent2: #C6FF4A;
+    --red: #FF4655; --accent-rgb: 0, 255, 65; --accent2-rgb: 198, 255, 74;
+/* /brand:theme */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   body {
     background:
-      radial-gradient(800px 400px at 80% -80px, rgba(0,255,65,0.07), transparent 60%),
+      radial-gradient(800px 400px at 80% -80px, rgba(var(--accent-rgb),0.07), transparent 60%),
       var(--bg);
     font-family: 'Share Tech Mono', ui-monospace, monospace;
     color: var(--ink);
@@ -34,8 +36,8 @@
   h1 {
     font-family: 'VT323', monospace; font-weight: 400;
     font-size: clamp(32px, 8vw, 48px);
-    color: var(--green);
-    text-shadow: 0 0 18px rgba(0,255,65,0.55);
+    color: var(--accent);
+    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
     text-align: center;
     letter-spacing: 2px;
   }
@@ -49,9 +51,9 @@
     background: var(--card); border: 2px solid var(--edge); border-radius: 10px;
     padding: 12px 14px; text-align: center;
   }
-  .tile:hover { border-color: var(--green); }
+  .tile:hover { border-color: var(--accent); }
   .tile .l { font-size: 10.5px; color: var(--sub); letter-spacing: 0.8px; }
-  .tile .v { font-family: 'VT323', monospace; font-size: 28px; margin-top: 2px; color: var(--green); }
+  .tile .v { font-family: 'VT323', monospace; font-size: 28px; margin-top: 2px; color: var(--accent); }
   .tile .s { font-size: 10.5px; color: var(--sub); }
   .lookup { display: flex; gap: 8px; width: min(480px, 100%); margin-bottom: 12px; }
   #lkIn {
@@ -61,7 +63,7 @@
     padding: 10px 16px;
     outline: none; color: var(--ink);
   }
-  #lkIn:focus { border-color: var(--green); }
+  #lkIn:focus { border-color: var(--accent); }
   .btn.lk { font-size: 14px; padding: 10px 18px; }
   .lkcard {
     width: min(480px, 100%);
@@ -69,10 +71,10 @@
     padding: 14px 16px; margin-bottom: 20px;
     font-size: 13px; line-height: 1.5;
   }
-  .lkcard .big { font-family: 'VT323', monospace; font-size: 24px; margin: 2px 0; color: var(--green); }
+  .lkcard .big { font-family: 'VT323', monospace; font-size: 24px; margin: 2px 0; color: var(--accent); }
   .lkcard .dim { color: var(--sub); font-size: 11.5px; }
   .lkcard .err { color: var(--red); }
-  .lkcard a { color: var(--pill); }
+  .lkcard a { color: var(--accent2); }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 16px; }
   .chip {
     font-family: 'Share Tech Mono', monospace; font-size: 13px;
@@ -80,11 +82,11 @@
     border: 1.5px solid var(--edge); border-radius: 6px;
     padding: 7px 14px; cursor: pointer;
   }
-  .chip.on { background: var(--green); color: #001505; border-color: var(--green); }
+  .chip.on { background: var(--accent); color: #001505; border-color: var(--accent); }
   .board {
     width: min(760px, 100%);
     background: var(--card); border: 2px solid var(--edge); border-radius: 12px;
-    box-shadow: 0 0 18px rgba(0,255,65,0.14);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb),0.14);
     overflow: hidden;
   }
   .thead, .row {
@@ -95,29 +97,29 @@
     font-size: 12px;
   }
   .thead {
-    font-size: 11px; letter-spacing: 1px; color: var(--green);
+    font-size: 11px; letter-spacing: 1px; color: var(--accent);
     border-bottom: 2px solid var(--edge);
     position: sticky; top: 0; background: var(--card);
   }
   .rows { max-height: 65vh; overflow-y: auto; }
-  .row + .row { border-top: 1.5px dashed rgba(0,255,65,0.1); }
-  .row a { color: var(--pill); text-decoration: none; }
-  .row .kept-hi { color: var(--green); }
+  .row + .row { border-top: 1.5px dashed rgba(var(--accent-rgb),0.1); }
+  .row a { color: var(--accent2); text-decoration: none; }
+  .row .kept-hi { color: var(--accent); }
   .row .kept-lo { color: var(--red); }
   .num { text-align: right; font-variant-numeric: tabular-nums; }
   .skeleton { padding: 40px 20px; text-align: center; color: var(--sub); }
   .links { display: flex; gap: 12px; margin-top: 26px; flex-wrap: wrap; justify-content: center; }
   .btn {
     font-family: 'Share Tech Mono', monospace; font-size: 14px;
-    background: var(--green); color: #001505;
-    border: 2px solid var(--green); border-radius: 8px;
+    background: var(--accent); color: #001505;
+    border: 2px solid var(--accent); border-radius: 8px;
     padding: 10px 20px; cursor: pointer;
     text-decoration: none; display: inline-block;
-    box-shadow: 0 0 14px rgba(0,255,65,0.3);
+    box-shadow: 0 0 14px rgba(var(--accent-rgb),0.3);
   }
   .btn:active { transform: translate(1px, 1px); }
   .btn.plain { background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; }
-  .btn.plain:hover { border-color: var(--green); }
+  .btn.plain:hover { border-color: var(--accent); }
   .note { margin-top: 10px; font-size: 11px; color: var(--sub); text-align: center; max-width: 420px; opacity: 0.85; }
 </style>
 </head>

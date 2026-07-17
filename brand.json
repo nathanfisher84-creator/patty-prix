@@ -1,0 +1,80 @@
+{
+  "_readme": [
+    "Single source of truth for the site's brand. Edit this file, then run",
+    "`node scripts/apply-brand.mjs` (the brand.yml workflow does it automatically",
+    "on push) to stamp every page, API function and OG image.",
+    "`_applied` is machine-managed bookkeeping — the script rewrites it; don't edit."
+  ],
+  "token": {
+    "name": "Jared From Subway",
+    "shortName": "Jared",
+    "ticker": "JARED",
+    "mint": "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump",
+    "pairAddress": "B6dbWZ2dqGAxtwE5SpAhvPqbygM82fMj2RH4M71GYXDZ"
+  },
+  "wallets": {
+    "airdrop": "JCphPSVpR9ddhuyvukbKcqyLwdTY6opLXujxGFEoDUDg"
+  },
+  "links": {
+    "xHandle": "jaredsmev"
+  },
+  "theme": {
+    "bg": "#030905",
+    "card": "#08130C",
+    "stripe": "#0B1A10",
+    "edge": "#1D5232",
+    "ink": "#CDFFD9",
+    "sub": "#63A377",
+    "accent": "#00FF41",
+    "accent2": "#C6FF4A",
+    "red": "#FF4655",
+    "fontDisplay": "VT323",
+    "fontBody": "Share Tech Mono"
+  },
+  "copy": {
+    "gameName": "MEMPOOL RUN",
+    "gameOver": "SANDWICHED 🥪",
+    "catchphraseA": "get in or get sandwiched",
+    "catchphraseB": "the hacker is printing",
+    "banners": [
+      "BUY $JARED 🥪",
+      "GET IN OR GET SANDWICHED",
+      "THE HACKER IS PRINTING 👨‍💻",
+      "MEV NEVER SLEEPS ⚡"
+    ],
+    "loreHtml": [
+      "<p><b>Hood up. Eyes glowing. Mempool open.</b></p>",
+      "<p>Launched by <b>jaredfromsubway.eth</b> — the wallet behind the world's highest-earning MEV bot. He doesn't trade — he <b>extracts</b>. Front slice, back slice, your order is the filling. The most ruthless profit-maxxing meme token ever deployed.</p>",
+      "<p class=\"lore-tag\">$JARED is the ticker. Get in or get sandwiched. The hacker is printing.</p>"
+    ],
+    "whoTitle": "WHO_IS_JARED 👨‍💻"
+  },
+  "ai": {
+    "baseImage": "extractor-base.png",
+    "characterPrompt": "same pale-skinned man with a sly smug grin, same glowing bright green eyes, same dark navy hooded hoodie with the hood up, same green neon rim-lighting, same bold comic style with dark outlines",
+    "scenePrompt": "Keep the dark hacker / matrix-code mood of the background unless the request implies a different scene."
+  },
+  "og": {
+    "headline": "$JARED",
+    "sub1": "JARED FROM SUBWAY — the MEV extractor",
+    "sub2": "launched by jaredfromsubway.eth",
+    "badge": ">> BUY $JARED",
+    "prompt": "> get in or get sandwiched. the hacker is printing_",
+    "printSub1": "THE PRINT SHOP — dress the extractor",
+    "printSub2": "AI prints. same hacker, any fit.",
+    "printBadge": ">> PRINT NOW"
+  },
+  "_applied": {
+    "name": "Jared From Subway",
+    "shortName": "Jared",
+    "ticker": "JARED",
+    "gameName": "MEMPOOL RUN",
+    "gameOver": "SANDWICHED 🥪",
+    "catchphraseA": "get in or get sandwiched",
+    "catchphraseB": "the hacker is printing",
+    "baseImage": "extractor-base.png",
+    "fontDisplay": "VT323",
+    "fontBody": "Share Tech Mono",
+    "whoTitle": "WHO_IS_JARED 👨‍💻"
+  }
+}
