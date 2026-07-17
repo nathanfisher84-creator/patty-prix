@@ -176,7 +176,7 @@ const ON_SITE = /(\.vercel\.app|(^|\.)robbinghood\.xyz)$/.test(location.hostname
 const CONFIG = {
   mint: "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
   airdropWallet: "DxQ1iNidsGap2kr14VdEzA8NheqXabfh6fRkvZQbnZVY",
-  statsApi: ON_SITE ? location.origin + "/api/stats" : "https://robbinghood-kappa.vercel.app/api/stats"
+  statsApi: ON_SITE ? location.origin + "/api/stats" : "https://robbinghood.vercel.app/api/stats"
 };
 document.getElementById("bubble").href = "https://app.bubblemaps.io/sol/token/" + CONFIG.mint;
 
