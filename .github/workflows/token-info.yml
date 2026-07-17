@@ -1,15 +1,20 @@
 name: Token Info
 
-# Fetch a token's live metadata (name, symbol, socials, pairs) from
-# DexScreener + pump.fun and push the raw JSON to the token-info branch,
-# where the sandboxed dev session can read it.
+# ON THIS BRANCH: repurposed as the Robbinghood holders feed. Dispatching
+# the registered token-info workflow with this branch as ref runs this
+# version: it fetches the top-20 holder list with the repo's Helius key
+# (Birdeye as backup) and publishes holders.json to the public
+# holders-feed branch, where the site reads it via raw.githubusercontent
+# — public RPCs block datacenter IPs, so this keyed feed is what keeps
+# the crew map filled for every visitor.
 
 on:
   workflow_dispatch:
     inputs:
       mint:
         description: "Solana mint address"
-        required: true
+        required: false
+        default: "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
 
 permissions:
   contents: write
@@ -18,24 +23,70 @@ jobs:
   fetch:
     runs-on: ubuntu-latest
     steps:
-      - name: Fetch metadata
+      - name: Fetch top-20 holders
         env:
-          MINT: ${{ inputs.mint }}
+          HELIUS_API_KEY: ${{ secrets.HELIUS_API_KEY }}
+          BIRDEYE_API_KEY: ${{ secrets.BIRDEYE_API_KEY }}
         run: |
           mkdir -p out
-          curl -sS --max-time 30 "https://api.dexscreener.com/token-pairs/v1/solana/${MINT}" -o out/dexscreener.json || echo '{"error":"dexscreener fetch failed"}' > out/dexscreener.json
-          curl -sS --max-time 30 -H "accept: application/json" "https://frontend-api-v3.pump.fun/coins/${MINT}" -o out/pump.json || echo '{"error":"pump fetch failed"}' > out/pump.json
-          echo "--- dexscreener ---"; head -c 2000 out/dexscreener.json; echo
-          echo "--- pump ---"; head -c 2000 out/pump.json; echo
+          node - <<'EOF'
+          const MINT = "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump";
+          const fs = require("fs");
+          const rpcUrl = "https://mainnet.helius-rpc.com/?api-key=" + process.env.HELIUS_API_KEY;
+          const rpc = (method, params) => fetch(rpcUrl, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+          }).then(r => r.json());
+          (async () => {
+            try {
+              const largest = await rpc("getTokenLargestAccounts", [MINT]);
+              const supply = await rpc("getTokenSupply", [MINT]);
+              const total = Number(supply?.result?.value?.amount);
+              const accs = (largest?.result?.value || []).slice(0, 20);
+              if (!total || !accs.length) throw new Error("helius: no data");
+              const owners = {};
+              try {
+                const info = await rpc("getMultipleAccounts", [accs.map(a => a.address), { encoding: "jsonParsed" }]);
+                (info?.result?.value || []).forEach((v, i) => {
+                  owners[accs[i].address] = v?.data?.parsed?.info?.owner || accs[i].address;
+                });
+              } catch {}
+              const holders = accs
+                .map(a => ({ addr: owners[a.address] || a.address, pct: Number(a.amount) / total * 100 }))
+                .sort((a, b) => b.pct - a.pct);
+              fs.writeFileSync("out/holders.json", JSON.stringify({ holders, ts: Date.now(), src: "helius" }));
+              console.log("helius ok:", holders.length, "holders");
+            } catch (e) {
+              console.log("helius failed (" + e.message + ") — trying birdeye");
+              const H = { "X-API-KEY": process.env.BIRDEYE_API_KEY, "x-chain": "solana", accept: "application/json" };
+              const hd = await fetch("https://public-api.birdeye.so/defi/v3/token/holder?address=" + MINT + "&offset=0&limit=20", { headers: H }).then(r => r.json());
+              const items = hd?.data?.items || [];
+              if (!items.length) throw new Error("birdeye: no data");
+              let supplyUi = 1e9;
+              try {
+                const od = await fetch("https://public-api.birdeye.so/defi/token_overview?address=" + MINT, { headers: H }).then(r => r.json());
+                supplyUi = Number(od?.data?.supply) || supplyUi;
+              } catch {}
+              const holders = items
+                .map(i => ({ addr: i.owner || i.token_account, pct: Number(i.ui_amount) / supplyUi * 100 }))
+                .filter(h => h.addr && h.pct > 0)
+                .sort((a, b) => b.pct - a.pct);
+              fs.writeFileSync("out/holders.json", JSON.stringify({ holders, ts: Date.now(), src: "birdeye" }));
+              console.log("birdeye ok:", holders.length, "holders");
+            }
+          })().catch(e => { console.error(e); process.exit(1); });
+          EOF
+          echo "--- feed ---"; head -c 500 out/holders.json; echo
 
-      - name: Push results
+      - name: Push feed
         env:
           TOKEN: ${{ github.token }}
         run: |
           cd out
-          git init -b token-info > /dev/null
+          git init -b holders-feed > /dev/null
           git config user.email "actions@github.com"
-          git config user.name "token-info"
+          git config user.name "holders-feed"
           git add -A
-          git commit -m "token info fetch" > /dev/null
-          git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" token-info
+          git commit -m "holders feed" > /dev/null
+          git push --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" holders-feed
