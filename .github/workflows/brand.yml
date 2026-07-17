@@ -1,0 +1,35 @@
+name: Apply Brand
+
+# Restamp the site whenever brand.json changes: apply the config across
+# every page/API file and regenerate the OG link-preview cards, then
+# commit the result. Also runnable by hand from the Actions tab (e.g.
+# after swapping the mascot image).
+
+on:
+  push:
+    branches: [main]
+    paths: ["brand.json", "scripts/apply-brand.mjs", "scripts/make-og.py"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Stamp brand across the site
+        run: node scripts/apply-brand.mjs
+      - name: Regenerate OG cards
+        run: |
+          pip install --quiet pillow
+          python3 scripts/make-og.py
+      - name: Commit the stamped site
+        run: |
+          git config user.email "actions@github.com"
+          git config user.name "brand-bot"
+          git add -A
+          git diff --cached --quiet && echo "nothing to commit" && exit 0
+          git commit -m "Apply brand.json across the site"
+          git push

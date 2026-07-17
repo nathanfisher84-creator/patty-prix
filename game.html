@@ -9,15 +9,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #030905; --card: #08130C; --stripe: #0B1A10; --ink: #CDFFD9; --edge: #1D5232;
-    --sub: #63A377; --pill: #C6FF4A; --gold: #00FF41; --green: #00FF41; --red: #FF4655;
+    /* brand:theme */
+    --bg: #030905; --card: #08130C; --stripe: #0B1A10; --edge: #1D5232;
+    --ink: #CDFFD9; --sub: #63A377; --accent: #00FF41; --accent2: #C6FF4A;
+    --red: #FF4655; --accent-rgb: 0, 255, 65; --accent2-rgb: 198, 255, 74;
+/* /brand:theme */
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     background:
-      radial-gradient(800px 400px at 80% -80px, rgba(0,255,65,0.07), transparent 60%),
+      radial-gradient(800px 400px at 80% -80px, rgba(var(--accent-rgb),0.07), transparent 60%),
       var(--bg);
     font-family: 'Share Tech Mono', ui-monospace, monospace;
     color: var(--ink);
@@ -34,7 +37,7 @@
     max-height: 800px;
     border: 2px solid var(--edge);
     border-radius: 14px;
-    box-shadow: 0 0 24px rgba(0,255,65,0.2);
+    box-shadow: 0 0 24px rgba(var(--accent-rgb),0.2);
     overflow: hidden;
     background: var(--card);
     touch-action: none;
@@ -51,30 +54,30 @@
   .overlay h1 {
     font-family: 'VT323', monospace; font-weight: 400;
     font-size: clamp(36px, 10vw, 52px);
-    color: var(--green);
-    text-shadow: 0 0 18px rgba(0,255,65,0.55);
+    color: var(--accent);
+    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
     letter-spacing: 2px;
   }
   .overlay p { font-size: 13.5px; color: var(--sub); max-width: 300px; line-height: 1.45; }
-  .overlay p b { color: var(--green); font-weight: 400; }
-  .overlay .score-big { font-family: 'VT323', monospace; font-size: 48px; color: var(--green); }
+  .overlay p b { color: var(--accent); font-weight: 400; }
+  .overlay .score-big { font-family: 'VT323', monospace; font-size: 48px; color: var(--accent); }
   #menuIcon {
     width: 92px; height: 92px; border-radius: 14px;
-    border: 2px solid var(--green); background: #000;
-    box-shadow: 0 0 18px rgba(0,255,65,0.4);
+    border: 2px solid var(--accent); background: #000;
+    box-shadow: 0 0 18px rgba(var(--accent-rgb),0.4);
     animation: bob 2.2s ease-in-out infinite;
   }
   @keyframes bob { 50% { transform: translateY(-8px); } }
   .btn {
     font-family: 'Share Tech Mono', monospace; font-size: 18px;
-    background: var(--green); color: #001505;
-    border: 2px solid var(--green); border-radius: 8px;
+    background: var(--accent); color: #001505;
+    border: 2px solid var(--accent); border-radius: 8px;
     padding: 14px 34px; cursor: pointer;
-    box-shadow: 0 0 18px rgba(0,255,65,0.4);
+    box-shadow: 0 0 18px rgba(var(--accent-rgb),0.4);
   }
   .btn:active { transform: translate(1px, 1px); }
   .btn.small { font-size: 13px; padding: 9px 20px; background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; }
-  .btn.small:hover { border-color: var(--green); }
+  .btn.small:hover { border-color: var(--accent); }
   .hud {
     position: absolute; top: 10px; left: 10px; right: 10px; z-index: 4;
     display: flex; justify-content: space-between; align-items: flex-start;
@@ -82,13 +85,13 @@
   }
   .chip {
     background: rgba(4,16,10,0.9); border: 1.5px solid var(--edge); border-radius: 6px;
-    padding: 5px 14px; font-size: 15px; color: var(--green);
+    padding: 5px 14px; font-size: 15px; color: var(--accent);
   }
-  .chip.mult { border-color: var(--pill); color: var(--pill); }
+  .chip.mult { border-color: var(--accent2); color: var(--accent2); }
   .chip.mult.pulse { animation: pulse 0.35s ease; }
   @keyframes pulse { 50% { transform: scale(1.25); } }
   .beta-note { margin-top: 10px; font-size: 12px; color: var(--sub); text-align: center; }
-  .beta-note a { color: var(--pill); }
+  .beta-note a { color: var(--accent2); }
   .lb {
     width: min(280px, 84%); font-size: 13px;
     background: #04100A; border: 1.5px solid var(--edge); border-radius: 10px;
@@ -96,9 +99,9 @@
     max-height: 168px; overflow-y: auto;
   }
   .lb .row { display: flex; justify-content: space-between; gap: 10px; padding: 2.5px 0; }
-  .lb .row + .row { border-top: 1.5px dashed rgba(0,255,65,0.12); }
-  .lb .row.head { color: var(--green); letter-spacing: 1px; }
-  .lb .row.me { color: var(--pill); }
+  .lb .row + .row { border-top: 1.5px dashed rgba(var(--accent-rgb),0.12); }
+  .lb .row.head { color: var(--accent); letter-spacing: 1px; }
+  .lb .row.me { color: var(--accent2); }
   .name-note { font-size: 12px; color: var(--sub); max-width: 300px; }
   #lbMsg { font-size: 13px; color: var(--sub); max-width: 300px; }
   .overlay { overflow-y: auto; }
@@ -147,6 +150,25 @@ const cv = document.getElementById("cv");
 const ctx = cv.getContext("2d");
 const stage = document.getElementById("stage");
 const LANES = 3;
+
+// the canvas palette reads the page theme, so a brand re-skin
+// (brand.json → :root vars) reaches the game art too
+const THEME = getComputedStyle(document.documentElement);
+const tvar = (n) => THEME.getPropertyValue(n).trim();
+const mix = (hex, f) => {           // f>0 toward white, f<0 toward black
+  const n = parseInt(hex.slice(1), 16), t = f > 0 ? 255 : 0, p = Math.abs(f);
+  const ch = (s) => Math.round(((n >> s) & 255) * (1 - p) + t * p);
+  return "#" + [16, 8, 0].map((s) => ch(s).toString(16).padStart(2, "0")).join("");
+};
+const rgba = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+};
+const PAL = {
+  accent: tvar("--accent"), accent2: tvar("--accent2"), red: tvar("--red"),
+  bg: tvar("--bg"), card: tvar("--card"), sub: tvar("--sub"),
+};
+PAL.dark = mix(PAL.accent, -0.92); // near-black ink used on accent surfaces
 const MINT = "98UYfFK6VFNTpv2Hp7NYy4yLdzvCfcpv69TuJgYdpump";
 
 // visit + run beacons (Vercel-served domains only; localhost/mirror skip)
@@ -419,7 +441,7 @@ function crash() {
     " close calls · daily " + dailyDone() + "/3";
   renderDaily();
   renderMenuBest();
-  burst(S.carX, H - 110, ["#FF4655", "#00FF41", "#C6FF4A", "#0BAF3C"], 34, 320);
+  burst(S.carX, H - 110, [PAL.red, PAL.accent, PAL.accent2, mix(PAL.accent, -0.31)], 34, 320);
   if (S.score > S.best) { S.best = Math.round(S.score); localStorage.setItem("dash_best", S.best); }
   document.getElementById("overScore").textContent = S.finalScore.toLocaleString();
   document.getElementById("overBest").innerHTML = "personal best: <b>" + S.best.toLocaleString() + "</b>";
@@ -467,12 +489,12 @@ function update(dt) {
       if (cell === "bag") {
         S.score += 250 * S.mult; row.cells[S.lane] = null;
         S.bagsRun++; bagsTotal++; daily.bags++;
-        burst(S.carX, carY - 30, ["#00FF41", "#C6FF4A", "#fff"], 12, 180);
+        burst(S.carX, carY - 30, [PAL.accent, PAL.accent2, "#fff"], 12, 180);
         S.pops.push({ x: S.carX, y: carY - 46, txt: "+" + (250 * S.mult), life: 0.9 });
         blip(880, 0.12, "square");
       } else if (cell === "crown") {
         S.mult = Math.min(S.mult + 1, 5); S.multT = 8; row.cells[S.lane] = null;
-        burst(S.carX, carY - 30, ["#C6FF4A", "#fff", "#00FF41"], 18, 220);
+        burst(S.carX, carY - 30, [PAL.accent2, "#fff", PAL.accent], 18, 220);
         S.pops.push({ x: S.carX, y: carY - 46, txt: "x" + S.mult + " ⚡", life: 1.1 });
         const hm = document.getElementById("hudMult");
         hm.classList.remove("pulse"); void hm.offsetWidth; hm.classList.add("pulse");
@@ -506,29 +528,29 @@ function draw() {
   const r = ROAD();
 
   // shoulders — near-black with faint code ticks
-  ctx.fillStyle = "#04100A";
+  ctx.fillStyle = mix(PAL.accent, -0.94);
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "rgba(0,255,65,0.07)";
+  ctx.fillStyle = rgba(PAL.accent, 0.07);
   for (let y = -26 + (S.trackOff % 26); y < H; y += 26) {
     ctx.fillRect(0, y, r.x0 - 12, 2);
     ctx.fillRect(r.x1 + 12, y, W - r.x1 - 12, 2);
   }
   // racing surface — the data highway
-  ctx.fillStyle = "#071209";
+  ctx.fillStyle = mix(PAL.card, -0.15);
   ctx.fillRect(r.x0, 0, r.x1 - r.x0, H);
-  ctx.fillStyle = "rgba(0,255,65,0.045)";
+  ctx.fillStyle = rgba(PAL.accent, 0.045);
   for (let y = -80 + S.trackOff; y < H; y += 80) ctx.fillRect(r.x0, y, r.x1 - r.x0, 40);
   // green/black hazard curbs
   for (const cx of [r.x0 - 12, r.x1]) {
     for (let y = -40 + (S.trackOff % 40); y < H; y += 40) {
-      ctx.fillStyle = "#00A82F"; ctx.fillRect(cx, y, 12, 20);
-      ctx.fillStyle = "#03240E"; ctx.fillRect(cx, y + 20, 12, 20);
+      ctx.fillStyle = mix(PAL.accent, -0.34); ctx.fillRect(cx, y, 12, 20);
+      ctx.fillStyle = mix(PAL.accent, -0.86); ctx.fillRect(cx, y + 20, 12, 20);
     }
-    ctx.strokeStyle = "#00FF41"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = PAL.accent; ctx.lineWidth = 1.5;
     ctx.strokeRect(cx, -2, 12, H + 4);
   }
   // lane dashes
-  ctx.strokeStyle = "rgba(0,255,65,0.22)";
+  ctx.strokeStyle = rgba(PAL.accent, 0.22);
   ctx.lineWidth = 3; ctx.setLineDash([24, 28]); ctx.lineDashOffset = -S.trackOff * 1.5;
   for (let i = 1; i < LANES; i++) {
     const x = r.x0 + (r.x1 - r.x0) * i / LANES;
@@ -537,7 +559,7 @@ function draw() {
   ctx.setLineDash([]);
   // speed streaks
   if (S.state === "run" && S.speed > 640) {
-    ctx.fillStyle = "rgba(0,255,65,0.35)";
+    ctx.fillStyle = rgba(PAL.accent, 0.35);
     const n = Math.floor((S.speed - 640) / 90);
     for (let i = 0; i < n; i++) {
       const x = r.x0 + Math.random() * (r.x1 - r.x0);
@@ -550,11 +572,11 @@ function draw() {
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   for (const b of S.banners) {
     ctx.globalAlpha = 0.95;
-    ctx.fillStyle = "#0B2A14";
+    ctx.fillStyle = mix(PAL.accent, -0.85);
     ctx.fillRect(r.x0 + 4, b.y - 13, r.x1 - r.x0 - 8, 26);
-    ctx.strokeStyle = "#00FF41"; ctx.lineWidth = 1.5;
+    ctx.strokeStyle = PAL.accent; ctx.lineWidth = 1.5;
     ctx.strokeRect(r.x0 + 4, b.y - 13, r.x1 - r.x0 - 8, 26);
-    ctx.fillStyle = "#00FF41";
+    ctx.fillStyle = PAL.accent;
     ctx.font = "13px 'Share Tech Mono', monospace";
     ctx.fillText(b.msg, (r.x0 + r.x1) / 2, b.y + 1);
     ctx.globalAlpha = 1;
@@ -574,10 +596,10 @@ function draw() {
       if (c === "candle") {
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.beginPath(); ctx.ellipse(x + 4, row.y + 30, 20, 7, 0, 0, 6.28); ctx.fill();
-        ctx.strokeStyle = "#5C0F16"; ctx.lineWidth = 3;
+        ctx.strokeStyle = mix(PAL.red, -0.64); ctx.lineWidth = 3;
         ctx.beginPath(); ctx.moveTo(x, row.y - 36); ctx.lineTo(x, row.y + 36); ctx.stroke();
         const g = ctx.createLinearGradient(x - 15, 0, x + 15, 0);
-        g.addColorStop(0, "#FF6B75"); g.addColorStop(0.5, "#FF4655"); g.addColorStop(1, "#B7242B");
+        g.addColorStop(0, mix(PAL.red, 0.18)); g.addColorStop(0.5, PAL.red); g.addColorStop(1, mix(PAL.red, -0.28));
         ctx.fillStyle = g;
         rr(x - 15, row.y - 23, 30, 46, 8); ctx.fill(); ctx.stroke();
         ctx.fillStyle = "rgba(255,255,255,0.3)";
@@ -587,9 +609,9 @@ function draw() {
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.beginPath(); ctx.ellipse(x + 3, by + 26, 18, 6, 0, 0, 6.28); ctx.fill();
         if (c !== "paper") {
-          ctx.fillStyle = c === "crown" ? "rgba(198,255,74,0.22)" : "rgba(0,255,65,0.14)";
+          ctx.fillStyle = c === "crown" ? rgba(PAL.accent2, 0.22) : rgba(PAL.accent, 0.14);
           ctx.beginPath(); ctx.arc(x, by, 26, 0, 6.28); ctx.fill();
-          ctx.strokeStyle = c === "crown" ? "#C6FF4A" : "#00FF41"; ctx.lineWidth = 1.5; ctx.stroke();
+          ctx.strokeStyle = c === "crown" ? PAL.accent2 : PAL.accent; ctx.lineWidth = 1.5; ctx.stroke();
         }
         ctx.font = "32px serif";
         ctx.fillText(c === "paper" ? "🧻" : c === "bag" ? "💰" : "⚡", x, by + 1);
@@ -610,8 +632,8 @@ function draw() {
   ctx.font = "20px 'Share Tech Mono', monospace";
   for (const p of S.pops) {
     ctx.globalAlpha = Math.min(p.life * 2, 1);
-    ctx.strokeStyle = "#001505"; ctx.lineWidth = 5; ctx.strokeText(p.txt, p.x, p.y);
-    ctx.fillStyle = "#00FF41"; ctx.fillText(p.txt, p.x, p.y);
+    ctx.strokeStyle = PAL.dark; ctx.lineWidth = 5; ctx.strokeText(p.txt, p.x, p.y);
+    ctx.fillStyle = PAL.accent; ctx.fillText(p.txt, p.x, p.y);
   }
   ctx.globalAlpha = 1;
   ctx.restore();
@@ -628,18 +650,18 @@ function drawCar(x, y) {
   ctx.fillStyle = "rgba(23,19,14,0.22)";
   ctx.beginPath(); ctx.ellipse(4, 8, w * 0.55, h * 0.5, 0, 0, 6.28); ctx.fill();
 
-  ctx.strokeStyle = "#001505"; ctx.lineWidth = 3;
+  ctx.strokeStyle = PAL.dark; ctx.lineWidth = 3;
   // wheels
-  ctx.fillStyle = "#001505";
+  ctx.fillStyle = PAL.dark;
   [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(([sx, sy]) => {
     rr(sx * w * 0.52 - 5, sy * h * 0.28 - 11, 10, 22, 4); ctx.fill();
   });
   // rear wing
-  ctx.fillStyle = "#C6FF4A";
+  ctx.fillStyle = PAL.accent2;
   rr(-w * 0.42, h * 0.34, w * 0.84, 12, 5); ctx.fill(); ctx.stroke();
   // body — the extraction bot glows green
   const bodyG = ctx.createLinearGradient(-w / 2, 0, w / 2, 0);
-  bodyG.addColorStop(0, "#4CFF7A"); bodyG.addColorStop(0.5, "#00E23A"); bodyG.addColorStop(1, "#00A82F");
+  bodyG.addColorStop(0, mix(PAL.accent, 0.3)); bodyG.addColorStop(0.5, mix(PAL.accent, -0.11)); bodyG.addColorStop(1, mix(PAL.accent, -0.34));
   ctx.fillStyle = bodyG;
   ctx.beginPath();
   ctx.moveTo(0, -h * 0.52);                       // nose tip
@@ -649,18 +671,18 @@ function drawCar(x, y) {
   ctx.quadraticCurveTo(-w * 0.46, -h * 0.34, 0, -h * 0.52);
   ctx.closePath(); ctx.fill(); ctx.stroke();
   // racing stripe
-  ctx.fillStyle = "#001505";
+  ctx.fillStyle = PAL.dark;
   rr(-5, -h * 0.5, 10, h * 0.92, 5); ctx.fill();
   // nose number
-  ctx.fillStyle = "#C6FF4A";
+  ctx.fillStyle = PAL.accent2;
   ctx.beginPath(); ctx.arc(0, -h * 0.27, 11, 0, 6.28); ctx.fill(); ctx.stroke();
-  ctx.fillStyle = "#001505"; ctx.font = "13px 'Share Tech Mono', monospace";
+  ctx.fillStyle = PAL.dark; ctx.font = "13px 'Share Tech Mono', monospace";
   ctx.textAlign = "center"; ctx.textBaseline = "middle";
   ctx.fillText("J", 0, -h * 0.26);
 
   // Jared in the cockpit
   const hr = w * 0.26;
-  ctx.fillStyle = "#001505";
+  ctx.fillStyle = PAL.dark;
   ctx.beginPath(); ctx.arc(0, h * 0.08, hr + 4, 0, 6.28); ctx.fill(); ctx.stroke();
   if (carImg && carImg.complete && carImg.naturalWidth) {
     ctx.save();
@@ -721,26 +743,26 @@ function scoreCard() {
   const c = document.createElement("canvas");
   c.width = 1000; c.height = 524;
   const x = c.getContext("2d");
-  x.fillStyle = "#030905"; x.fillRect(0, 0, 1000, 524);
+  x.fillStyle = PAL.bg; x.fillRect(0, 0, 1000, 524);
   // faint matrix columns
   x.font = "22px monospace";
   for (let i = 0; i < 46; i++) {
-    x.fillStyle = "rgba(0,255,65," + (0.05 + Math.random() * 0.12) + ")";
+    x.fillStyle = rgba(PAL.accent, 0.05 + Math.random() * 0.12);
     x.fillText(String((Math.random() * 2) | 0), 12 + i * 22, 20 + Math.random() * 500);
   }
-  x.fillStyle = "#08130C";
+  x.fillStyle = PAL.card;
   x.fillRect(24, 24, 952, 476);
-  x.strokeStyle = "#00FF41"; x.lineWidth = 4;
+  x.strokeStyle = PAL.accent; x.lineWidth = 4;
   x.strokeRect(24, 24, 952, 476);
-  x.textAlign = "center"; x.fillStyle = "#00FF41";
+  x.textAlign = "center"; x.fillStyle = PAL.accent;
   x.font = "64px 'VT323', monospace";
   x.fillText("MEMPOOL RUN ⚡", 500, 110);
   x.font = "160px 'VT323', monospace";
   x.fillText((S.finalScore || 0).toLocaleString(), 500, 280);
-  x.font = "26px 'Share Tech Mono', monospace"; x.fillStyle = "#63A377";
+  x.font = "26px 'Share Tech Mono', monospace"; x.fillStyle = PAL.sub;
   x.fillText("🔥 " + S.streak + " streak · 💰 " + S.bagsRun + " bags · 😅 " + S.closeCalls + " close calls", 500, 350);
-  x.fillStyle = "#00FF41"; x.fillRect(29, 415, 942, 80);
-  x.fillStyle = "#001505"; x.font = "34px 'Share Tech Mono', monospace";
+  x.fillStyle = PAL.accent; x.fillRect(29, 415, 942, 80);
+  x.fillStyle = PAL.dark; x.font = "34px 'Share Tech Mono', monospace";
   x.fillText("$JARED · get in or get sandwiched 🥪", 500, 465);
   return c;
 }

@@ -33,13 +33,9 @@ const SID_RE = /^[a-z0-9]{8,64}$/i;       // client session id for recovery
 // one any time with the PRINT_SHUTOFF env var ("off" = always open).
 const SHUTOFF_DEFAULT = "off";
 
-const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% " +
-  "consistent and instantly recognizable: same pale-skinned man with a sly smug grin, same " +
-  "glowing bright green eyes, same dark navy hooded hoodie with the hood up, same green neon " +
-  "rim-lighting, same bold comic style with dark outlines. You MAY change the pose, body " +
-  "position and camera angle so the requested outfit or scene looks natural and dynamic. Keep " +
-  "the dark hacker / matrix-code mood of the background unless the request implies a different " +
-  "scene. Square 1:1 composition. Requested change: ";
+/* brand:consistency */
+const CONSISTENCY = "Edit this exact cartoon character. Keep the character's IDENTITY 100% consistent and instantly recognizable: same pale-skinned man with a sly smug grin, same glowing bright green eyes, same dark navy hooded hoodie with the hood up, same green neon rim-lighting, same bold comic style with dark outlines. You MAY change the pose, body position and camera angle so the requested outfit or scene looks natural and dynamic. Keep the dark hacker / matrix-code mood of the background unless the request implies a different scene. Square 1:1 composition. Requested change: ";
+/* /brand:consistency */
 
 function kvEnv() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
