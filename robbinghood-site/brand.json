@@ -19,16 +19,16 @@
     "xHandle": "Sizeyon"
   },
   "theme": {
-    "bg": "#060A04",
-    "card": "#0B140A",
-    "stripe": "#101D0C",
-    "edge": "#2A5220",
-    "ink": "#DDFFD2",
-    "sub": "#7BA86B",
-    "accent": "#00C805",
-    "accent2": "#C6E829",
+    "bg": "#0D0D0B",
+    "card": "#15150F",
+    "stripe": "#1B1B12",
+    "edge": "#4A5220",
+    "ink": "#F4F2E0",
+    "sub": "#A8AD8A",
+    "accent": "#C6E829",
+    "accent2": "#3FBF4F",
     "red": "#FF4655",
-    "fontDisplay": "VT323",
+    "fontDisplay": "Special Elite",
     "fontBody": "Share Tech Mono"
   },
   "copy": {
@@ -73,7 +73,7 @@
     "catchphraseA": "he's got the bag",
     "catchphraseB": "the buy button is disabled",
     "baseImage": "robbinghood-base.png",
-    "fontDisplay": "VT323",
+    "fontDisplay": "Special Elite",
     "fontBody": "Share Tech Mono",
     "whoTitle": "WHO_IS_ROBBINGHOOD 💰"
   }

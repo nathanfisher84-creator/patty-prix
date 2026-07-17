@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>$ROBBINGHOOD — Robbinghood 💰 he's got the bag</title>
-<meta name="description" content="Born on r/wallstreetbets — the app turned off the buy button and walked off with the bag. Live stats, the getaway game and the airdrop log." />
+<meta name="description" content="Born on r/wallstreetbets — the app turned off the buy button and walked off with the bag. Live stats, the getaway game and the top-20 crew map." />
 <meta name="theme-color" content="#060A04" />
 <meta name="color-scheme" content="dark" />
 <link rel="canonical" href="https://robbinghood.vercel.app/" />
@@ -34,13 +34,13 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   :root {
     /* brand:theme */
-    --bg: #060A04; --card: #0B140A; --stripe: #101D0C; --edge: #2A5220;
-    --ink: #DDFFD2; --sub: #7BA86B; --accent: #00C805; --accent2: #C6E829;
-    --red: #FF4655; --accent-rgb: 0, 200, 5; --accent2-rgb: 198, 232, 41;
+    --bg: #0D0D0B; --card: #15150F; --stripe: #1B1B12; --edge: #4A5220;
+    --ink: #F4F2E0; --sub: #A8AD8A; --accent: #C6E829; --accent2: #3FBF4F;
+    --red: #FF4655; --accent-rgb: 198, 232, 41; --accent2-rgb: 63, 191, 79;
 /* /brand:theme */
     --radius: 14px;
     --glow: 0 0 14px rgba(var(--accent-rgb), 0.22);
@@ -60,14 +60,25 @@
       var(--bg);
     background-attachment: fixed;
   }
-  /* matrix rain sits behind everything */
+  /* falling money sits behind everything */
   #rain {
     position: fixed; inset: 0;
     z-index: 0;
     opacity: 0.5;
     pointer-events: none;
   }
-  /* CRT scanlines over the rain, under the content */
+  .spider-card {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    padding: 12px 12px 4px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .spider-card canvas { max-width: 100%; height: auto; cursor: pointer; }
+  .spider-note { color: var(--sub); font-size: 13px; padding: 6px 0 10px; }
+
+  /* CRT scanlines over the money, under the content */
   body::before {
     content: "";
     position: fixed;
@@ -147,7 +158,7 @@
     flex-shrink: 0;
   }
   .hero-name {
-    font-family: 'VT323', monospace;
+    font-family: 'Special Elite', monospace;
     font-weight: 400;
     font-size: clamp(38px, 9vw, 58px);
     line-height: 0.95;
@@ -248,7 +259,7 @@
   .step a { color: var(--accent2); }
   .step-n {
     float: right;
-    font-family: 'VT323', monospace; font-size: 22px;
+    font-family: 'Special Elite', monospace; font-size: 22px;
     width: 32px; height: 32px; line-height: 28px; text-align: center;
     color: var(--accent);
     border: 2px solid var(--edge); border-radius: 6px;
@@ -276,7 +287,7 @@
     border-left: 4px solid var(--accent);
     border-radius: 6px;
     padding: 8px 18px;
-    font-family: 'VT323', monospace;
+    font-family: 'Special Elite', monospace;
     font-size: 24px;
     color: var(--accent);
     margin-bottom: 22px;
@@ -305,7 +316,7 @@
     color: var(--sub);
   }
   .tile .t-value {
-    font-family: 'VT323', monospace;
+    font-family: 'Special Elite', monospace;
     font-size: clamp(20px, 4vw, 27px);
     color: var(--accent);
   }
@@ -329,7 +340,7 @@
     margin-bottom: 14px;
   }
   .title-tag h2 {
-    font-family: 'VT323', monospace;
+    font-family: 'Special Elite', monospace;
     font-weight: 400;
     font-size: clamp(26px, 6vw, 38px);
     color: var(--accent);
@@ -662,40 +673,12 @@
     </div>
   </div>
 
-  <div class="section-tag" id="airdropTag" hidden>AIRDROP_LOG 🪂</div>
-  <div class="stash" id="airdrop" hidden>
-    <div class="tile">
-      <div class="t-label">Bags Dropped</div>
-      <div class="t-value" id="aBags">—</div>
-    </div>
-    <div class="tile">
-      <div class="t-label">Tokens Airdropped</div>
-      <div class="t-value" id="aTokens">—</div>
-      <div class="t-sub" id="aTokensSub"></div>
-    </div>
-    <div class="tile">
-      <div class="t-label">Diamond Hands 💎</div>
-      <div class="t-value" id="aDiamond">—</div>
-      <div class="t-sub" id="aDiamondSub"></div>
-    </div>
-    <div class="tile">
-      <div class="t-label">Full Bag Holders</div>
-      <div class="t-value" id="aFull">—</div>
-      <div class="t-sub">never sold a single token</div>
-    </div>
-    <div class="tile t-red">
-      <div class="t-label">Paper Hands 🧻</div>
-      <div class="t-value" id="aPaper">—</div>
-      <div class="t-sub" id="aPaperSub"></div>
-    </div>
-    <div class="tile">
-      <div class="t-label">Median Hold</div>
-      <div class="t-value" id="aMedian">—</div>
-      <div class="t-sub">and counting</div>
-    </div>
+  <div class="section-tag">THE_TOP_20 🕸️</div>
+  <div class="spider-card">
+    <canvas id="spider" width="840" height="840"></canvas>
+    <div class="spider-note" id="spiderNote">casing the vault…</div>
   </div>
-  <div class="fam-links" id="famLinks" hidden>
-    <a class="btn" href="airdrops.html">🪂 full airdrop log — every wallet, every bag</a>
+  <div class="fam-links" id="famLinks">
     <a class="btn" href="https://app.bubblemaps.io/sol/token/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
        target="_blank" rel="noopener">🫧 holder bubble map</a>
   </div>
@@ -718,47 +701,58 @@ const CONFIG = {
   pollIntervalMs: 10000,
 
   // Stats API — Vercel serverless proxy (api/stats.mjs) that holds the
-  // Helius key server-side. Powers the HOLDERS tile and the Airdrop Log.
+  // Helius key server-side. Powers the HOLDERS tile.
   // Leave "" to hide those sections.
   statsApi: ON_SITE ? "/api/stats" : "https://robbinghood.vercel.app/api/stats",
 
-  // Wallet the airdrops are sent from — powers the Airdrop Log
-  // section below the targets. Leave "" to hide the section.
-  airdropWallet: "DxQ1iNidsGap2kr14VdEzA8NheqXabfh6fRkvZQbnZVY"
 };
 /* ================================================================ */
 
-// ── matrix rain (colors come from the page theme) ──
+// ── falling money (colors come from the page theme) ──
 (() => {
   const cv = document.getElementById("rain");
   const cx = cv.getContext("2d");
   const T = getComputedStyle(document.documentElement);
-  const hex = (n) => parseInt(T.getPropertyValue(n).trim().slice(1), 16);
-  const rgba = (n, a) => { const v = hex(n); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
-  const mixW = (n, f) => { const v = hex(n); const c = (s) => Math.round(((v >> s) & 255) * (1 - f) + 255 * f); return `rgb(${c(16)},${c(8)},${c(0)})`; };
-  const FADE = rgba("--bg", 0.16), DROP = rgba("--accent", 0.55), BRIGHT = mixW("--accent", 0.7);
-  const GLYPHS = "アイウエオカキクケコサシスセソタチツテト0123456789$ROBBINGHOOD<>#";
-  let cols = [], fs = 16;
+  const col = (n) => T.getPropertyValue(n).trim();
+  const rgba = (n, a) => { const v = parseInt(col(n).slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
+  let bills = [];
+  const rand = (a, b) => a + Math.random() * (b - a);
+  function spawn(b, fromTop) {
+    b.x = rand(0, cv.width); b.y = fromTop ? rand(-160, -30) : rand(0, cv.height);
+    b.w = rand(26, 52); b.rot = rand(0, 6.28); b.vr = rand(-0.02, 0.02);
+    b.vy = rand(0.5, 1.6); b.sway = rand(0, 6.28); b.a = rand(0.10, 0.30);
+    return b;
+  }
   function size() {
     cv.width = innerWidth; cv.height = innerHeight;
-    const n = Math.ceil(innerWidth / fs);
-    cols = Array.from({ length: n }, () => Math.random() * -60);
+    bills = Array.from({ length: Math.max(12, (innerWidth / 70) | 0) }, () => spawn({}, false));
   }
   size();
   addEventListener("resize", size);
   let lastT = 0;
   function step(ts) {
-    if (ts - lastT > 66) {          // ~15fps is plenty for rain
+    if (ts - lastT > 50) {
       lastT = ts;
-      cx.fillStyle = FADE;
+      cx.fillStyle = col("--bg");
       cx.fillRect(0, 0, cv.width, cv.height);
-      cx.font = fs + "px monospace";
-      for (let i = 0; i < cols.length; i++) {
-        const y = cols[i] * fs;
-        const ch = GLYPHS[(Math.random() * GLYPHS.length) | 0];
-        cx.fillStyle = Math.random() < 0.08 ? BRIGHT : DROP;
-        cx.fillText(ch, i * fs, y);
-        cols[i] = y > cv.height && Math.random() > 0.975 ? 0 : cols[i] + 1;
+      for (const b of bills) {
+        b.y += b.vy; b.rot += b.vr; b.sway += 0.02;
+        const bx = b.x + Math.sin(b.sway) * 14;
+        if (b.y > cv.height + 60) spawn(b, true);
+        const h = b.w * 0.46;
+        cx.save();
+        cx.translate(bx, b.y); cx.rotate(b.rot);
+        cx.fillStyle = rgba("--accent2", b.a);
+        cx.fillRect(-b.w / 2, -h / 2, b.w, h);
+        cx.strokeStyle = rgba("--accent", b.a + 0.15); cx.lineWidth = 1.2;
+        cx.strokeRect(-b.w / 2, -h / 2, b.w, h);
+        cx.strokeStyle = rgba("--accent", b.a);
+        cx.strokeRect(-b.w / 2 + 3, -h / 2 + 3, b.w - 6, h - 6);
+        cx.fillStyle = rgba("--ink", b.a + 0.25);
+        cx.font = "bold " + (h * 0.62) + "px " + col("--fontBody");
+        cx.textAlign = "center"; cx.textBaseline = "middle";
+        cx.fillText("$", 0, 1);
+        cx.restore();
       }
     }
     requestAnimationFrame(step);
@@ -884,14 +878,15 @@ document.getElementById("refreshBtn").addEventListener("click", () => refresh())
 // Top-10 holder share straight from Solana public RPC (approximate:
 // the largest token accounts include liquidity pools). Tile stays
 // hidden if the RPC is unreachable or rate-limits us.
+const rpc = (method, params) =>
+  fetch("https://api.mainnet-beta.solana.com", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+  }).then(r => r.json());
+
 async function refreshWhale() {
   try {
-    const rpc = (method, params) =>
-      fetch("https://api.mainnet-beta.solana.com", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
-      }).then(r => r.json());
     const [largest, supply] = await Promise.all([
       rpc("getTokenLargestAccounts", [CONFIG.challenger]),
       rpc("getTokenSupply", [CONFIG.challenger])
@@ -914,7 +909,7 @@ async function statsFetch(params) {
 
 // One sweep over the mint's token accounts (Helius getTokenAccounts via
 // the stats proxy, paginated 1000/page) → raw balance per owner. Shared
-// by the HOLDERS tile and the Airdrop Log analysis.
+// by the HOLDERS tile.
 async function scanHolders() {
   const balances = new Map();
   let page = 1, maybeMore = false;
@@ -956,71 +951,109 @@ function fmtNum(n) {
 
 function setText(id, text) { document.getElementById(id).textContent = text; }
 
-// The Airdrop Log: read the airdrop wallet's outgoing transfers of the
-// challenger token (Helius Enhanced Transactions API), then compare each
-// recipient's current balance to what they received.
-//   full bag  = still holds ≥98% of the drop (never sold)
-//   trimmed   = sold some but still holds >2%
-//   full exit = holds ≤2% (paper hands)
-// Diamond hands = full bags + trimmed. Median hold = median days since
-// the drop among wallets still holding.
-async function refreshAirdrops(scan) {
-  if (!CONFIG.airdropWallet) return;
+// THE TOP 20: the crew map. Twenty largest token accounts straight from
+// Solana public RPC, resolved to owner wallets, drawn as a spider web —
+// spoke length and node size scale with the share of supply. The pool
+// (owner = the trading pair) is tagged as the vault. Tap a node to open
+// the wallet on Solscan.
+const spiderNodes = [];
+async function refreshSpider() {
   try {
-    const supply = await statsFetch({ q: "supply" });
-    const decimals = supply?.result?.value?.decimals ?? 6;
-
-    const recip = {};
-    let before = "";
-    for (let i = 0; i < 10; i++) {
-      const batch = await statsFetch(before ? { q: "airdrop", before } : { q: "airdrop" });
-      if (!Array.isArray(batch) || !batch.length) break;
-      for (const tx of batch) {
-        for (const t of tx.tokenTransfers || []) {
-          if (t.mint !== CONFIG.challenger) continue;
-          if (t.fromUserAccount !== CONFIG.airdropWallet) continue;
-          const w = t.toUserAccount;
-          if (!w || w === CONFIG.airdropWallet) continue;
-          if (!recip[w]) recip[w] = { amount: 0, ts: tx.timestamp };
-          recip[w].amount += Number(t.tokenAmount) || 0;
-          recip[w].ts = Math.min(recip[w].ts, tx.timestamp);
-        }
-      }
-      if (batch.length < 100) break;
-      before = batch[batch.length - 1].signature;
-    }
-    const wallets = Object.values(recip);
-    const n = wallets.length;
-    if (!n) return;
-
-    let full = 0, trimmed = 0, exits = 0, totalDropped = 0;
-    const holdDays = [];
-    const now = Date.now() / 1000;
-    for (const [w, r] of Object.entries(recip)) {
-      totalDropped += r.amount;
-      const bal = (scan.balances.get(w) || 0) / Math.pow(10, decimals);
-      if (bal <= r.amount * 0.02) { exits++; continue; }
-      if (bal >= r.amount * 0.98) full++; else trimmed++;
-      holdDays.push((now - r.ts) / 86400);
-    }
-    const holding = full + trimmed;
-
-    setText("aBags", n.toLocaleString());
-    setText("aTokens", fmtNum(totalDropped));
-    setText("aTokensSub", lastPrice != null ? "street value " + fmtUsd(totalDropped * lastPrice) : "");
-    setText("aDiamond", (holding / n * 100).toFixed(1) + "%");
-    setText("aDiamondSub", holding + " of " + n + " wallets");
-    setText("aFull", (full / n * 100).toFixed(1) + "%");
-    setText("aPaper", exits.toLocaleString());
-    setText("aPaperSub", "full exits · " + trimmed + " trimmed the bag");
-    holdDays.sort((a, b) => a - b);
-    const med = holdDays.length ? holdDays[Math.floor(holdDays.length / 2)] : 0;
-    setText("aMedian", med >= 1 ? Math.floor(med) + "d" : Math.max(1, Math.round(med * 24)) + "h");
-    document.getElementById("airdropTag").hidden = false;
-    document.getElementById("airdrop").hidden = false;
-    document.getElementById("famLinks").hidden = false;
-  } catch { /* keep the section hidden */ }
+    const [largest, supply] = await Promise.all([
+      rpc("getTokenLargestAccounts", [CONFIG.challenger]),
+      rpc("getTokenSupply", [CONFIG.challenger])
+    ]);
+    const total = Number(supply?.result?.value?.amount);
+    const accs = (largest?.result?.value || []).slice(0, 20);
+    if (!total || !accs.length) return;
+    const owners = {};
+    try {
+      const info = await rpc("getMultipleAccounts", [accs.map(a => a.address), { encoding: "jsonParsed" }]);
+      (info?.result?.value || []).forEach((v, i) => {
+        owners[accs[i].address] = v?.data?.parsed?.info?.owner || accs[i].address;
+      });
+    } catch { /* fall back to token-account addresses */ }
+    const holders = accs
+      .map(a => ({ addr: owners[a.address] || a.address, pct: Number(a.amount) / total * 100 }))
+      .sort((a, b) => b.pct - a.pct);
+    drawSpider(holders);
+    document.getElementById("spiderNote").textContent =
+      "top 20 holders · " + holders.reduce((s, h) => s + h.pct, 0).toFixed(1) +
+      "% of supply · live from Solana RPC · tap a node to open the wallet";
+  } catch { document.getElementById("spiderNote").textContent = "the crew map is hiding — RPC unreachable, retrying in 5 min"; }
 }
+
+function drawSpider(holders) {
+  const cv = document.getElementById("spider");
+  const x = cv.getContext("2d");
+  const T = getComputedStyle(document.documentElement);
+  const col = (n) => T.getPropertyValue(n).trim();
+  const rgba2 = (n, a) => { const v = parseInt(col(n).slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
+  const W = cv.width, C = W / 2, maxR = W * 0.36;
+  x.clearRect(0, 0, W, W);
+  const n = holders.length, maxPct = holders[0].pct || 1;
+  const R = (pct) => maxR * Math.max(0.16, Math.sqrt(pct / maxPct));
+  const ang = (i) => -Math.PI / 2 + i * 2 * Math.PI / n;
+
+  // web rings + spokes
+  for (let ring = 1; ring <= 5; ring++) {
+    x.beginPath();
+    for (let i = 0; i <= n; i++) {
+      const a = ang(i), r = maxR * ring / 5;
+      i ? x.lineTo(C + r * Math.cos(a), C + r * Math.sin(a)) : x.moveTo(C + r * Math.cos(a), C + r * Math.sin(a));
+    }
+    x.strokeStyle = rgba2("--accent", 0.10 + ring * 0.015); x.lineWidth = 1; x.stroke();
+  }
+  for (let i = 0; i < n; i++) {
+    const a = ang(i);
+    x.beginPath(); x.moveTo(C, C); x.lineTo(C + maxR * Math.cos(a), C + maxR * Math.sin(a));
+    x.strokeStyle = rgba2("--accent", 0.09); x.stroke();
+  }
+
+  // the crew polygon
+  x.beginPath();
+  holders.forEach((h, i) => {
+    const a = ang(i), r = R(h.pct);
+    i ? x.lineTo(C + r * Math.cos(a), C + r * Math.sin(a)) : x.moveTo(C + r * Math.cos(a), C + r * Math.sin(a));
+  });
+  x.closePath();
+  x.fillStyle = rgba2("--accent", 0.13); x.fill();
+  x.strokeStyle = rgba2("--accent2", 0.8); x.lineWidth = 2; x.stroke();
+
+  // nodes + labels
+  spiderNodes.length = 0;
+  holders.forEach((h, i) => {
+    const a = ang(i), r = R(h.pct);
+    const px = C + r * Math.cos(a), py = C + r * Math.sin(a);
+    const isVault = challengerPairAddr && h.addr === challengerPairAddr;
+    const nr = 4 + 11 * Math.sqrt(h.pct / maxPct);
+    x.beginPath(); x.arc(px, py, nr, 0, 7);
+    x.fillStyle = isVault ? col("--red") : col("--accent"); x.fill();
+    x.strokeStyle = rgba2("--ink", 0.5); x.lineWidth = 1; x.stroke();
+    const lr = maxR + 34, lx = C + lr * Math.cos(a), ly = C + lr * Math.sin(a);
+    x.textAlign = Math.cos(a) > 0.35 ? "left" : Math.cos(a) < -0.35 ? "right" : "center";
+    x.font = "13px " + col("--fontBody");
+    x.fillStyle = rgba2("--ink", i < 5 ? 0.95 : 0.6);
+    x.fillText((isVault ? "🏦 VAULT" : h.addr.slice(0, 4) + "…") + " " + h.pct.toFixed(1) + "%", lx, ly - 2);
+    spiderNodes.push({ x: px, y: py, addr: h.addr });
+  });
+
+  // the boss in the middle
+  x.textAlign = "center"; x.font = "34px serif";
+  x.fillText("💰", C, C + 12);
+}
+
+document.getElementById("spider").addEventListener("click", (e) => {
+  const cv = e.currentTarget, box = cv.getBoundingClientRect();
+  const sx = (e.clientX - box.left) * cv.width / box.width;
+  const sy = (e.clientY - box.top) * cv.height / box.height;
+  let best = null, bd = 30 * 30;
+  for (const nd of spiderNodes) {
+    const d = (nd.x - sx) ** 2 + (nd.y - sy) ** 2;
+    if (d < bd) { bd = d; best = nd; }
+  }
+  if (best) open("https://solscan.io/account/" + best.addr, "_blank", "noopener");
+});
 
 function renderAth(athPrice, athTime) {
   document.getElementById("tAth").textContent = fmtPrice(athPrice);
@@ -1076,16 +1109,16 @@ async function refresh() {
   }
 }
 
-// The slow-moving tiles (whale share, holders, ATH, airdrops) poll every
+// The slow-moving tiles (whale share, holders, ATH, crew map) poll every
 // 5 minutes. ATH waits for the first refresh() to learn the pool address.
 async function refreshExtras() {
   refreshWhale();
   refreshAth();
   if (!CONFIG.statsApi) return;
+  refreshSpider();
   try {
     const scan = await scanHolders();
     updateHoldersTile(scan);
-    await refreshAirdrops(scan);
   } catch { /* tiles keep their last values */ }
 }
 
