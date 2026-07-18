@@ -1359,6 +1359,37 @@ function layoutStars(holders) {
       vault: challengerPairAddr && h.addr === challengerPairAddr
     });
   });
+  placeLabels(cv);
+}
+
+// pick a clear spot for each of the five labels: try above, below,
+// right, left of the star and take the first that doesn't collide with
+// an already-placed label or leave the canvas
+function placeLabels(cv) {
+  const x = cv.getContext("2d");
+  x.font = "13px " + getComputedStyle(document.documentElement).getPropertyValue("--fontBody").trim();
+  const placed = [];
+  const overlaps = (r) => placed.some((o) =>
+    r.x < o.x + o.w + 6 && r.x + r.w + 6 > o.x && r.y < o.y + o.h + 4 && r.y + r.h + 4 > o.y);
+  spiderNodes.forEach((n, i) => {
+    if (i >= 5) return;
+    n.label = (n.vault ? "VAULT" : n.addr.slice(0, 4) + "…") + " " + n.pct.toFixed(1) + "%";
+    const w = x.measureText(n.label).width, h = 15;
+    const spots = [
+      { lx: n.x, ly: n.y - n.size - 12, align: "center" },
+      { lx: n.x, ly: n.y + n.size + 20, align: "center" },
+      { lx: n.x + n.size + 9, ly: n.y + 4, align: "left" },
+      { lx: n.x - n.size - 9, ly: n.y + 4, align: "right" }
+    ];
+    let pick = spots[0];
+    for (const sp of spots) {
+      const rx = sp.align === "center" ? sp.lx - w / 2 : sp.align === "left" ? sp.lx : sp.lx - w;
+      const r = { x: rx, y: sp.ly - h, w, h };
+      if (r.x < 6 || r.x + r.w > cv.width - 6 || r.y < 6 || r.y + r.h > cv.height - 6) continue;
+      if (!overlaps(r)) { pick = sp; placed.push(r); break; }
+    }
+    n.labelX = pick.lx; n.labelY = pick.ly; n.labelAlign = pick.align;
+  });
 }
 
 function drawSky(t) {
@@ -1420,13 +1451,12 @@ function drawSky(t) {
       x.beginPath(); x.arc(n.x, n.y, s + 7, 0, 7);
       x.strokeStyle = rgba2(color, 0.7); x.lineWidth = 1.5; x.stroke();
     }
-    // name the five brightest
-    if (i < 5) {
+    // name the five brightest, at their pre-computed collision-free spot
+    if (i < 5 && n.label) {
       x.font = "13px " + col("--fontBody");
-      x.textAlign = "center";
+      x.textAlign = n.labelAlign;
       x.fillStyle = rgba2("--ink", 0.75);
-      x.fillText((n.vault ? "VAULT" : n.addr.slice(0, 4) + "…") + " " + n.pct.toFixed(1) + "%",
-                 n.x, n.y - s - 10);
+      x.fillText(n.label, n.labelX, n.labelY);
     }
   });
 }
