@@ -10,7 +10,8 @@
     "shortName": "Robbinghood",
     "ticker": "ROBBINGHOOD",
     "mint": "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
-    "pairAddress": "8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V"
+    "pairAddress": "8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V",
+    "holderGoal": 10000
   },
   "wallets": {
     "airdrop": "DxQ1iNidsGap2kr14VdEzA8NheqXabfh6fRkvZQbnZVY"

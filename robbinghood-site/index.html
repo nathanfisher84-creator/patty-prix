@@ -35,6 +35,24 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is Robbinghood ($ROBBINGHOOD)?",
+      "acceptedAnswer": { "@type": "Answer", "text": "A memecoin on Solana born from the r/wallstreetbets GME saga. Community-run, no promises, pure meme." } },
+    { "@type": "Question", "name": "What is the $ROBBINGHOOD contract address?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The canonical mint is shown at the top of the page and in the site footer. Always verify it before trading — copycat mints exist." } },
+    { "@type": "Question", "name": "Where can I buy $ROBBINGHOOD?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Swap SOL for it on Jupiter or pump.fun from any Solana wallet such as Phantom." } },
+    { "@type": "Question", "name": "Is $ROBBINGHOOD on Solana?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, it is a Solana token launched on pump.fun." } },
+    { "@type": "Question", "name": "Is this financial advice?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Memecoins are extremely volatile and can go to zero. The site shows entertainment and public on-chain data only." } }
+  ]
+}
+</script>
 <style>
   :root {
     /* brand:theme */
@@ -42,6 +60,8 @@
     --ink: #F4F2E0; --sub: #A8AD8A; --accent: #C6E829; --accent2: #3FBF4F;
     --red: #FF4655; --accent-rgb: 198, 232, 41; --accent2-rgb: 63, 191, 79;
 /* /brand:theme */
+    --fontDisplay: 'Special Elite';
+    --fontBody: 'Share Tech Mono';
     --radius: 14px;
     --glow: 0 0 14px rgba(var(--accent-rgb), 0.22);
   }
@@ -541,6 +561,101 @@
     animation: shimmer 1.6s ease-in-out infinite;
   }
   @keyframes shimmer { to { transform: translateX(100%); } }
+
+  /* road to the holder goal */
+  .road-card {
+    background: var(--card);
+    border: 2px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 34px;
+  }
+  .road-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .road-count {
+    font-family: var(--fontDisplay), serif; font-size: clamp(30px, 7vw, 44px);
+    color: var(--accent); text-shadow: 0 0 14px rgba(var(--accent-rgb),0.5);
+  }
+  .road-goal { font-size: 14px; color: var(--sub); }
+  .road-bar {
+    height: 14px; margin: 14px 0 10px;
+    background: var(--bg); border: 2px solid var(--edge); border-radius: 9px;
+    overflow: hidden;
+  }
+  .road-fill {
+    height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    box-shadow: 0 0 12px rgba(var(--accent-rgb),0.6);
+    border-radius: 6px;
+    transition: width 1.2s ease;
+  }
+  .road-sub { font-size: 12.5px; color: var(--sub); }
+  .road-sub b { color: var(--accent2); font-weight: 400; }
+
+  /* the heist tape */
+  .tape-card {
+    background: var(--card);
+    border: 2px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 34px;
+  }
+  .tape-flow {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 13px; color: var(--sub);
+    padding-bottom: 10px; margin-bottom: 6px;
+    border-bottom: 2px solid var(--edge);
+  }
+  .tape-flow b { font-weight: 400; }
+  .tape { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tape td { padding: 6px 8px; border-bottom: 1px solid var(--stripe); white-space: nowrap; }
+  .tape tr:last-child td { border-bottom: none; }
+  .tape .t-time { color: var(--sub); font-size: 12px; }
+  .tape .t-side-buy { color: var(--accent2); }
+  .tape .t-side-sell { color: var(--red); }
+  .tape .t-usd { text-align: right; }
+  .tape .t-src { color: var(--sub); font-size: 12px; text-align: right; }
+  .tape tr.fresh { animation: tapePop 0.5s ease; }
+  @keyframes tapePop { from { background: rgba(var(--accent-rgb),0.16); } }
+  .tape-note { font-size: 11.5px; color: var(--sub); margin-top: 8px; opacity: 0.8; }
+
+  /* FAQ */
+  .faq { margin-bottom: 34px; }
+  .faq details {
+    background: var(--card);
+    border: 2px solid var(--edge);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .faq summary {
+    cursor: pointer; list-style: none;
+    padding: 13px 16px;
+    font-size: 14px; color: var(--ink);
+  }
+  .faq summary::before { content: "> "; color: var(--accent); }
+  .faq details[open] summary { color: var(--accent); border-bottom: 1px solid var(--stripe); }
+  .faq .a { padding: 12px 16px 14px; font-size: 13.5px; line-height: 1.65; color: var(--sub); }
+  .faq .a a { color: var(--accent2); }
+  .faq .a code { color: var(--accent); word-break: break-all; }
+
+  /* canonical-mint footer */
+  .mint-verify {
+    background: var(--card);
+    border: 2px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .mv-label { font-size: 12px; letter-spacing: 1px; color: var(--red); margin-bottom: 10px; }
+  .mv-row { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .mv-row code.ca {
+    font-family: inherit; font-size: 12.5px; color: var(--accent);
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 7px;
+    padding: 8px 10px; word-break: break-all;
+  }
+  .mv-note { font-size: 11.5px; color: var(--sub); margin-top: 10px; opacity: 0.85; }
+
   .updated {
     text-align: center;
     font-size: 12px;
@@ -628,9 +743,20 @@
     </div>
   </div>
 
+  <div class="section-tag" id="roadTag" hidden>ROAD_TO_10K_ACCOMPLICES 🚐</div>
+  <div class="road-card" id="roadCard" hidden>
+    <div class="road-top">
+      <span class="road-count" id="roadCount">—</span>
+      <span class="road-goal" id="roadGoal">wallets on the crew</span>
+    </div>
+    <div class="road-bar"><div class="road-fill" id="roadFill"></div></div>
+    <div class="road-sub" id="roadSub">every wallet is another pair of hands on the bag.</div>
+  </div>
+
   <a class="btn play-cta" id="playLink" href="game.html">⚡ PLAY GETAWAY RUN <span class="beta-pill">BETA</span></a>
   <a class="btn lb-cta" href="leaderboard.html">🏆 weekly leaderboard — see who's getting away with the bag</a>
   <a class="btn lb-cta" href="printshop.html">🖨️ THE PRINT SHOP — the buy button is disabled. dress Robbinghood in anything</a>
+  <a class="btn lb-cta" href="wanted.html">🤠 WANTED POSTER — check any wallet's loot, print the poster</a>
 
   <div class="section-tag">WHO_IS_ROBBINGHOOD 💰</div>
   <div class="lore-card">
@@ -683,6 +809,89 @@
        target="_blank" rel="noopener">🫧 holder bubble map</a>
   </div>
 
+  <div class="section-tag" id="tapeTag" hidden>THE_HEIST_TAPE 🚨</div>
+  <div class="tape-card" id="tapeCard" hidden>
+    <div class="tape-flow" id="tapeFlow"></div>
+    <table class="tape"><tbody id="tapeBody"></tbody></table>
+    <div class="tape-note">every buy and sell as it lands · refreshes automatically · big buys make it rain harder</div>
+  </div>
+
+  <div class="section-tag">FREQUENTLY_CASED_QUESTIONS ❓</div>
+  <div class="faq">
+    <details>
+      <summary>What is Robbinghood ($ROBBINGHOOD)?</summary>
+      <div class="a">A memecoin on Solana born from the r/wallstreetbets GME saga — the app that
+        turned off the buy button, immortalized on-chain as the getaway car. The robbery becomes
+        the ticker. It trades like any Solana token: community-run, no promises, pure meme.</div>
+    </details>
+    <details>
+      <summary>What is the contract address (CA)?</summary>
+      <div class="a">The one and only canonical mint is
+        <code class="ca">6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump</code> — also pinned at the
+        top of this page and in the footer below. Always verify against it before trading;
+        copycat mints exist.</div>
+    </details>
+    <details>
+      <summary>Where can I buy $ROBBINGHOOD?</summary>
+      <div class="a">Swap SOL for it on
+        <a href="https://jup.ag/swap/SOL-6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump" target="_blank" rel="noopener">Jupiter</a>
+        or <a href="https://pump.fun/coin/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump" target="_blank" rel="noopener">pump.fun</a>
+        from any Solana wallet (Phantom takes two minutes to set up — full steps in the
+        HOW_TO_BUY section above).</div>
+    </details>
+    <details>
+      <summary>What is the current price and market cap?</summary>
+      <div class="a">Live numbers stream at the top of this page (price, market cap, volume,
+        liquidity, holder count), or see the full chart on
+        <a href="https://dexscreener.com/solana/8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V" target="_blank" rel="noopener">DexScreener</a>.</div>
+    </details>
+    <details>
+      <summary>Is $ROBBINGHOOD on Solana?</summary>
+      <div class="a">Yes — it's a Solana token launched on pump.fun. You'll need a Solana wallet
+        and a little SOL to swap.</div>
+    </details>
+    <details>
+      <summary>Who are the biggest holders?</summary>
+      <div class="a">The crew map above shows the top-20 wallets live from the chain, with the
+        trading-pool vault tagged 🏦. Tap any node to inspect the wallet on Solscan, or run any
+        address through the <a href="wanted.html">WANTED poster checker</a>.</div>
+    </details>
+    <details>
+      <summary>What is GETAWAY RUN?</summary>
+      <div class="a">The site's <a href="game.html">arcade game</a> — tap to keep the getaway car
+        running and post your score to the <a href="leaderboard.html">weekly leaderboard</a>.
+        Free, runs in the browser, works on phones.</div>
+    </details>
+    <details>
+      <summary>What is THE PRINT SHOP?</summary>
+      <div class="a">An <a href="printshop.html">AI dress-up machine</a>: type any outfit or scene
+        and it re-draws the mascot to match — your PFP, one prompt away.</div>
+    </details>
+    <details>
+      <summary>How do I join the community?</summary>
+      <div class="a">The crew lives in
+        <a href="https://x.com/i/communities/2033592066060554438" target="_blank" rel="noopener">the community on X</a> —
+        memes, prints and heist planning.</div>
+    </details>
+    <details>
+      <summary>Is this financial advice?</summary>
+      <div class="a">No. Memecoins are extremely volatile and can go to zero. Everything on this
+        site is entertainment and public on-chain data, not investment advice. Never spend what
+        you can't afford to lose.</div>
+    </details>
+  </div>
+
+  <footer class="mint-verify">
+    <div class="mv-label">⚠ CANONICAL MINT — VERIFY BEFORE YOU BUY. FAKES EXIST.</div>
+    <div class="mv-row">
+      <code class="ca">6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump</code>
+      <button class="btn" id="mvCopy" type="button">copy</button>
+      <a class="btn" href="https://solscan.io/token/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
+         target="_blank" rel="noopener">solscan</a>
+    </div>
+    <div class="mv-note">match every character against the CA you're about to trade — one letter off is a different (fake) token.</div>
+  </footer>
+
   <div class="updated" id="updated"></div>
 </div>
 
@@ -706,7 +915,12 @@ const CONFIG = {
   statsApi: ON_SITE ? "/api/stats" : "https://robbinghood.mom/api/stats",
   // top-20 holders via the site's own cached proxy (see api/top20.mjs)
   top20Api: ON_SITE ? "/api/top20" : "https://robbinghood.mom/api/top20",
+  // live buys/sells via the Birdeye proxy (api/tape.mjs); the section
+  // stays hidden until the endpoint answers
+  tapeApi: ON_SITE ? "/api/tape" : "https://robbinghood.mom/api/tape",
 
+  // the stated holder target for the ROAD_TO progress bar
+  holderGoal: 10000,
 };
 /* ================================================================ */
 
@@ -759,6 +973,16 @@ const CONFIG = {
     }
     requestAnimationFrame(step);
   }
+  // big buys on the heist tape call this to make it rain harder for a beat
+  window.__rainBurst = (n) => {
+    for (let i = 0; i < Math.min(n, 30); i++) {
+      const b = spawn({}, true);
+      b.vy *= 2.2; b.a = Math.min(0.5, b.a + 0.2);
+      bills.push(b);
+    }
+    // let the extras fall through, then trim back to the calm baseline
+    setTimeout(() => { bills.length = Math.max(12, (innerWidth / 70) | 0); }, 6000);
+  };
   if (!matchMedia("(prefers-reduced-motion: reduce)").matches) requestAnimationFrame(step);
 })();
 
@@ -833,7 +1057,11 @@ function updateHero(me) {
     `<span class="ti">$${me.symbol.toUpperCase()} ${fmtPrice(me.price)}</span><span class="sep">▮</span>` +
     (me.change24 != null ? `<span class="ti ${cls}">24h ${dir} ${Math.abs(me.change24).toFixed(1)}%</span><span class="sep">▮</span>` : "") +
     `<span class="ti">MCAP ${fmtUsd(me.mcap)}</span><span class="sep">▮</span>` +
-    (me.vol24 != null ? `<span class="ti">VOL ${fmtUsd(me.vol24)}</span><span class="sep">▮</span>` : "");
+    (me.vol24 != null ? `<span class="ti">VOL ${fmtUsd(me.vol24)}</span><span class="sep">▮</span>` : "") +
+    (lastHolderCount != null
+      ? `<span class="ti">ACCOMPLICES ${lastHolderCount.toLocaleString()}</span><span class="sep">▮</span>` +
+        (CONFIG.holderGoal ? `<span class="ti up">ROAD TO ${fmtGoal(CONFIG.holderGoal)} ${Math.min(100, lastHolderCount / CONFIG.holderGoal * 100).toFixed(1)}%</span><span class="sep">▮</span>` : "")
+      : "");
   const half = unit.repeat(3);
   if (half !== lastTicker) {
     lastTicker = half;
@@ -1000,6 +1228,32 @@ function updateHoldersTile({ balances, maybeMore }) {
     document.getElementById("tHoldersSub").textContent = delta > 0 ? "+" + delta.toLocaleString() + " today" : "";
   } catch { /* localStorage unavailable — skip the delta */ }
   document.getElementById("tileHolders").hidden = false;
+  updateRoad(count);
+}
+
+// ROAD TO the holder goal — progress bar plus "+N since your last visit"
+// (the previous visit's count lives in localStorage).
+const fmtGoal = (g) => (g >= 1000 && g % 1000 === 0 ? (g / 1000) + "K" : g.toLocaleString());
+let lastHolderCount = null; // also feeds the scrolling ticker
+function updateRoad(count) {
+  lastHolderCount = count;
+  const goal = CONFIG.holderGoal;
+  if (!goal) return;
+  const pct = Math.min(100, count / goal * 100);
+  document.getElementById("roadTag").textContent = `ROAD_TO_${fmtGoal(goal)}_ACCOMPLICES 🚐`;
+  document.getElementById("roadCount").textContent = count.toLocaleString();
+  document.getElementById("roadGoal").textContent = `/ ${goal.toLocaleString()} holders · ${pct.toFixed(1)}% of the way`;
+  document.getElementById("roadFill").style.width = pct + "%";
+  try {
+    const prev = JSON.parse(localStorage.getItem("pp_road") || "null");
+    localStorage.setItem("pp_road", JSON.stringify({ count, ts: Date.now() }));
+    const delta = prev ? count - prev.count : 0;
+    document.getElementById("roadSub").innerHTML = delta > 0
+      ? `<b>+${delta.toLocaleString()} recruited</b> since your last visit. every wallet is another pair of hands on the bag.`
+      : "every wallet is another pair of hands on the bag. bring a friend.";
+  } catch { /* keep the default line */ }
+  document.getElementById("roadTag").hidden = false;
+  document.getElementById("roadCard").hidden = false;
 }
 
 function fmtNum(n) {
@@ -1135,6 +1389,66 @@ async function refreshAth() {
   } catch { /* keep the tile hidden */ }
 }
 
+// THE HEIST TAPE — recent buys/sells via the site's Birdeye proxy.
+// The section reveals itself on the first successful answer and then
+// polls every 15s; while the endpoint is missing (404/503) it retries
+// lazily on the 5-minute cycle instead. Fresh big buys trigger a
+// money-rain burst.
+let tapeLive = false, tapeSeen = new Set(), tapeFirstFill = true;
+const fmtTapeUsd = (n) => n == null ? "—" : (n >= 1000 ? "$" + (n / 1000).toFixed(1) + "K" : "$" + n.toFixed(2));
+async function pollTape() {
+  try {
+    const r = await fetch(CONFIG.tapeApi);
+    if (!r.ok) return false;
+    const trades = (await r.json())?.trades || [];
+    if (!trades.length) return false;
+
+    const buys = trades.filter(t => t.side === "buy").reduce((s, t) => s + (t.usd || 0), 0);
+    const sells = trades.filter(t => t.side === "sell").reduce((s, t) => s + (t.usd || 0), 0);
+    const net = buys - sells;
+    document.getElementById("tapeFlow").innerHTML =
+      `<span>buys <b class="up">${fmtTapeUsd(buys)}</b></span>` +
+      `<span>sells <b class="down">${fmtTapeUsd(sells)}</b></span>` +
+      `<span>net <b class="${net >= 0 ? "up" : "down"}">${net >= 0 ? "+" : "−"}${fmtTapeUsd(Math.abs(net))}</b></span>` +
+      `<span style="margin-left:auto">last ${trades.length} trades</span>`;
+
+    const rows = trades.slice(0, 14).map(t => {
+      const id = t.tx || (t.ts + ":" + t.usd);
+      const fresh = !tapeFirstFill && !tapeSeen.has(id);
+      if (fresh && t.side === "buy" && (t.usd || 0) >= 250 && window.__rainBurst) {
+        window.__rainBurst(Math.round(Math.min(30, t.usd / 100)));
+      }
+      const when = t.ts ? new Date(t.ts * 1000).toLocaleTimeString(undefined, { hour12: false }) : "";
+      return `<tr${fresh ? ' class="fresh"' : ""}>` +
+        `<td class="t-time">${when}</td>` +
+        `<td class="t-side-${t.side}">${t.side.toUpperCase()}</td>` +
+        `<td class="t-usd">${fmtTapeUsd(t.usd)}</td>` +
+        `<td class="t-usd">${t.amt != null ? fmtNum(t.amt) : "—"}</td>` +
+        `<td class="t-src">${String(t.src || "").slice(0, 14)}</td></tr>`;
+    }).join("");
+    document.getElementById("tapeBody").innerHTML = rows;
+    tapeSeen = new Set(trades.map(t => t.tx || (t.ts + ":" + t.usd)));
+    tapeFirstFill = false;
+
+    document.getElementById("tapeTag").hidden = false;
+    document.getElementById("tapeCard").hidden = false;
+    if (!tapeLive) {
+      tapeLive = true;
+      setInterval(pollTape, 15000);
+    }
+    return true;
+  } catch { return false; }
+}
+
+document.getElementById("mvCopy").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(CONFIG.challenger);
+    btn.textContent = "copied ✓";
+  } catch { btn.textContent = "copy failed"; }
+  setTimeout(() => { btn.textContent = "copy"; }, 1500);
+});
+
 async function refresh() {
   try {
     const pairs = await fetch(API + CONFIG.challenger).then(r => (r.ok ? r.json() : [])).catch(() => []);
@@ -1159,6 +1473,7 @@ async function refresh() {
 async function refreshExtras() {
   refreshWhale();
   refreshAth();
+  if (!tapeLive) pollTape(); // once live it runs on its own 15s clock
   if (!CONFIG.statsApi) return;
   refreshSpider();
   try {
