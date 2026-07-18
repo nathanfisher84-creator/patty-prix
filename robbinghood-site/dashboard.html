@@ -3,35 +3,35 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Robbinghood Mission Control 🛰</title>
+<title>THE LEDGER 📒 — Robbinghood Mission Control</title>
 <meta name="robots" content="noindex" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%9B%B0%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%93%92%3C/text%3E%3C/svg%3E" />
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #17130E; --card: #221C14; --ink: #FBF4E4; --sub: #B4A992;
-    --line: #3A3226; --blue: #7ED3F0; --pink: #E570CD; --purple: #8B7BF0;
-    --gold: #FFC93C; --green: #5BCF7F; --red: #F0716B; --salmon: #F0908C;
+    --bg: #0D0D0B; --card: #15150F; --ink: #F4F2E0; --sub: #A8AD8A;
+    --line: #4A5220; --blue: #C6E829; --pink: #C6E829; --purple: #C6E829;
+    --gold: #FFD24A; --green: #3FBF4F; --red: #FF4655; --salmon: #FF4655;
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   body {
     background: var(--bg); color: var(--ink);
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Share Tech Mono', monospace;
     padding: 22px 16px 60px;
   }
   .wrap { max-width: 900px; margin: 0 auto; }
-  h1 { font-family: 'Fredoka', sans-serif; font-size: 26px; font-weight: 700; }
+  h1 { font-family: 'Special Elite', monospace; font-size: 26px; font-weight: 700; color: #C6E829; }
   .meta { color: var(--sub); font-size: 13px; font-weight: 700; margin: 4px 0 22px; }
   h2 {
-    font-family: 'Fredoka', sans-serif; font-size: 15px; font-weight: 600;
+    font-family: 'Special Elite', monospace; font-size: 15px; font-weight: 600;
     text-transform: uppercase; letter-spacing: 1.5px; color: var(--sub);
     margin: 26px 0 10px;
   }
   .tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
   .tile { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
   .tile .l { font-size: 10.5px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--sub); margin-bottom: 5px; }
-  .tile .v { font-family: 'Fredoka', sans-serif; font-size: 21px; font-weight: 600; }
+  .tile .v { font-family: 'Special Elite', monospace; font-size: 21px; font-weight: 600; }
   .tile .s { font-size: 11.5px; font-weight: 700; color: var(--sub); margin-top: 3px; }
   .up { color: var(--green); } .down { color: var(--red); }
   table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
@@ -53,7 +53,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Robbinghood Mission Control 🛰</h1>
+  <h1>THE LEDGER 📒</h1>
   <div class="meta" id="meta">connecting…</div>
 
   <h2>Visitors</h2>
@@ -64,15 +64,31 @@
     <div class="tile"><div class="l">🎮 Game views today</div><div class="v" id="gToday">—</div><div class="s" id="gUnique"></div></div>
     <div class="tile"><div class="l">🎮 Runs today</div><div class="v" id="gRuns">—</div></div>
     <div class="tile"><div class="l">🎮 Game all-time</div><div class="v" id="gTotal">—</div><div class="s" id="gRunsTotal"></div></div>
-    <div class="tile"><div class="l">🕶️ PFP views today</div><div class="v" id="pToday">—</div><div class="s" id="pUnique"></div></div>
-    <div class="tile"><div class="l">🕶️ Downloads today</div><div class="v" id="pDls">—</div></div>
-    <div class="tile"><div class="l">🕶️ PFP all-time</div><div class="v" id="pTotal">—</div><div class="s" id="pDlsTotal"></div></div>
+    <div class="tile"><div class="l">🖨️ Print shop views today</div><div class="v" id="pToday">—</div><div class="s" id="pUnique"></div></div>
+    <div class="tile"><div class="l">🖨️ Saves today</div><div class="v" id="pDls">—</div></div>
+    <div class="tile"><div class="l">🖨️ Print shop all-time</div><div class="v" id="pTotal">—</div><div class="s" id="pDlsTotal"></div></div>
   </div>
   <div class="note" id="visitNote" hidden>
-    Visit tracking isn't wired up yet — in Vercel: project → <b>Storage</b> → create a free
-    <b>Upstash Redis</b> → connect it to patty-prix → redeploy. Counters start immediately.
+    Visit tracking isn't wired up yet — in Vercel: <b>robbinghood</b> project → <b>Storage</b> →
+    create a free <b>Upstash Redis</b> → connect → <b>Redeploy</b>. Counters start immediately,
+    and the game leaderboard switches on with the same step.
   </div>
   <div class="chart" id="chart" hidden></div>
+
+  <h2>🖨️ Print Shop Spend</h2>
+  <div class="tiles" id="printTiles" hidden>
+    <div class="tile"><div class="l">Prints today</div><div class="v" id="prToday">—</div><div class="s" id="prLeft"></div></div>
+    <div class="tile"><div class="l">Prints all-time</div><div class="v" id="prTotal">—</div></div>
+    <div class="tile"><div class="l">Spend today</div><div class="v" id="prSpend">—</div><div class="s" id="prSpendAll"></div></div>
+  </div>
+  <div class="note" id="printNote" hidden>Print-spend counters come online with the next full API deploy (or once the project is git-connected) — saves are already counted above.</div>
+
+  <h2>🏆 Getaway Run — This Week</h2>
+  <table id="lbWrap" hidden>
+    <thead><tr><th>#</th><th>Racer</th><th class="num">Best score</th></tr></thead>
+    <tbody id="lbRows"></tbody>
+  </table>
+  <div class="note" id="lbNote" hidden>Leaderboard switches on with the Upstash Redis store (same step as visit tracking).</div>
 
   <h2>$ROBBINGHOOD</h2>
   <div class="tiles">
@@ -107,12 +123,16 @@ const CONFIG = {
   ],
   // keep the token list above in sync with index.html
   statsApi: "https://robbinghood.mom/api/stats",
-  visitsApi: "https://robbinghood.mom/api/visits"
+  visitsApi: "https://robbinghood.mom/api/visits",
+  lbApi: "https://robbinghood.mom/api/leaderboard",
+  printsApi: "https://robbinghood.mom/api/printstats"
 };
 // served from the site itself (any attached domain) → same-origin APIs
 if (/(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname)) {
   CONFIG.statsApi = location.origin + "/api/stats";
   CONFIG.visitsApi = location.origin + "/api/visits";
+  CONFIG.lbApi = location.origin + "/api/leaderboard";
+  CONFIG.printsApi = location.origin + "/api/printstats";
 }
 const DEX = "https://api.dexscreener.com/token-pairs/v1/solana/";
 
@@ -230,10 +250,10 @@ async function refreshVisits() {
     }
     if (v.pfp) {
       $("pToday").textContent = v.pfp.today.views.toLocaleString();
-      $("pUnique").textContent = "~" + v.pfp.today.uniques.toLocaleString() + " visitors";
+      $("pUnique").textContent = "~" + v.pfp.today.uniques.toLocaleString() + " printers";
       $("pDls").textContent = v.pfp.today.downloads.toLocaleString();
       $("pTotal").textContent = v.pfp.total.toLocaleString();
-      $("pDlsTotal").textContent = v.pfp.dlTotal.toLocaleString() + " downloads total";
+      $("pDlsTotal").textContent = v.pfp.dlTotal.toLocaleString() + " saves total";
     }
     $("visitTiles").hidden = false;
     const max = Math.max(1, ...v.days.map(d => d.views));
@@ -246,9 +266,39 @@ async function refreshVisits() {
   }
 }
 
+async function refreshLb() {
+  try {
+    const res = await fetch(CONFIG.lbApi);
+    if (res.status === 501) { $("lbNote").hidden = false; return; }
+    if (!res.ok) return;
+    const d = await res.json();
+    const top = (d.top || []).slice(0, 10);
+    if (!top.length) { $("lbNote").hidden = false; $("lbNote").textContent = "No scores yet this week — be the first bag off the block."; return; }
+    $("lbRows").innerHTML = top.map((r, i) =>
+      `<tr><td>${["🥇","🥈","🥉"][i] || i + 1}</td><td>${esc(r.name)}</td><td class="num">${r.score.toLocaleString()}</td></tr>`).join("");
+    $("lbWrap").hidden = false; $("lbNote").hidden = true;
+  } catch { /* leave hidden */ }
+}
+
+async function refreshPrints() {
+  try {
+    const res = await fetch(CONFIG.printsApi);
+    if (!res.ok) { $("printNote").hidden = res.status !== 404 && res.status !== 501 && res.status !== 405; if (res.status === 404 || res.status === 405) $("printNote").hidden = false; return; }
+    const d = await res.json();
+    $("prToday").textContent = d.today.toLocaleString();
+    $("prLeft").textContent = d.remainingToday.toLocaleString() + " left in today's cap";
+    $("prTotal").textContent = d.alltime.toLocaleString();
+    $("prSpend").textContent = "$" + d.spendToday.toFixed(2);
+    $("prSpendAll").textContent = "$" + d.spendAllTime.toFixed(2) + " all-time";
+    $("printTiles").hidden = false; $("printNote").hidden = true;
+  } catch { $("printNote").hidden = false; }
+}
+
 function tick() {
   refreshRace().catch(err => { $("meta").innerHTML = '<span class="err">' + esc(err.message) + "</span>"; });
   refreshVisits();
+  refreshLb();
+  refreshPrints();
 }
 tick();
 refreshStats();

@@ -143,6 +143,9 @@
 "use strict";
 const TRACKED_HOST = /(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname);
 const API = TRACKED_HOST ? "/api/generate" : "https://robbinghood.mom/api/generate";
+// visit + download beacons for the owner dashboard (api/track.mjs)
+if (TRACKED_HOST) fetch("/api/track?p=pfp", { method: "POST", keepalive: true }).catch(() => {});
+const trackDl = () => { if (TRACKED_HOST) fetch("/api/track?p=pfp&e=dl", { method: "POST", keepalive: true }).catch(() => {}); };
 
 const el = (id) => document.getElementById(id);
 let lastImage = null;
@@ -204,6 +207,7 @@ el("again").addEventListener("click", () => {
 // iOS-friendly save flow: share sheet first, download fallback
 el("save").addEventListener("click", async () => {
   if (!lastImage) return;
+  trackDl();
   try {
     const blob = await (await fetch(lastImage)).blob();
     const file = new File([blob], "robbinghood-print.png", { type: blob.type || "image/png" });
