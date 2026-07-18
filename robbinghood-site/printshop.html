@@ -92,6 +92,25 @@
   .links { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; justify-content: center; }
   .btn.plain { background: var(--card); color: var(--ink); border-color: var(--edge); box-shadow: none; font-size: 13px; }
   .btn.plain:hover { border-color: var(--accent); }
+  .wall-title {
+    font-family: 'Special Elite', monospace; font-weight: 400;
+    font-size: clamp(22px, 6vw, 30px); letter-spacing: 2px;
+    color: var(--accent); margin-top: 34px; text-align: center;
+    text-shadow: 0 0 14px rgba(var(--accent-rgb),0.45);
+  }
+  .wall-sub { font-size: 12px; color: var(--sub); margin: 4px 0 14px; text-align: center; }
+  .wall {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+    gap: 8px; width: min(440px, 100%);
+  }
+  .wall img {
+    width: 100%; aspect-ratio: 1; object-fit: cover;
+    border: 2px solid var(--edge); border-radius: 8px;
+    cursor: pointer; display: block;
+    background: var(--card);
+  }
+  .wall img:hover { border-color: var(--accent); }
+  .wall-empty { grid-column: 1 / -1; text-align: center; color: var(--sub); font-size: 12.5px; padding: 18px 6px; }
 </style>
 </head>
 <body>
@@ -135,6 +154,12 @@
     the robber stays the robber — only the fit changes ·
     on iPhone pick <b>Save Image</b> from the share sheet</div>
 
+  <div id="wallSection" hidden>
+    <div class="wall-title">THE HEIST GALLERY 🖼️</div>
+    <div class="wall-sub">recent prints from the crew — tap one to view and save it</div>
+    <div class="wall" id="wall"></div>
+  </div>
+
   <div class="links">
     <a class="btn plain" href="index.html">← back to $ROBBINGHOOD</a>
   </div>
@@ -147,8 +172,69 @@ const API = TRACKED_HOST ? "/api/generate" : "https://robbinghood.mom/api/genera
 if (TRACKED_HOST) fetch("/api/track?p=pfp", { method: "POST", keepalive: true }).catch(() => {});
 const trackDl = () => { if (TRACKED_HOST) fetch("/api/track?p=pfp&e=dl", { method: "POST", keepalive: true }).catch(() => {}); };
 
+const GALLERY_API = TRACKED_HOST ? "/api/gallery" : "https://robbinghood.mom/api/gallery";
+
 const el = (id) => document.getElementById(id);
 let lastImage = null;
+
+const newSid = () =>
+  Array.from(crypto.getRandomValues(new Uint8Array(12)), (b) => b.toString(16).padStart(2, "0")).join("");
+
+// pin a compressed copy of the fresh print to the public wall
+// (best-effort — a gallery hiccup never bothers the printer)
+async function pinToWall(image, prompt, sid) {
+  try {
+    const im = new Image();
+    await new Promise((ok, no) => { im.onload = ok; im.onerror = no; im.src = image; });
+    const size = 640;
+    const cv = document.createElement("canvas");
+    cv.width = size; cv.height = size;
+    cv.getContext("2d").drawImage(im, 0, 0, size, size);
+    const thumb = cv.toDataURL("image/jpeg", 0.82);
+    if (thumb.length > 390000) return; // over the wall's size cap — skip
+    await fetch(GALLERY_API, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ sid, prompt, img: thumb })
+    });
+    loadWall();
+  } catch { /* the wall can miss one */ }
+}
+
+async function loadWall() {
+  try {
+    const r = await fetch(GALLERY_API);
+    if (!r.ok) return; // gallery not configured — section stays hidden
+    const items = (await r.json())?.items || [];
+    const wall = el("wall");
+    wall.innerHTML = items.length
+      ? items.map((it, i) =>
+          `<img loading="lazy" src="${it.img}" alt="print: ${(it.prompt || "").replace(/["<>&]/g, "")}"` +
+          ` title="${(it.prompt || "").replace(/["<>&]/g, "")}" data-i="${i}" />`).join("")
+      : `<div class="wall-empty">the wall is empty — your print could hang here first 🖼️</div>`;
+    wall.dataset.items = JSON.stringify(items.map((it) => it.img));
+    el("wallSection").hidden = false;
+  } catch { /* keep hidden */ }
+}
+
+// tap a wall print → show it in the big frame, SAVE works on it
+document.addEventListener("click", (e) => {
+  const img = e.target.closest("#wall img");
+  if (!img) return;
+  try {
+    const imgs = JSON.parse(el("wall").dataset.items || "[]");
+    const src = imgs[Number(img.dataset.i)];
+    if (!src) return;
+    lastImage = src;
+    el("idle").hidden = true;
+    el("printing").hidden = true;
+    el("result").src = src;
+    el("result").hidden = false;
+    el("actions").hidden = false;
+    say("from the gallery wall — SAVE PIC grabs it");
+    scrollTo({ top: 0, behavior: "smooth" });
+  } catch { /* ignore */ }
+});
 
 function say(msg, isErr) {
   el("msg").hidden = !msg;
@@ -165,11 +251,12 @@ async function print() {
   el("actions").hidden = true;
   el("printing").hidden = false;
   say("");
+  const sid = newSid(); // ties this print to its gallery pin + recovery cache
   try {
     const r = await fetch(API, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ prompt })
+      body: JSON.stringify({ prompt, sid })
     });
     const j = await r.json();
     el("printing").hidden = true;
@@ -182,6 +269,7 @@ async function print() {
     el("result").hidden = false;
     el("actions").hidden = false;
     say(j.left > 0 ? j.left + " prints left today" : "that was the last print today — back tomorrow!");
+    pinToWall(j.image, prompt, sid);
   } catch {
     el("printing").hidden = true;
     el("idle").hidden = false;
@@ -224,6 +312,7 @@ el("save").addEventListener("click", async () => {
   } catch { say("couldn't save that one — long-press the image instead", true); }
 });
 
+loadWall();
 window.__print = { print, get last() { return lastImage; } };
 </script>
 </body>
