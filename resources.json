@@ -1,0 +1,102 @@
+{
+  "url": "https://robbinghood.mom/",
+  "when": "2026-07-18T19:18:05.643Z",
+  "resources": [
+    {
+      "url": "https://robbinghood.mom/",
+      "type": "document",
+      "status": 200,
+      "ct": "text/html; charset=utf-8"
+    },
+    {
+      "url": "https://robbinghood.mom/_vercel/insights/script.js",
+      "type": "script",
+      "status": 404,
+      "ct": "text/plain; charset=utf-8"
+    },
+    {
+      "url": "https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=Space+Grotesk:wght@400;500;700&display=swap",
+      "type": "stylesheet",
+      "status": 200,
+      "ct": "text/css; charset=utf-8"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/specialelite/v20/XLYgIZbkc4JPUL5CVArUVL0ntnAOSA.woff2",
+      "type": "font",
+      "status": 200,
+      "ct": "font/woff2"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/spacegrotesk/v22/V8mDoQDjQSkFtoMM3T6r8E7mPbF4Cw.woff2",
+      "type": "font",
+      "status": 200,
+      "ct": "font/woff2"
+    },
+    {
+      "url": "https://fonts.gstatic.com/s/sharetechmono/v16/J7aHnp1uDWRBEqV98dVQztYldFcLowEF.woff2",
+      "type": "font",
+      "status": 200,
+      "ct": "font/woff2"
+    },
+    {
+      "url": "https://api.dexscreener.com/token-pairs/v1/solana/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://cdn.dexscreener.com/cms/images/bowt6vkASOSYXW8q?width=800&height=800&quality=95&format=auto",
+      "type": "image",
+      "status": 200,
+      "ct": "image/avif"
+    },
+    {
+      "url": "https://robbinghood.mom/api/track",
+      "type": "fetch",
+      "status": 204,
+      "ct": ""
+    },
+    {
+      "url": "https://robbinghood.mom/api/stats?q=ath",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://robbinghood.mom/api/stats?q=holders&page=1",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://robbinghood.mom/api/tape",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://robbinghood.mom/api/top20",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://robbinghood.mom/api/top20",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://robbinghood.mom/api/stats?q=holders&page=2",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    },
+    {
+      "url": "https://api.dexscreener.com/token-pairs/v1/solana/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
+      "type": "fetch",
+      "status": 200,
+      "ct": "application/json; charset=utf-8"
+    }
+  ]
+}

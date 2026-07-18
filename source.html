@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>$ROBBINGHOOD — Robbinghood 💰 he's got the bag</title>
+<meta name="description" content="Born on r/wallstreetbets — the app turned off the buy button and walked off with the bag. Live stats, the getaway game and the top-20 crew map." />
+<meta name="theme-color" content="#060A04" />
+<meta name="color-scheme" content="dark" />
+<link rel="canonical" href="https://robbinghood.mom/" />
+<meta property="og:url" content="https://robbinghood.mom/" />
+<meta property="og:image" content="https://robbinghood.mom/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:title" content="$ROBBINGHOOD — Robbinghood 💰" />
+<meta property="og:description" content="Born on r/wallstreetbets. He's got the bag — the buy button is disabled." />
+<meta property="og:type" content="website" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="$ROBBINGHOOD — Robbinghood 💰" />
+<meta name="twitter:description" content="Born on r/wallstreetbets. He's got the bag — the buy button is disabled." />
+<meta name="twitter:image" content="https://robbinghood.mom/og.png" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
+<script>
+  // Vercel Web Analytics + visit beacon — only on Vercel-served
+  // domains (neither exists on the GitHub Pages mirror).
+  if ((/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname)) {
+    var va = document.createElement("script");
+    va.defer = true;
+    va.src = "/_vercel/insights/script.js";
+    document.head.appendChild(va);
+    // self-owned visit counter (api/track.mjs) — fire and forget
+    fetch("/api/track", { method: "POST", keepalive: true }).catch(function () {});
+  }
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    { "@type": "Question", "name": "What is Robbinghood ($ROBBINGHOOD)?",
+      "acceptedAnswer": { "@type": "Answer", "text": "A memecoin on Solana born from the r/wallstreetbets GME saga. Community-run, no promises, pure meme." } },
+    { "@type": "Question", "name": "What is the $ROBBINGHOOD contract address?",
+      "acceptedAnswer": { "@type": "Answer", "text": "The canonical mint is shown at the top of the page and in the site footer. Always verify it before trading — copycat mints exist." } },
+    { "@type": "Question", "name": "Where can I buy $ROBBINGHOOD?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Swap SOL for it on Jupiter or pump.fun from any Solana wallet such as Phantom." } },
+    { "@type": "Question", "name": "Is $ROBBINGHOOD on Solana?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, it is a Solana token launched on pump.fun." } },
+    { "@type": "Question", "name": "Is this financial advice?",
+      "acceptedAnswer": { "@type": "Answer", "text": "No. Memecoins are extremely volatile and can go to zero. The site shows entertainment and public on-chain data only." } }
+  ]
+}
+</script>
+<style>
+  :root {
+    /* brand:theme */
+    --bg: #0D0D0B; --card: #15150F; --stripe: #1B1B12; --edge: #4A5220;
+    --ink: #F4F2E0; --sub: #A8AD8A; --accent: #C6E829; --accent2: #3FBF4F;
+    --red: #FF4655; --accent-rgb: 198, 232, 41; --accent2-rgb: 63, 191, 79;
+/* /brand:theme */
+    --fontDisplay: 'Special Elite';
+    --fontBody: 'Share Tech Mono';
+    --fontUi: 'Space Grotesk';
+    --radius: 14px;
+    --glow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  [hidden] { display: none !important; }
+
+  body {
+    font-family: var(--fontUi), 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 24px 16px 70px;
+    background:
+      radial-gradient(900px 500px at 80% -120px, rgba(var(--accent-rgb),0.07), transparent 60%),
+      radial-gradient(700px 420px at -80px 40%, rgba(var(--accent-rgb),0.045), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+  }
+  /* falling money sits behind everything */
+  #rain {
+    position: fixed; inset: 0;
+    z-index: 0;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+  .star-tip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-family: var(--fontBody), ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  }
+  .spider-card {
+    position: relative;
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 12px;
+    padding: 12px 12px 4px;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .spider-card canvas { max-width: 100%; height: auto; cursor: pointer; }
+  .spider-note { color: var(--sub); font-size: 13px; padding: 6px 0 10px; }
+
+  /* (scanline overlay removed for a cleaner surface) */
+
+  ::selection { background: var(--accent); color: #001505; }
+  button:focus-visible, a:focus-visible { outline: 2px dashed var(--accent); outline-offset: 3px; }
+
+  .wrap { max-width: 760px; margin: 0 auto; position: relative; z-index: 2; }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .ticker, .hero, .section-tag, .stash, .title-tag, .tagline, .skeleton {
+    animation: rise 0.5s ease-out both;
+  }
+  .stash .tile:nth-child(2) { animation: rise 0.5s 0.06s ease-out both; }
+  .stash .tile:nth-child(3) { animation: rise 0.5s 0.12s ease-out both; }
+  .stash .tile:nth-child(4) { animation: rise 0.5s 0.18s ease-out both; }
+  .stash .tile:nth-child(5) { animation: rise 0.5s 0.24s ease-out both; }
+  .stash .tile:nth-child(6) { animation: rise 0.5s 0.30s ease-out both; }
+  .race-card.pop { animation: rise 0.5s ease-out both; }
+
+  /* ---------- ticker ---------- */
+  .ticker {
+    position: sticky;
+    top: 10px;
+    z-index: 40;
+    background: rgba(4,12,7,0.92);
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    box-shadow: var(--glow);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 10px 0;
+    margin-bottom: 28px;
+    backdrop-filter: blur(3px);
+  }
+  .ticker::before, .ticker::after {
+    content: "";
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 38px;
+    z-index: 2;
+    pointer-events: none;
+  }
+  .ticker::before { left: 0;  background: linear-gradient(90deg, #040C07 30%, transparent); }
+  .ticker::after  { right: 0; background: linear-gradient(270deg, #040C07 30%, transparent); }
+  .ticker-track { display: inline-block; animation: ticker-scroll 30s linear infinite; }
+  .ticker:hover .ticker-track { animation-play-state: paused; }
+  @keyframes ticker-scroll { to { transform: translateX(-50%); } }
+  .ticker .ti { font-size: 15px; padding: 0 10px; }
+  .ticker .sep { color: var(--accent); padding: 0 6px; }
+  .up { color: var(--accent); }
+  .down { color: var(--red); }
+
+  /* ---------- token hero ---------- */
+  .hero {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    margin: 10px 2px 34px;
+  }
+  .hero-icon {
+    width: 96px; height: 96px;
+    border-radius: 12px;
+    border: 2px solid var(--accent);
+    background: #000;
+    object-fit: cover;
+    box-shadow: var(--glow);
+    flex-shrink: 0;
+  }
+  .hero-name {
+    font-family: var(--fontDisplay), serif;
+    font-weight: 400;
+    font-size: clamp(38px, 9vw, 58px);
+    line-height: 0.95;
+    color: var(--ink);
+    text-transform: uppercase;
+  }
+  .hero-ca {
+    display: inline-block;
+    font-size: 12.5px;
+    letter-spacing: 0.4px;
+    background: #04100A;
+    border: 1.5px solid var(--edge);
+    border-radius: 6px;
+    padding: 5px 13px;
+    color: var(--sub);
+    margin: 8px 0 12px;
+  }
+  .hero-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    background: #06170D;
+    color: var(--ink);
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    padding: 8px 18px;
+    cursor: pointer;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  }
+  .btn:hover { border-color: var(--accent); box-shadow: var(--glow); }
+  .btn:active { transform: translate(1px, 1px); }
+  a.btn { display: inline-block; text-decoration: none; color: var(--ink); }
+  .btn.buy {
+    background: var(--accent);
+    color: #001505;
+    border-color: var(--accent);
+    font-weight: 700;
+    box-shadow: 0 0 18px rgba(var(--accent-rgb),0.4);
+  }
+  .btn.buy:hover { background: #4CFF7A; }
+  /* the star of the site — louder than everything else on the page */
+  .print-cta {
+    display: block;
+    text-align: center;
+    text-decoration: none;
+    padding: 20px 20px 17px;
+    border-radius: 14px;
+    margin: -8px 2px 16px;
+    background:
+      radial-gradient(500px 120px at 50% -40px, rgba(255,255,255,0.22), transparent 70%),
+      linear-gradient(160deg, var(--accent), var(--accent2));
+    border: 2px solid var(--accent);
+    color: var(--bg);
+    box-shadow: 0 12px 36px rgba(var(--accent-rgb), 0.25);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+  .print-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 44px rgba(var(--accent-rgb), 0.4); }
+  .print-cta .pc-title {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: var(--fontDisplay), serif;
+    font-size: clamp(22px, 6.4vw, 34px);
+    letter-spacing: 3px;
+  }
+  .print-cta .pc-arrow { font-family: var(--fontUi), sans-serif; font-weight: 700; }
+  .print-cta .pc-sub {
+    display: block; margin-top: 5px;
+    font-size: clamp(11.5px, 3.1vw, 13.5px);
+    opacity: 0.85; letter-spacing: 0.4px;
+  }
+
+  .play-cta {
+    display: block;
+    text-align: center;
+    font-size: clamp(16px, 4.2vw, 21px);
+    padding: 16px 20px;
+    background: linear-gradient(160deg, #0E2A17, #071A0E);
+    border: 2px solid var(--accent);
+    border-radius: 12px;
+    margin: -8px 2px 36px;
+    box-shadow: var(--glow);
+    color: var(--accent);
+  }
+  .play-cta:hover { background: #10331B; }
+  .lb-cta {
+    display: block;
+    text-align: center;
+    font-size: clamp(12px, 3vw, 14px);
+    padding: 10px 16px;
+    border-radius: 10px;
+    margin: -26px 2px 36px;
+  }
+  .fam-links { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin: 16px 0 8px; }
+  .fam-links .btn { font-size: 13px; }
+  .lore-card {
+    display: flex; gap: 18px; align-items: center;
+    background: var(--card);
+    border: 1px solid var(--edge); border-radius: 12px;
+    box-shadow: var(--glow);
+    padding: 20px 22px; margin-bottom: 36px;
+  }
+  .lore-icon {
+    width: 110px; height: 110px; flex: none;
+    border-radius: 10px; border: 2px solid var(--accent);
+    box-shadow: var(--glow);
+    object-fit: cover; background: #000;
+  }
+  .lore-text p { font-size: 14px; margin: 0 0 8px; line-height: 1.45; }
+  .lore-text p:last-child { margin-bottom: 0; }
+  .lore-text b { color: var(--accent); font-weight: 400; }
+  .lore-tag { color: var(--sub); font-size: 12.5px !important; }
+  .howto {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px; margin-bottom: 36px;
+  }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--edge); border-radius: 10px;
+    padding: 14px 16px; font-size: 13px; line-height: 1.4;
+  }
+  .step b { color: var(--accent); font-weight: 400; font-size: 15px; display: block; margin-bottom: 4px; }
+  .step p { margin: 0; color: var(--sub); }
+  .step a { color: var(--accent2); }
+  .step-n {
+    float: right;
+    font-family: 'Special Elite', monospace; font-size: 22px;
+    width: 32px; height: 32px; line-height: 28px; text-align: center;
+    color: var(--accent);
+    border: 1px solid var(--edge); border-radius: 6px;
+  }
+  @media (max-width: 520px) {
+    .lore-card { flex-direction: column; text-align: center; }
+  }
+  .beta-pill {
+    font-size: 10px;
+    letter-spacing: 1px;
+    background: var(--accent);
+    color: #001505;
+    border-radius: 4px;
+    padding: 2px 8px;
+    vertical-align: middle;
+    margin-left: 8px;
+  }
+  .hero-updated { margin-top: 10px; font-size: 12.5px; color: var(--sub); }
+
+  /* ---------- stash tiles ---------- */
+  .section-tag {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin-bottom: 18px;
+  }
+  .section-tag::after { content: ""; flex: 1; height: 1px; background: var(--edge); opacity: 0.5; }
+  .stash {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 38px;
+  }
+  .tile {
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    padding: 12px 14px;
+    background: var(--card);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .tile:hover { border-color: var(--accent); box-shadow: var(--glow); }
+  .tile .t-label {
+    font-size: 10px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 5px;
+    color: var(--sub);
+  }
+  .tile .t-value {
+    font-family: 'Special Elite', monospace;
+    font-size: clamp(20px, 4vw, 27px);
+    color: var(--accent);
+  }
+  .tile .t-sub { font-size: 11px; margin-top: 4px; color: var(--sub); }
+  .t-red .t-value { color: var(--red); }
+  .t-lime .t-value { color: var(--accent2); }
+  .t-wide { grid-column: 1 / -1; }
+  .tile-big .t-value { font-size: clamp(30px, 7vw, 42px); }
+  .tile-big .t-sub { font-size: 12.5px; }
+
+  /* ---------- header ---------- */
+  .title-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    padding: 12px 22px;
+    margin-bottom: 14px;
+  }
+  .title-tag h2 {
+    font-family: 'Special Elite', monospace;
+    font-weight: 400;
+    font-size: clamp(26px, 6vw, 38px);
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+  .tagline {
+    font-size: clamp(13px, 3.4vw, 16px);
+    color: var(--sub);
+    margin: 2px 4px 0;
+  }
+  .tagline b { color: var(--accent); font-weight: 400; }
+
+  .live-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    background: #04100A;
+    border: 1.5px solid var(--edge);
+    border-radius: 6px;
+    padding: 7px 14px;
+    color: var(--accent);
+  }
+  .live-dot::before {
+    content: "";
+    width: 9px; height: 9px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    animation: blink 1.4s ease-in-out infinite;
+  }
+  @keyframes blink { 50% { opacity: 0.25; } }
+
+  /* ---------- race cards ---------- */
+  .race-card {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 24px 24px 20px;
+    margin-bottom: 30px;
+    transition: border-color 0.18s ease, box-shadow 0.18s ease;
+  }
+  .race-card:hover { border-color: var(--accent); box-shadow: var(--glow); }
+  .race-card.flipped { border-color: var(--accent2); background: linear-gradient(160deg, #0D2210, #08130C); }
+
+  .card-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .card-top .flag { font-size: 20px; }
+  .card-top .rival-name { font-size: clamp(15px, 3.6vw, 20px); color: var(--ink); }
+  .card-top .rival-symbol { font-size: clamp(12px, 3vw, 16px); color: var(--sub); letter-spacing: 0.5px; }
+  .multiplier {
+    margin-left: auto;
+    background: #04100A;
+    color: var(--accent);
+    border: 1.5px solid var(--edge);
+    font-size: clamp(12px, 3vw, 15px);
+    padding: 7px 16px;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: transform 0.25s ease;
+  }
+  .multiplier.bump { transform: scale(1.12); }
+  .multiplier.done { background: var(--accent); color: #001505; border-color: var(--accent); }
+
+  /* track */
+  .track {
+    position: relative;
+    height: 66px;
+    border: 1px solid var(--edge);
+    border-radius: 8px;
+    background:
+      repeating-linear-gradient(90deg,
+        #060F09 0 46px,
+        var(--stripe) 46px 92px);
+    overflow: visible;
+  }
+  .track::before {
+    content: "";
+    position: absolute;
+    left: 26px; right: 26px; top: 50%;
+    border-top: 2px dashed rgba(var(--accent-rgb),0.15);
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .track-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background-image:
+      repeating-linear-gradient(-55deg, rgba(var(--accent-rgb),0.16) 0 12px, rgba(0,0,0,0) 12px 24px),
+      linear-gradient(180deg, #0E4B24, #0A3319);
+    border-radius: 6px 0 0 6px;
+    border-right: 2px solid var(--accent);
+    min-width: 30px;
+    transition: width 1.6s cubic-bezier(.3,.9,.3,1);
+    animation: chug 1.4s linear infinite;
+  }
+  @keyframes chug { to { background-position: 34px 0, 0 0; } }
+  .race-card.flipped .track-fill {
+    background-image:
+      repeating-linear-gradient(-55deg, rgba(var(--accent2-rgb),0.2) 0 12px, rgba(0,0,0,0) 12px 24px),
+      linear-gradient(180deg, #3A5C10, #2A430B);
+    border-right-color: var(--accent2);
+  }
+  .car {
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 54px; height: 54px;
+    border-radius: 10px;
+    border: 2px solid var(--accent);
+    background: #000;
+    object-fit: cover;
+    z-index: 2;
+    transition: left 1.6s cubic-bezier(.3,.9,.3,1);
+    box-shadow: 0 0 12px rgba(var(--accent-rgb),0.5);
+  }
+  .car.vroom { animation: vroom 0.7s ease; }
+  @keyframes vroom {
+    0%   { transform: translate(-50%, -50%) rotate(0deg); }
+    30%  { transform: translate(-50%, -54%) rotate(-6deg); }
+    60%  { transform: translate(-50%, -47%) rotate(4deg); }
+    100% { transform: translate(-50%, -50%) rotate(0deg); }
+  }
+
+  .finish {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+  }
+  .finish img {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid var(--edge);
+    background: #000;
+    object-fit: cover;
+    filter: saturate(0.6);
+  }
+  .finish .target { font-size: clamp(13px, 3.2vw, 17px); color: var(--sub); white-space: nowrap; }
+
+  /* holder race — slim second track in each card */
+  .hrace { margin-top: 14px; }
+  .htrack {
+    position: relative;
+    height: 14px;
+    border: 1.5px solid var(--edge);
+    border-radius: 6px;
+    background: repeating-linear-gradient(90deg, #331116 0 30px, #26090D 30px 60px); /* their side: red */
+    overflow: hidden;
+  }
+  .htrack-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(180deg, #0E4B24, #0A3319); /* our side: green */
+    border-right: 1.5px solid var(--accent);
+    min-width: 6px;
+    transition: width 1.2s cubic-bezier(.3,.9,.3,1);
+  }
+  .hstat { margin-top: 6px; font-size: 12px; color: var(--sub); }
+  .hstat b { color: var(--accent); font-weight: 400; }
+
+  .status {
+    margin-top: 16px;
+    font-size: clamp(13px, 3.4vw, 16px);
+    color: var(--sub);
+  }
+  .status b { color: var(--accent); font-weight: 400; }
+  .status::before { content: "$ "; color: var(--sub); }
+
+  /* skeleton + error */
+  .skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 40px;
+    text-align: center;
+    font-size: 16px;
+    color: var(--sub);
+    margin-bottom: 34px;
+  }
+  .skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(var(--accent-rgb),0.08), transparent);
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+  @keyframes shimmer { to { transform: translateX(100%); } }
+
+  /* road to the holder goal */
+  .road-card {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    margin-bottom: 34px;
+  }
+  .road-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .road-count {
+    font-family: var(--fontDisplay), serif; font-size: clamp(30px, 7vw, 44px);
+    color: var(--accent);
+  }
+  .road-goal { font-size: 14px; color: var(--sub); }
+  .road-bar {
+    height: 14px; margin: 14px 0 10px;
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 9px;
+    overflow: hidden;
+  }
+  .road-fill {
+    height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    box-shadow: 0 0 12px rgba(var(--accent-rgb),0.6);
+    border-radius: 6px;
+    transition: width 1.2s ease;
+  }
+  .road-sub { font-size: 12.5px; color: var(--sub); }
+  .road-sub b { color: var(--accent2); font-weight: 400; }
+
+  /* the heist tape */
+  .tape-card {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 16px 18px;
+    margin-bottom: 34px;
+  }
+  .tape-flow {
+    display: flex; gap: 16px; flex-wrap: wrap;
+    font-size: 13px; color: var(--sub);
+    padding-bottom: 10px; margin-bottom: 6px;
+    border-bottom: 2px solid var(--edge);
+  }
+  .tape-flow b { font-weight: 400; }
+  .tape { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .tape td { padding: 6px 8px; border-bottom: 1px solid var(--stripe); white-space: nowrap; }
+  .tape tr:last-child td { border-bottom: none; }
+  .tape .t-time { color: var(--sub); font-size: 12px; }
+  .tape .t-side-buy { color: var(--accent2); }
+  .tape .t-side-sell { color: var(--red); }
+  .tape .t-usd { text-align: right; }
+  .tape .t-src { color: var(--sub); font-size: 12px; text-align: right; }
+  .tape tr.fresh { animation: tapePop 0.5s ease; }
+  @keyframes tapePop { from { background: rgba(var(--accent-rgb),0.16); } }
+  .tape-note { font-size: 11.5px; color: var(--sub); margin-top: 8px; opacity: 0.8; }
+
+  /* FAQ */
+  .faq { margin-bottom: 34px; }
+  .faq details {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 10px;
+    margin-bottom: 8px;
+    overflow: hidden;
+  }
+  .faq summary {
+    cursor: pointer; list-style: none;
+    padding: 13px 16px;
+    font-size: 14px; color: var(--ink);
+  }
+  .faq details[open] summary { color: var(--accent); border-bottom: 1px solid var(--stripe); }
+  .faq .a { padding: 12px 16px 14px; font-size: 13.5px; line-height: 1.65; color: var(--sub); }
+  .faq .a a { color: var(--accent2); }
+  .faq .a code { color: var(--accent); word-break: break-all; }
+
+  /* canonical-mint footer */
+  .mint-verify {
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-top: 8px;
+    text-align: center;
+  }
+  .mv-label { font-size: 12px; letter-spacing: 1px; color: var(--red); margin-bottom: 10px; }
+  .mv-row { display: flex; gap: 8px; justify-content: center; align-items: center; flex-wrap: wrap; }
+  .mv-row code.ca {
+    font-family: inherit; font-size: 12.5px; color: var(--accent);
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 7px;
+    padding: 8px 10px; word-break: break-all;
+  }
+  .mv-note { font-size: 11.5px; color: var(--sub); margin-top: 10px; opacity: 0.85; }
+
+  .updated {
+    text-align: center;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+    color: var(--sub);
+    margin-top: 10px;
+    opacity: 0.7;
+  }
+
+  @media (max-width: 540px) {
+    body { padding: 16px 10px 56px; }
+    .hero { gap: 14px; }
+    .hero-icon { width: 76px; height: 76px; }
+    .stash { grid-template-columns: 1fr 1fr; gap: 10px; }
+    .tile { padding: 11px 12px; }
+    .ticker .ti { font-size: 13px; }
+    .race-card { padding: 20px 18px 18px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .track-fill, .car, .multiplier, .race-card, .tile, .btn, .hero-icon { transition: none; }
+    .car.vroom, .live-dot::before, .ticker-track, .track-fill, .skeleton::after { animation: none; }
+    .ticker, .hero, .section-tag, .stash, .stash .tile, .title-tag, .tagline, .skeleton, .race-card.pop { animation: none; }
+    #rain { display: none; }
+  }
+  /* data wears the mono; reading text wears the UI face */
+  .ticker, .hero-ca, .t-value, .hero-updated, .updated, .tape,
+  .mv-row code.ca, .road-goal, .spider-note, .tape-flow { font-family: var(--fontBody), ui-monospace, monospace; }
+</style>
+</head>
+<body>
+<canvas id="rain" aria-hidden="true"></canvas>
+<div class="wrap">
+
+  <div class="ticker" id="ticker" hidden>
+    <div class="ticker-track" id="tickerTrack"></div>
+  </div>
+
+  <div class="hero" id="hero" hidden>
+    <img class="hero-icon" id="heroIcon" alt="" />
+    <div class="hero-main">
+      <h1 class="hero-name" id="heroName">—</h1>
+      <div class="hero-ca" id="heroCa"></div>
+      <div class="hero-actions">
+        <a class="btn buy" href="https://jup.ag/swap/SOL-6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
+           target="_blank" rel="noopener" aria-label="Buy $ROBBINGHOOD on Jupiter">BUY $ROBBINGHOOD</a>
+        <button class="btn" id="copyBtn" type="button" aria-label="Copy contract address">COPY CA</button>
+        <button class="btn" id="refreshBtn" type="button" aria-label="Refresh stats">REFRESH</button>
+        <a class="btn" id="chartLink" href="https://dexscreener.com/solana/8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V" target="_blank" rel="noopener" aria-label="Open the DexScreener chart">CHART</a>
+        <span class="live-dot">LIVE</span>
+      </div>
+      <div class="hero-updated" id="heroUpdated"></div>
+    </div>
+  </div>
+
+  <div class="section-tag" id="stashTag" hidden>Market data</div>
+  <div class="stash" id="stash" hidden>
+    <div class="tile">
+      <div class="t-label">Price</div>
+      <div class="t-value" id="tPrice">—</div>
+      <div class="t-sub" id="tChange"></div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Market Cap</div>
+      <div class="t-value" id="tMcap">—</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">24h Volume</div>
+      <div class="t-value" id="tVol">—</div>
+    </div>
+    <div class="tile">
+      <div class="t-label">Liquidity</div>
+      <div class="t-value" id="tLiq">—</div>
+    </div>
+    <div class="tile t-lime" id="tileAth" hidden>
+      <div class="t-label">All-Time High</div>
+      <div class="t-value" id="tAth">—</div>
+      <div class="t-sub" id="tAthSub"></div>
+    </div>
+    <div class="tile t-red t-wide" id="tileWhale" hidden>
+      <div class="t-label">Whale Share (Top 10)</div>
+      <div class="t-value" id="tWhale">—</div>
+    </div>
+    <div class="tile t-wide tile-big" id="tileHolders" hidden>
+      <div class="t-label">Holders</div>
+      <div class="t-value" id="tHolders">—</div>
+      <div class="t-sub up" id="tHoldersSub"></div>
+    </div>
+  </div>
+
+  <div class="section-tag" id="roadTag" hidden>Road to 10K accomplices</div>
+  <div class="road-card" id="roadCard" hidden>
+    <div class="road-top">
+      <span class="road-count" id="roadCount">—</span>
+      <span class="road-goal" id="roadGoal">wallets on the crew</span>
+    </div>
+    <div class="road-bar"><div class="road-fill" id="roadFill"></div></div>
+    <div class="road-sub" id="roadSub">every wallet is another pair of hands on the bag.</div>
+  </div>
+
+  <a class="print-cta" href="printshop.html" aria-label="Open the Print Shop">
+    <span class="pc-title">THE PRINT SHOP <span class="pc-arrow">→</span></span>
+    <span class="pc-sub">Dress Robbinghood in anything. Free AI prints — yours hangs on the gallery wall.</span>
+  </a>
+  <a class="btn play-cta" id="playLink" href="game.html">PLAY GETAWAY RUN <span class="beta-pill">BETA</span></a>
+  <a class="btn lb-cta" href="leaderboard.html">Weekly leaderboard — see who's getting away with the bag</a>
+  <a class="btn lb-cta" href="wanted.html">Wanted poster — check any wallet's loot, print yours</a>
+
+  <div class="section-tag">Who is Robbinghood</div>
+  <div class="lore-card">
+    <img class="lore-icon" id="loreIcon" alt="Robbinghood" hidden />
+    <div class="lore-text">
+      <!-- brand:lore -->
+      <p><b>Suit on. Bag packed. Buy button off.</b></p>
+      <p>Straight out of the <b>r/wallstreetbets</b> GME saga — the friendly free-trading app that turned off the buy button, sold the order flow and walked off with the hood's bag. Robbinghood is the getaway car, immortalized on-chain: the robbery becomes the ticker.</p>
+      <p class="lore-tag">$ROBBINGHOOD is the ticker. He's got the bag. The buy button is disabled.</p>
+<!-- /brand:lore -->
+    </div>
+  </div>
+
+  <div class="section-tag">How to buy</div>
+  <div class="howto">
+    <div class="step">
+      <span class="step-n">1</span>
+      <b>Get a wallet</b>
+      <p>Grab <a href="https://phantom.com" target="_blank" rel="noopener">Phantom</a> —
+        free, takes two minutes on any phone.</p>
+    </div>
+    <div class="step">
+      <span class="step-n">2</span>
+      <b>Load it with SOL</b>
+      <p>Buy SOL in the wallet itself, or send some over from an exchange.</p>
+    </div>
+    <div class="step">
+      <span class="step-n">3</span>
+      <b>Swap for $ROBBINGHOOD</b>
+      <p>One tap on <a href="https://jup.ag/swap/SOL-6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
+        target="_blank" rel="noopener">Jupiter</a> or
+        <a href="https://pump.fun/coin/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
+        target="_blank" rel="noopener">pump.fun</a> — paste the CA from up top.</p>
+    </div>
+    <div class="step">
+      <span class="step-n">4</span>
+      <b>Join the heist</b>
+      <p><a href="https://x.com/i/communities/2033592066060554438" target="_blank" rel="noopener">the Robbinghood community on X</a> —
+        then go <a href="printshop.html">print Robbinghood a new fit</a>.</p>
+    </div>
+  </div>
+
+  <div class="section-tag">The constellation — top 20 holders</div>
+  <div class="spider-card">
+    <canvas id="spider" width="840" height="840"></canvas>
+    <div class="star-tip" id="starTip" hidden></div>
+    <div class="spider-note" id="spiderNote">casing the vault…</div>
+  </div>
+  <div class="fam-links" id="famLinks">
+    <a class="btn" href="https://app.bubblemaps.io/sol/token/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
+       target="_blank" rel="noopener">Holder bubble map</a>
+  </div>
+
+  <div class="section-tag" id="tapeTag" hidden>The heist tape — live trades</div>
+  <div class="tape-card" id="tapeCard" hidden>
+    <div class="tape-flow" id="tapeFlow"></div>
+    <table class="tape"><tbody id="tapeBody"></tbody></table>
+    <div class="tape-note">every buy and sell as it lands · refreshes automatically · big buys make it rain harder</div>
+  </div>
+
+  <div class="section-tag">Frequently cased questions</div>
+  <div class="faq">
+    <details>
+      <summary>What is Robbinghood ($ROBBINGHOOD)?</summary>
+      <div class="a">A memecoin on Solana born from the r/wallstreetbets GME saga — the app that
+        turned off the buy button, immortalized on-chain as the getaway car. The robbery becomes
+        the ticker. It trades like any Solana token: community-run, no promises, pure meme.</div>
+    </details>
+    <details>
+      <summary>What is the contract address (CA)?</summary>
+      <div class="a">The one and only canonical mint is
+        <code class="ca">6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump</code> — also pinned at the
+        top of this page and in the footer below. Always verify against it before trading;
+        copycat mints exist.</div>
+    </details>
+    <details>
+      <summary>Where can I buy $ROBBINGHOOD?</summary>
+      <div class="a">Swap SOL for it on
+        <a href="https://jup.ag/swap/SOL-6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump" target="_blank" rel="noopener">Jupiter</a>
+        or <a href="https://pump.fun/coin/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump" target="_blank" rel="noopener">pump.fun</a>
+        from any Solana wallet (Phantom takes two minutes to set up — full steps in the
+        HOW_TO_BUY section above).</div>
+    </details>
+    <details>
+      <summary>What is the current price and market cap?</summary>
+      <div class="a">Live numbers stream at the top of this page (price, market cap, volume,
+        liquidity, holder count), or see the full chart on
+        <a href="https://dexscreener.com/solana/8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V" target="_blank" rel="noopener">DexScreener</a>.</div>
+    </details>
+    <details>
+      <summary>Is $ROBBINGHOOD on Solana?</summary>
+      <div class="a">Yes — it's a Solana token launched on pump.fun. You'll need a Solana wallet
+        and a little SOL to swap.</div>
+    </details>
+    <details>
+      <summary>Who are the biggest holders?</summary>
+      <div class="a">The constellation above maps the top-20 wallets live from the chain — bigger
+        stars hold more, and the trading-pool vault burns red. Tap any star to inspect the wallet on Solscan, or run any
+        address through the <a href="wanted.html">WANTED poster checker</a>.</div>
+    </details>
+    <details>
+      <summary>What is GETAWAY RUN?</summary>
+      <div class="a">The site's <a href="game.html">arcade game</a> — tap to keep the getaway car
+        running and post your score to the <a href="leaderboard.html">weekly leaderboard</a>.
+        Free, runs in the browser, works on phones.</div>
+    </details>
+    <details>
+      <summary>What is THE PRINT SHOP?</summary>
+      <div class="a">An <a href="printshop.html">AI dress-up machine</a>: type any outfit or scene
+        and it re-draws the mascot to match — your PFP, one prompt away.</div>
+    </details>
+    <details>
+      <summary>How do I join the community?</summary>
+      <div class="a">The crew lives in
+        <a href="https://x.com/i/communities/2033592066060554438" target="_blank" rel="noopener">the community on X</a> —
+        memes, prints and heist planning.</div>
+    </details>
+    <details>
+      <summary>Is this financial advice?</summary>
+      <div class="a">No. Memecoins are extremely volatile and can go to zero. Everything on this
+        site is entertainment and public on-chain data, not investment advice. Never spend what
+        you can't afford to lose.</div>
+    </details>
+  </div>
+
+  <footer class="mint-verify">
+    <div class="mv-label">CANONICAL MINT — VERIFY BEFORE YOU BUY. FAKES EXIST.</div>
+    <div class="mv-row">
+      <code class="ca">6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump</code>
+      <button class="btn" id="mvCopy" type="button">copy</button>
+      <a class="btn" href="https://solscan.io/token/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
+         target="_blank" rel="noopener">solscan</a>
+    </div>
+    <div class="mv-note">match every character against the CA you're about to trade — one letter off is a different (fake) token.</div>
+  </footer>
+
+  <div class="updated" id="updated"></div>
+</div>
+
+<script>
+/* ================================================================
+   CONFIG — paste your token addresses here
+   ================================================================ */
+// on any domain wired to the Vercel project (or the mirror), API calls go
+// same-origin; anywhere else they fall back to the canonical domain
+const ON_SITE = (/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname);
+const CONFIG = {
+  // Your token
+  challenger: "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",
+
+  // How often to refresh prices (milliseconds). 10000 = every 10s.
+  pollIntervalMs: 10000,
+
+  // Stats API — Vercel serverless proxy (api/stats.mjs) that holds the
+  // Helius key server-side. Powers the HOLDERS tile.
+  // Leave "" to hide those sections.
+  statsApi: ON_SITE ? "/api/stats" : "https://robbinghood.mom/api/stats",
+  // top-20 holders via the site's own cached proxy (see api/top20.mjs)
+  top20Api: ON_SITE ? "/api/top20" : "https://robbinghood.mom/api/top20",
+  // live buys/sells via the Birdeye proxy (api/tape.mjs); the section
+  // stays hidden until the endpoint answers
+  tapeApi: ON_SITE ? "/api/tape" : "https://robbinghood.mom/api/tape",
+
+  // the stated holder target for the ROAD_TO progress bar
+  holderGoal: 10000,
+};
+/* ================================================================ */
+
+// ── falling money (colors come from the page theme) ──
+(() => {
+  const cv = document.getElementById("rain");
+  const cx = cv.getContext("2d");
+  const T = getComputedStyle(document.documentElement);
+  const col = (n) => T.getPropertyValue(n).trim();
+  const rgba = (n, a) => { const v = parseInt(col(n).slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
+  let bills = [];
+  const rand = (a, b) => a + Math.random() * (b - a);
+  function spawn(b, fromTop) {
+    b.x = rand(0, cv.width); b.y = fromTop ? rand(-160, -30) : rand(0, cv.height);
+    b.w = rand(26, 52); b.rot = rand(0, 6.28); b.vr = rand(-0.02, 0.02);
+    b.vy = rand(0.5, 1.6); b.sway = rand(0, 6.28); b.a = rand(0.10, 0.30);
+    return b;
+  }
+  function size() {
+    cv.width = innerWidth; cv.height = innerHeight;
+    bills = Array.from({ length: Math.max(12, (innerWidth / 70) | 0) }, () => spawn({}, false));
+  }
+  size();
+  addEventListener("resize", size);
+  let lastT = 0;
+  function step(ts) {
+    if (ts - lastT > 50) {
+      lastT = ts;
+      cx.fillStyle = col("--bg");
+      cx.fillRect(0, 0, cv.width, cv.height);
+      for (const b of bills) {
+        b.y += b.vy; b.rot += b.vr; b.sway += 0.02;
+        const bx = b.x + Math.sin(b.sway) * 14;
+        if (b.y > cv.height + 60) spawn(b, true);
+        const h = b.w * 0.46;
+        cx.save();
+        cx.translate(bx, b.y); cx.rotate(b.rot);
+        cx.fillStyle = rgba("--accent2", b.a);
+        cx.fillRect(-b.w / 2, -h / 2, b.w, h);
+        cx.strokeStyle = rgba("--accent", b.a + 0.15); cx.lineWidth = 1.2;
+        cx.strokeRect(-b.w / 2, -h / 2, b.w, h);
+        cx.strokeStyle = rgba("--accent", b.a);
+        cx.strokeRect(-b.w / 2 + 3, -h / 2 + 3, b.w - 6, h - 6);
+        cx.fillStyle = rgba("--ink", b.a + 0.25);
+        cx.font = "bold " + (h * 0.62) + "px " + col("--fontBody");
+        cx.textAlign = "center"; cx.textBaseline = "middle";
+        cx.fillText("$", 0, 1);
+        cx.restore();
+      }
+    }
+    requestAnimationFrame(step);
+  }
+  // big buys on the heist tape call this to make it rain harder for a beat
+  window.__rainBurst = (n) => {
+    for (let i = 0; i < Math.min(n, 30); i++) {
+      const b = spawn({}, true);
+      b.vy *= 2.2; b.a = Math.min(0.5, b.a + 0.2);
+      bills.push(b);
+    }
+    // let the extras fall through, then trim back to the calm baseline
+    setTimeout(() => { bills.length = Math.max(12, (innerWidth / 70) | 0); }, 6000);
+  };
+  if (!matchMedia("(prefers-reduced-motion: reduce)").matches) requestAnimationFrame(step);
+})();
+
+// token-pairs returns ALL pools of a token; the batch /tokens/v1
+// endpoint returns a single pair per token and can pick a stale
+// graduated bonding-curve listing over the live PumpSwap pool.
+const API = "https://api.dexscreener.com/token-pairs/v1/solana/";
+const updatedEl = document.getElementById("updated");
+
+function fmtUsd(n) {
+  if (n == null || isNaN(n)) return "—";
+  if (n >= 1e9) return "$" + (n / 1e9).toFixed(2) + "B";
+  if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e3) return "$" + (n / 1e3).toFixed(1) + "K";
+  return "$" + n.toFixed(0);
+}
+
+// Pick the token's PumpSwap pool (most liquid one if several);
+// fall back to the most liquid pool on any DEX only when a token
+// has no PumpSwap pool at all.
+function pairScore(p) {
+  return (p.dexId === "pumpswap" ? 1e15 : 0) + (p.liquidity?.usd || 0);
+}
+function bestPairs(pairs, addresses) {
+  const map = {};
+  const wanted = new Set(addresses.map(a => a.toLowerCase()));
+  for (const p of pairs || []) {
+    const addr = p.baseToken?.address?.toLowerCase();
+    if (!addr || !wanted.has(addr)) continue;
+    if (!map[addr] || pairScore(p) > pairScore(map[addr])) map[addr] = p;
+  }
+  return map;
+}
+
+function tokenData(pair) {
+  if (!pair) return null;
+  return {
+    name: pair.baseToken.name || pair.baseToken.symbol,
+    symbol: pair.baseToken.symbol,
+    mcap: pair.marketCap ?? pair.fdv ?? null,
+    icon: pair.info?.imageUrl || null,
+    price: pair.priceUsd != null ? Number(pair.priceUsd) : null,
+    change24: pair.priceChange?.h24 ?? null,
+    vol24: pair.volume?.h24 ?? null,
+    liq: pair.liquidity?.usd ?? null
+  };
+}
+
+function fmtPrice(p) {
+  if (p == null || isNaN(p)) return "—";
+  if (p >= 1) return "$" + p.toLocaleString(undefined, { maximumFractionDigits: 2 });
+  const s = p.toPrecision(4);
+  return "$" + (s.includes("e") ? Number(s).toFixed(10).replace(/0+$/, "") : s);
+}
+
+function deltaHtml(chg) {
+  if (chg == null || isNaN(chg)) return "";
+  const dir = chg >= 0 ? "▲" : "▼";
+  const cls = chg >= 0 ? "up" : "down";
+  return `<span class="${cls}">${dir} ${Math.abs(chg).toFixed(1)}% 24h</span>`;
+}
+
+let lastTicker = "";
+let lastPrice = null;          // latest challenger price, for the ATH tile
+let challengerPairAddr = null; // most liquid pool address, for OHLCV lookup
+function updateHero(me) {
+  lastPrice = me.price;
+  // scrolling ticker (two identical halves for a seamless loop)
+  const dir = (me.change24 ?? 0) >= 0 ? "▲" : "▼";
+  const cls = (me.change24 ?? 0) >= 0 ? "up" : "down";
+  const unit =
+    `<span class="ti">$${me.symbol.toUpperCase()} ${fmtPrice(me.price)}</span><span class="sep">▮</span>` +
+    (me.change24 != null ? `<span class="ti ${cls}">24h ${dir} ${Math.abs(me.change24).toFixed(1)}%</span><span class="sep">▮</span>` : "") +
+    `<span class="ti">MCAP ${fmtUsd(me.mcap)}</span><span class="sep">▮</span>` +
+    (me.vol24 != null ? `<span class="ti">VOL ${fmtUsd(me.vol24)}</span><span class="sep">▮</span>` : "") +
+    (lastHolderCount != null
+      ? `<span class="ti">ACCOMPLICES ${lastHolderCount.toLocaleString()}</span><span class="sep">▮</span>` +
+        (CONFIG.holderGoal ? `<span class="ti up">ROAD TO ${fmtGoal(CONFIG.holderGoal)} ${Math.min(100, lastHolderCount / CONFIG.holderGoal * 100).toFixed(1)}%</span><span class="sep">▮</span>` : "")
+      : "");
+  const half = unit.repeat(3);
+  if (half !== lastTicker) {
+    lastTicker = half;
+    document.getElementById("tickerTrack").innerHTML = half + half;
+  }
+  document.getElementById("ticker").hidden = false;
+
+  // hero header
+  document.getElementById("hero").hidden = false;
+  document.getElementById("heroName").textContent = me.name;
+  const caEl = document.getElementById("heroCa");
+  caEl.textContent = CONFIG.challenger.slice(0, 6) + "…" + CONFIG.challenger.slice(-6);
+  caEl.title = CONFIG.challenger;
+  if (me.icon) {
+    document.getElementById("heroIcon").src = me.icon;
+    const li = document.getElementById("loreIcon");
+    li.src = me.icon; li.hidden = false;
+  }
+  document.getElementById("heroUpdated").textContent =
+    "stats updated " + new Date().toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+
+  // stash tiles
+  document.getElementById("stashTag").hidden = false;
+  document.getElementById("stash").hidden = false;
+  document.getElementById("tPrice").textContent = fmtPrice(me.price);
+  document.getElementById("tChange").innerHTML = deltaHtml(me.change24);
+  document.getElementById("tMcap").textContent = fmtUsd(me.mcap);
+  document.getElementById("tVol").textContent = me.vol24 != null ? fmtUsd(me.vol24) : "—";
+  document.getElementById("tLiq").textContent = me.liq != null ? fmtUsd(me.liq) : "—";
+}
+
+document.getElementById("copyBtn").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(CONFIG.challenger);
+    btn.textContent = "COPIED ✓";
+  } catch {
+    btn.textContent = "COPY FAILED";
+  }
+  setTimeout(() => { btn.textContent = "COPY CA"; }, 1500);
+});
+document.getElementById("refreshBtn").addEventListener("click", () => refresh());
+
+// Top-10 holder share straight from Solana public RPC (approximate:
+// the largest token accounts include liquidity pools). Tile stays
+// hidden if the RPC is unreachable or rate-limits us.
+// Public RPC endpoints, tried in order — the flagship one 403s many
+// datacenter/VPN IPs, so keep a few fallbacks on hand. The first one
+// that answers gets remembered for the session.
+const RPCS = [
+  "https://api.mainnet-beta.solana.com",
+  "https://solana-rpc.publicnode.com",
+  "https://solana.blockpi.network/v1/rpc/public",
+  "https://endpoints.omniatech.io/v1/sol/mainnet/public",
+  "https://rpc.ankr.com/solana",
+  "https://solana.drpc.org"
+];
+let rpcIdx = 0;
+async function rpc(method, params) {
+  for (let t = 0; t < RPCS.length; t++) {
+    const i = (rpcIdx + t) % RPCS.length;
+    try {
+      const r = await fetch(RPCS[i], {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params })
+      });
+      if (!r.ok) continue;
+      const j = await r.json();
+      if (j.error) continue;
+      rpcIdx = i;
+      return j;
+    } catch { /* next endpoint */ }
+    await new Promise((res) => setTimeout(res, 250));
+  }
+  throw new Error("all RPCs unreachable");
+}
+
+// One shared top-20 fetch feeds both the whale tile and the crew map.
+// The site's own cached proxy goes first (immune to browser-IP blocks);
+// direct public RPC is the fallback, spaced to dodge rate limits.
+let top20Cache = null;
+async function top20Data() {
+  if (top20Cache && Date.now() - top20Cache.ts < 4 * 60 * 1000) return top20Cache;
+  try {
+    const r = await fetch(CONFIG.top20Api);
+    if (r.ok) {
+      const d = await r.json();
+      if (d?.holders?.length) {
+        top20Cache = { ts: Date.now(), holders: d.holders };
+        return top20Cache;
+      }
+    }
+  } catch { /* fall through to direct RPC */ }
+  const largest = await rpc("getTokenLargestAccounts", [CONFIG.challenger]);
+  await new Promise((res) => setTimeout(res, 400));
+  const supply = await rpc("getTokenSupply", [CONFIG.challenger]);
+  const total = Number(supply?.result?.value?.amount);
+  const accs = (largest?.result?.value || []).slice(0, 20);
+  if (!total || !accs.length) throw new Error("no chain data");
+  await new Promise((res) => setTimeout(res, 400));
+  const owners = {};
+  try {
+    const info = await rpc("getMultipleAccounts", [accs.map(a => a.address), { encoding: "jsonParsed" }]);
+    (info?.result?.value || []).forEach((v, i) => {
+      owners[accs[i].address] = v?.data?.parsed?.info?.owner || accs[i].address;
+    });
+  } catch { /* fall back to token-account addresses */ }
+  top20Cache = {
+    ts: Date.now(),
+    holders: accs
+      .map(a => ({ addr: owners[a.address] || a.address, pct: Number(a.amount) / total * 100 }))
+      .sort((a, b) => b.pct - a.pct)
+  };
+  return top20Cache;
+}
+
+async function refreshWhale() {
+  try {
+    const { holders } = await top20Data();
+    const top10 = holders.slice(0, 10).reduce((s, h) => s + h.pct, 0);
+    if (!top10) return;
+    document.getElementById("tWhale").textContent = top10.toFixed(1) + "%";
+    document.getElementById("tileWhale").hidden = false;
+  } catch { /* keep the tile hidden */ }
+}
+
+async function statsFetch(params) {
+  const res = await fetch(CONFIG.statsApi + "?" + new URLSearchParams(params));
+  if (!res.ok) throw new Error("stats API " + res.status);
+  return res.json();
+}
+
+// One sweep over the mint's token accounts (Helius getTokenAccounts via
+// the stats proxy, paginated 1000/page) → raw balance per owner. Shared
+// by the HOLDERS tile.
+async function scanHolders() {
+  const balances = new Map();
+  let page = 1, maybeMore = false;
+  while (page <= 20) {
+    const data = await statsFetch({ q: "holders", page });
+    const accs = data?.result?.token_accounts || [];
+    for (const a of accs) {
+      const amt = Number(a.amount);
+      if (amt > 0) balances.set(a.owner, (balances.get(a.owner) || 0) + amt);
+    }
+    if (accs.length < 1000) { maybeMore = false; break; }
+    maybeMore = true;
+    page++;
+  }
+  return { balances, maybeMore };
+}
+
+// "+N today" compares against the first count seen today on this device.
+function updateHoldersTile({ balances, maybeMore }) {
+  if (!balances.size) return;
+  const count = balances.size;
+  document.getElementById("tHolders").textContent = count.toLocaleString() + (maybeMore ? "+" : "");
+  try {
+    const today = new Date().toDateString();
+    const base = JSON.parse(localStorage.getItem("pp_holders") || "null");
+    if (!base || base.day !== today) localStorage.setItem("pp_holders", JSON.stringify({ day: today, count }));
+    const delta = base && base.day === today ? count - base.count : 0;
+    document.getElementById("tHoldersSub").textContent = delta > 0 ? "+" + delta.toLocaleString() + " today" : "";
+  } catch { /* localStorage unavailable — skip the delta */ }
+  document.getElementById("tileHolders").hidden = false;
+  updateRoad(count);
+}
+
+// ROAD TO the holder goal — progress bar plus "+N since your last visit"
+// (the previous visit's count lives in localStorage).
+const fmtGoal = (g) => (g >= 1000 && g % 1000 === 0 ? (g / 1000) + "K" : g.toLocaleString());
+let lastHolderCount = null; // also feeds the scrolling ticker
+function updateRoad(count) {
+  lastHolderCount = count;
+  const goal = CONFIG.holderGoal;
+  if (!goal) return;
+  const pct = Math.min(100, count / goal * 100);
+  document.getElementById("roadTag").textContent = `Road to ${fmtGoal(goal)} accomplices`;
+  document.getElementById("roadCount").textContent = count.toLocaleString();
+  document.getElementById("roadGoal").textContent = `/ ${goal.toLocaleString()} holders · ${pct.toFixed(1)}% of the way`;
+  document.getElementById("roadFill").style.width = pct + "%";
+  try {
+    const prev = JSON.parse(localStorage.getItem("pp_road") || "null");
+    localStorage.setItem("pp_road", JSON.stringify({ count, ts: Date.now() }));
+    const delta = prev ? count - prev.count : 0;
+    document.getElementById("roadSub").innerHTML = delta > 0
+      ? `<b>+${delta.toLocaleString()} recruited</b> since your last visit. every wallet is another pair of hands on the bag.`
+      : "every wallet is another pair of hands on the bag. bring a friend.";
+  } catch { /* keep the default line */ }
+  document.getElementById("roadTag").hidden = false;
+  document.getElementById("roadCard").hidden = false;
+}
+
+function fmtNum(n) {
+  if (n >= 1e9) return (n / 1e9).toFixed(1) + "B";
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + "M";
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + "K";
+  return String(Math.round(n));
+}
+
+function setText(id, text) { document.getElementById(id).textContent = text; }
+
+// THE CONSTELLATION — every top-20 holder is a star. Size and glow
+// scale with the share of supply; positions derive from the wallet
+// address, so the sky stays put between refreshes. The trading pool is
+// the red north star. Hover for details, tap to open the wallet.
+const spiderNodes = [];
+let starT0 = null, starRaf = 0, hoverStar = -1;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hash01 = (str) => {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0) / 4294967295;
+};
+// fixed background sky, generated once
+const BG_STARS = Array.from({ length: 110 }, (_, i) => {
+  const a = hash01("bg" + i), b = hash01("bg2" + i), c = hash01("bg3" + i);
+  return { x: a, y: b, r: 0.5 + c * 1.1, tw: c * 6.28 };
+});
+
+async function refreshSpider() {
+  try {
+    const { holders } = await top20Data();
+    if (!holders.length) return;
+    layoutStars(holders);
+    startSky();
+    document.getElementById("spiderNote").textContent =
+      "top 20 holders · " + holders.reduce((s, h) => s + h.pct, 0).toFixed(1) +
+      "% of supply · bigger stars hold more · tap a star to open the wallet";
+  } catch { document.getElementById("spiderNote").textContent = "clouds tonight — chain unreachable, retrying in 5 min"; }
+}
+
+function layoutStars(holders) {
+  const cv = document.getElementById("spider");
+  const W = cv.width, C = W / 2, maxR = W * 0.42;
+  const maxPct = holders[0].pct || 1;
+  spiderNodes.length = 0;
+  holders.forEach((h, i) => {
+    const j = hash01(h.addr);
+    const ang = i * 2.399963 + j * 1.3;
+    const rad = i === 0 ? maxR * 0.05
+      : maxR * (0.2 + 0.8 * Math.sqrt(i / holders.length)) * (0.9 + j * 0.2);
+    const hx = C + rad * Math.cos(ang), hy = C + rad * Math.sin(ang);
+    const j2 = hash01(h.addr + "drift");
+    spiderNodes.push({
+      x: hx, y: hy, hx, hy,
+      // slow personal orbit around the home spot — the vault barely
+      // moves so the constellation keeps its anchor
+      damp: i === 0 ? 4 : 9 + j2 * 12,
+      dfx: 0.10 + j * 0.16, dfy: 0.08 + j2 * 0.15,
+      dpx: j * 6.28, dpy: j2 * 6.28,
+      size: 6 + 24 * Math.sqrt(h.pct / maxPct),
+      phase: j * 6.28,
+      speed: 0.6 + j * 1.2,
+      addr: h.addr,
+      pct: h.pct,
+      vault: challengerPairAddr && h.addr === challengerPairAddr
+    });
+  });
+  // fix each star's constellation partner up front (nearest brighter
+  // neighbour by home position) so links don't flip while stars drift
+  for (let i = 1; i < spiderNodes.length; i++) {
+    const a = spiderNodes[i];
+    let best = 0, bd = Infinity;
+    for (let k = 0; k < i; k++) {
+      const d = (spiderNodes[k].hx - a.hx) ** 2 + (spiderNodes[k].hy - a.hy) ** 2;
+      if (d < bd) { bd = d; best = k; }
+    }
+    a.linkTo = best;
+  }
+  placeLabels(cv);
+}
+
+// pick a clear spot for each of the five labels: try above, below,
+// right, left of the star and take the first that doesn't collide with
+// an already-placed label or leave the canvas
+function placeLabels(cv) {
+  const x = cv.getContext("2d");
+  x.font = "13px " + getComputedStyle(document.documentElement).getPropertyValue("--fontBody").trim();
+  const placed = [];
+  const overlaps = (r) => placed.some((o) =>
+    r.x < o.x + o.w + 6 && r.x + r.w + 6 > o.x && r.y < o.y + o.h + 4 && r.y + r.h + 4 > o.y);
+  spiderNodes.forEach((n, i) => {
+    if (i >= 5) return;
+    n.label = (n.vault ? "VAULT" : n.addr.slice(0, 4) + "…") + " " + n.pct.toFixed(1) + "%";
+    const w = x.measureText(n.label).width, h = 15;
+    const spots = [
+      { lx: n.x, ly: n.y - n.size - 12, align: "center" },
+      { lx: n.x, ly: n.y + n.size + 20, align: "center" },
+      { lx: n.x + n.size + 9, ly: n.y + 4, align: "left" },
+      { lx: n.x - n.size - 9, ly: n.y + 4, align: "right" }
+    ];
+    let pick = spots[0];
+    for (const sp of spots) {
+      const rx = sp.align === "center" ? sp.lx - w / 2 : sp.align === "left" ? sp.lx : sp.lx - w;
+      const r = { x: rx, y: sp.ly - h, w, h };
+      if (r.x < 6 || r.x + r.w > cv.width - 6 || r.y < 6 || r.y + r.h > cv.height - 6) continue;
+      if (!overlaps(r)) { pick = sp; placed.push(r); break; }
+    }
+    n.labelDX = pick.lx - n.hx; n.labelDY = pick.ly - n.hy; n.labelAlign = pick.align;
+  });
+}
+
+function drawSky(t) {
+  const cv = document.getElementById("spider");
+  const x = cv.getContext("2d");
+  const T = getComputedStyle(document.documentElement);
+  const col = (n) => T.getPropertyValue(n).trim();
+  const rgba2 = (n, a) => { const v = parseInt(col(n).slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
+  const W = cv.width;
+  x.clearRect(0, 0, W, W);
+
+  // drift: each star wanders its slow personal orbit
+  for (const n of spiderNodes) {
+    n.x = n.hx + Math.sin(t * n.dfx + n.dpx) * n.damp;
+    n.y = n.hy + Math.cos(t * n.dfy + n.dpy) * n.damp;
+  }
+
+  // faint distant sky
+  for (const b of BG_STARS) {
+    const a = 0.10 + 0.10 * (0.5 + 0.5 * Math.sin(t * 0.8 + b.tw));
+    x.beginPath(); x.arc(b.x * W, b.y * W, b.r, 0, 7);
+    x.fillStyle = rgba2("--ink", a); x.fill();
+  }
+
+  // constellation lines flex as the stars drift
+  x.lineWidth = 1;
+  for (let i = 1; i < spiderNodes.length; i++) {
+    const a = spiderNodes[i], b = spiderNodes[a.linkTo];
+    x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y);
+    x.strokeStyle = rgba2("--accent", 0.14); x.stroke();
+  }
+
+  // the stars
+  spiderNodes.forEach((n, i) => {
+    const tw = REDUCED ? 1 : 0.75 + 0.25 * Math.sin(t * n.speed + n.phase);
+    const hot = i === hoverStar;
+    const color = n.vault ? "--red" : "--accent";
+    const s = n.size * (hot ? 1.18 : 1);
+
+    const glow = x.createRadialGradient(n.x, n.y, 0, n.x, n.y, s * 2.4);
+    glow.addColorStop(0, rgba2(color, 0.5 * tw));
+    glow.addColorStop(1, rgba2(color, 0));
+    x.fillStyle = glow;
+    x.beginPath(); x.arc(n.x, n.y, s * 2.4, 0, 7); x.fill();
+
+    // four-point sparkle
+    const w = s * 0.24;
+    x.beginPath();
+    x.moveTo(n.x, n.y - s); x.lineTo(n.x + w, n.y - w);
+    x.lineTo(n.x + s, n.y); x.lineTo(n.x + w, n.y + w);
+    x.lineTo(n.x, n.y + s); x.lineTo(n.x - w, n.y + w);
+    x.lineTo(n.x - s, n.y); x.lineTo(n.x - w, n.y - w);
+    x.closePath();
+    x.fillStyle = rgba2(color, (hot ? 1 : 0.85) * tw); x.fill();
+    x.beginPath(); x.arc(n.x, n.y, Math.max(1.6, s * 0.16), 0, 7);
+    x.fillStyle = rgba2("--ink", 0.95); x.fill();
+
+    if (hot) {
+      x.beginPath(); x.arc(n.x, n.y, s + 7, 0, 7);
+      x.strokeStyle = rgba2(color, 0.7); x.lineWidth = 1.5; x.stroke();
+    }
+    // name the five brightest, at their pre-computed collision-free spot
+    if (i < 5 && n.label) {
+      x.font = "13px " + col("--fontBody");
+      x.textAlign = n.labelAlign;
+      x.fillStyle = rgba2("--ink", 0.75);
+      x.fillText(n.label, n.x + n.labelDX, n.y + n.labelDY);
+    }
+  });
+}
+
+function startSky() {
+  cancelAnimationFrame(starRaf);
+  if (REDUCED) { drawSky(0); return; }
+  starT0 = performance.now();
+  let last = 0;
+  const loop = (now) => {
+    if (now - last > 40) { last = now; drawSky((now - starT0) / 1000); }
+    starRaf = requestAnimationFrame(loop);
+  };
+  starRaf = requestAnimationFrame(loop);
+}
+
+function starAt(e) {
+  const cv = document.getElementById("spider"), box = cv.getBoundingClientRect();
+  const sx = (e.clientX - box.left) * cv.width / box.width;
+  const sy = (e.clientY - box.top) * cv.height / box.height;
+  let best = -1, bd = 30 * 30;
+  spiderNodes.forEach((n, i) => {
+    const d = (n.x - sx) ** 2 + (n.y - sy) ** 2;
+    const hit = Math.max(24, n.size + 10) ** 2;
+    if (d < hit && d < bd) { bd = d; best = i; }
+  });
+  return best;
+}
+
+const starTip = document.getElementById("starTip");
+document.getElementById("spider").addEventListener("pointermove", (e) => {
+  const i = starAt(e);
+  if (i !== hoverStar) { hoverStar = i; if (REDUCED && spiderNodes.length) drawSky(0); }
+  const cv = e.currentTarget;
+  cv.style.cursor = i >= 0 ? "pointer" : "default";
+  if (i < 0) { starTip.hidden = true; return; }
+  const n = spiderNodes[i];
+  starTip.textContent = (n.vault ? "VAULT (trading pool) · " : "") +
+    n.addr.slice(0, 4) + "…" + n.addr.slice(-4) + " · " + n.pct.toFixed(2) + "% of supply";
+  const card = cv.closest(".spider-card").getBoundingClientRect();
+  starTip.style.left = Math.min(card.width - 10, Math.max(10, e.clientX - card.left)) + "px";
+  starTip.style.top = (e.clientY - card.top - 16) + "px";
+  starTip.hidden = false;
+});
+document.getElementById("spider").addEventListener("pointerleave", () => {
+  hoverStar = -1; starTip.hidden = true;
+  if (REDUCED && spiderNodes.length) drawSky(0);
+});
+document.getElementById("spider").addEventListener("click", (e) => {
+  const i = starAt(e);
+  if (i >= 0) open("https://solscan.io/account/" + spiderNodes[i].addr, "_blank", "noopener");
+});
+
+function renderAth(athPrice, athTime) {
+  document.getElementById("tAth").textContent = fmtPrice(athPrice);
+  const when = new Date(athTime * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  const pctOf = lastPrice != null ? Math.round(lastPrice / athPrice * 100) : null;
+  document.getElementById("tAthSub").textContent =
+    (pctOf != null ? "now at " + pctOf + "% of ATH · " : "") + when;
+  document.getElementById("tileAth").hidden = false;
+}
+
+// All-time high: token-level history via the stats proxy (Birdeye),
+// falling back to GeckoTerminal's free pool OHLCV if the proxy errors.
+async function refreshAth() {
+  if (CONFIG.statsApi) {
+    try {
+      const d = await statsFetch({ q: "ath" });
+      if (d?.athPrice) { renderAth(d.athPrice, d.athTime); return; }
+    } catch { /* fall through to GeckoTerminal */ }
+  }
+  if (!challengerPairAddr) return;
+  try {
+    const res = await fetch("https://api.geckoterminal.com/api/v2/networks/solana/pools/" +
+      challengerPairAddr + "/ohlcv/day?limit=1000");
+    if (!res.ok) return;
+    const data = await res.json();
+    const candles = data?.data?.attributes?.ohlcv_list || [];
+    let athPrice = 0, athTime = 0;
+    for (const c of candles) {
+      const high = Number(c[2]);
+      if (high > athPrice) { athPrice = high; athTime = c[0]; }
+    }
+    if (!athPrice) return;
+    renderAth(athPrice, athTime);
+  } catch { /* keep the tile hidden */ }
+}
+
+// THE HEIST TAPE — recent buys/sells via the site's Birdeye proxy.
+// The section reveals itself on the first successful answer and then
+// polls every 15s; while the endpoint is missing (404/503) it retries
+// lazily on the 5-minute cycle instead. Fresh big buys trigger a
+// money-rain burst.
+let tapeLive = false, tapeSeen = new Set(), tapeFirstFill = true;
+const fmtTapeUsd = (n) => n == null ? "—" : (n >= 1000 ? "$" + (n / 1000).toFixed(1) + "K" : "$" + n.toFixed(2));
+async function pollTape() {
+  try {
+    const r = await fetch(CONFIG.tapeApi);
+    if (!r.ok) return false;
+    const trades = (await r.json())?.trades || [];
+    if (!trades.length) return false;
+
+    const buys = trades.filter(t => t.side === "buy").reduce((s, t) => s + (t.usd || 0), 0);
+    const sells = trades.filter(t => t.side === "sell").reduce((s, t) => s + (t.usd || 0), 0);
+    const net = buys - sells;
+    document.getElementById("tapeFlow").innerHTML =
+      `<span>buys <b class="up">${fmtTapeUsd(buys)}</b></span>` +
+      `<span>sells <b class="down">${fmtTapeUsd(sells)}</b></span>` +
+      `<span>net <b class="${net >= 0 ? "up" : "down"}">${net >= 0 ? "+" : "−"}${fmtTapeUsd(Math.abs(net))}</b></span>` +
+      `<span style="margin-left:auto">last ${trades.length} trades</span>`;
+
+    const rows = trades.slice(0, 14).map(t => {
+      const id = t.tx || (t.ts + ":" + t.usd);
+      const fresh = !tapeFirstFill && !tapeSeen.has(id);
+      if (fresh && t.side === "buy" && (t.usd || 0) >= 250 && window.__rainBurst) {
+        window.__rainBurst(Math.round(Math.min(30, t.usd / 100)));
+      }
+      const when = t.ts ? new Date(t.ts * 1000).toLocaleTimeString(undefined, { hour12: false }) : "";
+      return `<tr${fresh ? ' class="fresh"' : ""}>` +
+        `<td class="t-time">${when}</td>` +
+        `<td class="t-side-${t.side}">${t.side.toUpperCase()}</td>` +
+        `<td class="t-usd">${fmtTapeUsd(t.usd)}</td>` +
+        `<td class="t-usd">${t.amt != null ? fmtNum(t.amt) : "—"}</td>` +
+        `<td class="t-src">${String(t.src || "").slice(0, 14)}</td></tr>`;
+    }).join("");
+    document.getElementById("tapeBody").innerHTML = rows;
+    tapeSeen = new Set(trades.map(t => t.tx || (t.ts + ":" + t.usd)));
+    tapeFirstFill = false;
+
+    document.getElementById("tapeTag").hidden = false;
+    document.getElementById("tapeCard").hidden = false;
+    if (!tapeLive) {
+      tapeLive = true;
+      setInterval(pollTape, 15000);
+    }
+    return true;
+  } catch { return false; }
+}
+
+document.getElementById("mvCopy").addEventListener("click", async (e) => {
+  const btn = e.currentTarget;
+  try {
+    await navigator.clipboard.writeText(CONFIG.challenger);
+    btn.textContent = "copied ✓";
+  } catch { btn.textContent = "copy failed"; }
+  setTimeout(() => { btn.textContent = "copy"; }, 1500);
+});
+
+async function refresh() {
+  try {
+    const pairs = await fetch(API + CONFIG.challenger).then(r => (r.ok ? r.json() : [])).catch(() => []);
+    if (!pairs.length) throw new Error("DexScreener unavailable");
+    const byAddr = bestPairs(pairs, [CONFIG.challenger]);
+
+    const me = tokenData(byAddr[CONFIG.challenger.toLowerCase()]);
+    if (!me || me.mcap == null) throw new Error("Token not found — check the address in CONFIG.");
+    challengerPairAddr = byAddr[CONFIG.challenger.toLowerCase()]?.pairAddress || challengerPairAddr;
+
+    // ticker + hero + stash tiles
+    updateHero(me);
+
+    updatedEl.textContent = "live via DexScreener · updated " + new Date().toLocaleTimeString();
+  } catch (err) {
+    updatedEl.textContent = "last update failed — retrying…";
+  }
+}
+
+// The slow-moving tiles (whale share, holders, ATH, crew map) poll every
+// 5 minutes. ATH waits for the first refresh() to learn the pool address.
+async function refreshExtras() {
+  refreshWhale();
+  refreshAth();
+  if (!tapeLive) pollTape(); // once live it runs on its own 15s clock
+  if (!CONFIG.statsApi) return;
+  refreshSpider();
+  try {
+    const scan = await scanHolders();
+    updateHoldersTile(scan);
+  } catch { /* tiles keep their last values */ }
+}
+
+refresh().then(() => refreshExtras());
+setInterval(refresh, CONFIG.pollIntervalMs);
+setInterval(refreshExtras, 5 * 60 * 1000);
+</script>
+</body>
+</html>
