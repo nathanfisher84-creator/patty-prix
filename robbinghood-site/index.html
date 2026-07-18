@@ -90,7 +90,23 @@
     opacity: 0.5;
     pointer-events: none;
   }
+  .star-tip {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    background: var(--card);
+    border: 1px solid var(--edge);
+    border-radius: 7px;
+    padding: 6px 10px;
+    font-family: var(--fontBody), ui-monospace, monospace;
+    font-size: 12px;
+    color: var(--ink);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 3;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+  }
   .spider-card {
+    position: relative;
     background: var(--card);
     border: 1px solid var(--edge);
     border-radius: 12px;
@@ -825,9 +841,10 @@
     </div>
   </div>
 
-  <div class="section-tag">The top 20 — crew map</div>
+  <div class="section-tag">The constellation — top 20 holders</div>
   <div class="spider-card">
     <canvas id="spider" width="840" height="840"></canvas>
+    <div class="star-tip" id="starTip" hidden></div>
     <div class="spider-note" id="spiderNote">casing the vault…</div>
   </div>
   <div class="fam-links" id="famLinks">
@@ -878,8 +895,8 @@
     </details>
     <details>
       <summary>Who are the biggest holders?</summary>
-      <div class="a">The crew map above shows the top-20 wallets live from the chain, with the
-        trading-pool vault tagged 🏦. Tap any node to inspect the wallet on Solscan, or run any
+      <div class="a">The constellation above maps the top-20 wallets live from the chain — bigger
+        stars hold more, and the trading-pool vault burns red. Tap any star to inspect the wallet on Solscan, or run any
         address through the <a href="wanted.html">WANTED poster checker</a>.</div>
     </details>
     <details>
@@ -1291,93 +1308,176 @@ function fmtNum(n) {
 
 function setText(id, text) { document.getElementById(id).textContent = text; }
 
-// THE TOP 20: the crew map. Twenty largest token accounts straight from
-// Solana public RPC, resolved to owner wallets, drawn as a spider web —
-// spoke length and node size scale with the share of supply. The pool
-// (owner = the trading pair) is tagged as the vault. Tap a node to open
-// the wallet on Solscan.
+// THE CONSTELLATION — every top-20 holder is a star. Size and glow
+// scale with the share of supply; positions derive from the wallet
+// address, so the sky stays put between refreshes. The trading pool is
+// the red north star. Hover for details, tap to open the wallet.
 const spiderNodes = [];
+let starT0 = null, starRaf = 0, hoverStar = -1;
+const REDUCED = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hash01 = (str) => {
+  let h = 2166136261;
+  for (let i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0) / 4294967295;
+};
+// fixed background sky, generated once
+const BG_STARS = Array.from({ length: 110 }, (_, i) => {
+  const a = hash01("bg" + i), b = hash01("bg2" + i), c = hash01("bg3" + i);
+  return { x: a, y: b, r: 0.5 + c * 1.1, tw: c * 6.28 };
+});
+
 async function refreshSpider() {
   try {
     const { holders } = await top20Data();
     if (!holders.length) return;
-    drawSpider(holders);
+    layoutStars(holders);
+    startSky();
     document.getElementById("spiderNote").textContent =
       "top 20 holders · " + holders.reduce((s, h) => s + h.pct, 0).toFixed(1) +
-      "% of supply · live from Solana RPC · tap a node to open the wallet";
-  } catch { document.getElementById("spiderNote").textContent = "the crew map is hiding — RPC unreachable, retrying in 5 min"; }
+      "% of supply · bigger stars hold more · tap a star to open the wallet";
+  } catch { document.getElementById("spiderNote").textContent = "clouds tonight — chain unreachable, retrying in 5 min"; }
 }
 
-function drawSpider(holders) {
+function layoutStars(holders) {
+  const cv = document.getElementById("spider");
+  const W = cv.width, C = W / 2, maxR = W * 0.42;
+  const maxPct = holders[0].pct || 1;
+  spiderNodes.length = 0;
+  holders.forEach((h, i) => {
+    const j = hash01(h.addr);
+    const ang = i * 2.399963 + j * 1.3;
+    const rad = i === 0 ? maxR * 0.05
+      : maxR * (0.2 + 0.8 * Math.sqrt(i / holders.length)) * (0.9 + j * 0.2);
+    spiderNodes.push({
+      x: C + rad * Math.cos(ang),
+      y: C + rad * Math.sin(ang),
+      size: 6 + 24 * Math.sqrt(h.pct / maxPct),
+      phase: j * 6.28,
+      speed: 0.6 + j * 1.2,
+      addr: h.addr,
+      pct: h.pct,
+      vault: challengerPairAddr && h.addr === challengerPairAddr
+    });
+  });
+}
+
+function drawSky(t) {
   const cv = document.getElementById("spider");
   const x = cv.getContext("2d");
   const T = getComputedStyle(document.documentElement);
   const col = (n) => T.getPropertyValue(n).trim();
   const rgba2 = (n, a) => { const v = parseInt(col(n).slice(1), 16); return `rgba(${(v >> 16) & 255},${(v >> 8) & 255},${v & 255},${a})`; };
-  const W = cv.width, C = W / 2, maxR = W * 0.36;
+  const W = cv.width;
   x.clearRect(0, 0, W, W);
-  const n = holders.length, maxPct = holders[0].pct || 1;
-  const R = (pct) => maxR * Math.max(0.16, Math.sqrt(pct / maxPct));
-  const ang = (i) => -Math.PI / 2 + i * 2 * Math.PI / n;
 
-  // web rings + spokes
-  for (let ring = 1; ring <= 5; ring++) {
-    x.beginPath();
-    for (let i = 0; i <= n; i++) {
-      const a = ang(i), r = maxR * ring / 5;
-      i ? x.lineTo(C + r * Math.cos(a), C + r * Math.sin(a)) : x.moveTo(C + r * Math.cos(a), C + r * Math.sin(a));
+  // faint distant sky
+  for (const b of BG_STARS) {
+    const a = 0.10 + 0.10 * (0.5 + 0.5 * Math.sin(t * 0.8 + b.tw));
+    x.beginPath(); x.arc(b.x * W, b.y * W, b.r, 0, 7);
+    x.fillStyle = rgba2("--ink", a); x.fill();
+  }
+
+  // constellation lines: each star joins its nearest brighter neighbour
+  x.lineWidth = 1;
+  for (let i = 1; i < spiderNodes.length; i++) {
+    const a = spiderNodes[i];
+    let best = 0, bd = Infinity;
+    for (let k = 0; k < i; k++) {
+      const d = (spiderNodes[k].x - a.x) ** 2 + (spiderNodes[k].y - a.y) ** 2;
+      if (d < bd) { bd = d; best = k; }
     }
-    x.strokeStyle = rgba2("--accent", 0.10 + ring * 0.015); x.lineWidth = 1; x.stroke();
-  }
-  for (let i = 0; i < n; i++) {
-    const a = ang(i);
-    x.beginPath(); x.moveTo(C, C); x.lineTo(C + maxR * Math.cos(a), C + maxR * Math.sin(a));
-    x.strokeStyle = rgba2("--accent", 0.09); x.stroke();
+    const b = spiderNodes[best];
+    x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y);
+    x.strokeStyle = rgba2("--accent", 0.14); x.stroke();
   }
 
-  // the crew polygon
-  x.beginPath();
-  holders.forEach((h, i) => {
-    const a = ang(i), r = R(h.pct);
-    i ? x.lineTo(C + r * Math.cos(a), C + r * Math.sin(a)) : x.moveTo(C + r * Math.cos(a), C + r * Math.sin(a));
-  });
-  x.closePath();
-  x.fillStyle = rgba2("--accent", 0.13); x.fill();
-  x.strokeStyle = rgba2("--accent2", 0.8); x.lineWidth = 2; x.stroke();
+  // the stars
+  spiderNodes.forEach((n, i) => {
+    const tw = REDUCED ? 1 : 0.75 + 0.25 * Math.sin(t * n.speed + n.phase);
+    const hot = i === hoverStar;
+    const color = n.vault ? "--red" : "--accent";
+    const s = n.size * (hot ? 1.18 : 1);
 
-  // nodes + labels
-  spiderNodes.length = 0;
-  holders.forEach((h, i) => {
-    const a = ang(i), r = R(h.pct);
-    const px = C + r * Math.cos(a), py = C + r * Math.sin(a);
-    const isVault = challengerPairAddr && h.addr === challengerPairAddr;
-    const nr = 4 + 11 * Math.sqrt(h.pct / maxPct);
-    x.beginPath(); x.arc(px, py, nr, 0, 7);
-    x.fillStyle = isVault ? col("--red") : col("--accent"); x.fill();
-    x.strokeStyle = rgba2("--ink", 0.5); x.lineWidth = 1; x.stroke();
-    const lr = maxR + 34, lx = C + lr * Math.cos(a), ly = C + lr * Math.sin(a);
-    x.textAlign = Math.cos(a) > 0.35 ? "left" : Math.cos(a) < -0.35 ? "right" : "center";
-    x.font = "13px " + col("--fontBody");
-    x.fillStyle = rgba2("--ink", i < 5 ? 0.95 : 0.6);
-    x.fillText((isVault ? "🏦 VAULT" : h.addr.slice(0, 4) + "…") + " " + h.pct.toFixed(1) + "%", lx, ly - 2);
-    spiderNodes.push({ x: px, y: py, addr: h.addr });
-  });
+    const glow = x.createRadialGradient(n.x, n.y, 0, n.x, n.y, s * 2.4);
+    glow.addColorStop(0, rgba2(color, 0.5 * tw));
+    glow.addColorStop(1, rgba2(color, 0));
+    x.fillStyle = glow;
+    x.beginPath(); x.arc(n.x, n.y, s * 2.4, 0, 7); x.fill();
 
-  // the boss in the middle
-  x.textAlign = "center"; x.font = "34px serif";
-  x.fillText("💰", C, C + 12);
+    // four-point sparkle
+    const w = s * 0.24;
+    x.beginPath();
+    x.moveTo(n.x, n.y - s); x.lineTo(n.x + w, n.y - w);
+    x.lineTo(n.x + s, n.y); x.lineTo(n.x + w, n.y + w);
+    x.lineTo(n.x, n.y + s); x.lineTo(n.x - w, n.y + w);
+    x.lineTo(n.x - s, n.y); x.lineTo(n.x - w, n.y - w);
+    x.closePath();
+    x.fillStyle = rgba2(color, (hot ? 1 : 0.85) * tw); x.fill();
+    x.beginPath(); x.arc(n.x, n.y, Math.max(1.6, s * 0.16), 0, 7);
+    x.fillStyle = rgba2("--ink", 0.95); x.fill();
+
+    if (hot) {
+      x.beginPath(); x.arc(n.x, n.y, s + 7, 0, 7);
+      x.strokeStyle = rgba2(color, 0.7); x.lineWidth = 1.5; x.stroke();
+    }
+    // name the five brightest
+    if (i < 5) {
+      x.font = "13px " + col("--fontBody");
+      x.textAlign = "center";
+      x.fillStyle = rgba2("--ink", 0.75);
+      x.fillText((n.vault ? "VAULT" : n.addr.slice(0, 4) + "…") + " " + n.pct.toFixed(1) + "%",
+                 n.x, n.y - s - 10);
+    }
+  });
 }
 
-document.getElementById("spider").addEventListener("click", (e) => {
-  const cv = e.currentTarget, box = cv.getBoundingClientRect();
+function startSky() {
+  cancelAnimationFrame(starRaf);
+  if (REDUCED) { drawSky(0); return; }
+  starT0 = performance.now();
+  let last = 0;
+  const loop = (now) => {
+    if (now - last > 40) { last = now; drawSky((now - starT0) / 1000); }
+    starRaf = requestAnimationFrame(loop);
+  };
+  starRaf = requestAnimationFrame(loop);
+}
+
+function starAt(e) {
+  const cv = document.getElementById("spider"), box = cv.getBoundingClientRect();
   const sx = (e.clientX - box.left) * cv.width / box.width;
   const sy = (e.clientY - box.top) * cv.height / box.height;
-  let best = null, bd = 30 * 30;
-  for (const nd of spiderNodes) {
-    const d = (nd.x - sx) ** 2 + (nd.y - sy) ** 2;
-    if (d < bd) { bd = d; best = nd; }
-  }
-  if (best) open("https://solscan.io/account/" + best.addr, "_blank", "noopener");
+  let best = -1, bd = 30 * 30;
+  spiderNodes.forEach((n, i) => {
+    const d = (n.x - sx) ** 2 + (n.y - sy) ** 2;
+    const hit = Math.max(24, n.size + 10) ** 2;
+    if (d < hit && d < bd) { bd = d; best = i; }
+  });
+  return best;
+}
+
+const starTip = document.getElementById("starTip");
+document.getElementById("spider").addEventListener("pointermove", (e) => {
+  const i = starAt(e);
+  if (i !== hoverStar) { hoverStar = i; if (REDUCED && spiderNodes.length) drawSky(0); }
+  const cv = e.currentTarget;
+  cv.style.cursor = i >= 0 ? "pointer" : "default";
+  if (i < 0) { starTip.hidden = true; return; }
+  const n = spiderNodes[i];
+  starTip.textContent = (n.vault ? "VAULT (trading pool) · " : "") +
+    n.addr.slice(0, 4) + "…" + n.addr.slice(-4) + " · " + n.pct.toFixed(2) + "% of supply";
+  const card = cv.closest(".spider-card").getBoundingClientRect();
+  starTip.style.left = Math.min(card.width - 10, Math.max(10, e.clientX - card.left)) + "px";
+  starTip.style.top = (e.clientY - card.top - 16) + "px";
+  starTip.hidden = false;
+});
+document.getElementById("spider").addEventListener("pointerleave", () => {
+  hoverStar = -1; starTip.hidden = true;
+  if (REDUCED && spiderNodes.length) drawSky(0);
+});
+document.getElementById("spider").addEventListener("click", (e) => {
+  const i = starAt(e);
+  if (i >= 0) open("https://solscan.io/account/" + spiderNodes[i].addr, "_blank", "noopener");
 });
 
 function renderAth(athPrice, athTime) {
