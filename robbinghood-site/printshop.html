@@ -141,8 +141,8 @@
 
 <script>
 "use strict";
-const TRACKED_HOST = /(\.vercel\.app|(^|\.)robbinghood\.xyz)$/.test(location.hostname);
-const API = TRACKED_HOST ? "/api/generate" : "https://robbinghood.vercel.app/api/generate";
+const TRACKED_HOST = /(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname);
+const API = TRACKED_HOST ? "/api/generate" : "https://robbinghood.mom/api/generate";
 
 const el = (id) => document.getElementById(id);
 let lastImage = null;

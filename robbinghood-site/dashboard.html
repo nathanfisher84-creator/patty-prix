@@ -106,11 +106,11 @@ const CONFIG = {
     "BWH6gtE5MSCS1GUoRpM5HrqQnV97oi8g8dDHAi41pump"
   ],
   // keep the token list above in sync with index.html
-  statsApi: "https://robbinghood.vercel.app/api/stats",
-  visitsApi: "https://robbinghood.vercel.app/api/visits"
+  statsApi: "https://robbinghood.mom/api/stats",
+  visitsApi: "https://robbinghood.mom/api/visits"
 };
 // served from the site itself (any attached domain) → same-origin APIs
-if (/(\.vercel\.app|(^|\.)robbinghood\.xyz)$/.test(location.hostname)) {
+if (/(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname)) {
   CONFIG.statsApi = location.origin + "/api/stats";
   CONFIG.visitsApi = location.origin + "/api/visits";
 }
