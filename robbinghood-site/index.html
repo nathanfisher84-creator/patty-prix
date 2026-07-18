@@ -1348,9 +1348,15 @@ function layoutStars(holders) {
     const ang = i * 2.399963 + j * 1.3;
     const rad = i === 0 ? maxR * 0.05
       : maxR * (0.2 + 0.8 * Math.sqrt(i / holders.length)) * (0.9 + j * 0.2);
+    const hx = C + rad * Math.cos(ang), hy = C + rad * Math.sin(ang);
+    const j2 = hash01(h.addr + "drift");
     spiderNodes.push({
-      x: C + rad * Math.cos(ang),
-      y: C + rad * Math.sin(ang),
+      x: hx, y: hy, hx, hy,
+      // slow personal orbit around the home spot — the vault barely
+      // moves so the constellation keeps its anchor
+      damp: i === 0 ? 4 : 9 + j2 * 12,
+      dfx: 0.10 + j * 0.16, dfy: 0.08 + j2 * 0.15,
+      dpx: j * 6.28, dpy: j2 * 6.28,
       size: 6 + 24 * Math.sqrt(h.pct / maxPct),
       phase: j * 6.28,
       speed: 0.6 + j * 1.2,
@@ -1359,6 +1365,17 @@ function layoutStars(holders) {
       vault: challengerPairAddr && h.addr === challengerPairAddr
     });
   });
+  // fix each star's constellation partner up front (nearest brighter
+  // neighbour by home position) so links don't flip while stars drift
+  for (let i = 1; i < spiderNodes.length; i++) {
+    const a = spiderNodes[i];
+    let best = 0, bd = Infinity;
+    for (let k = 0; k < i; k++) {
+      const d = (spiderNodes[k].hx - a.hx) ** 2 + (spiderNodes[k].hy - a.hy) ** 2;
+      if (d < bd) { bd = d; best = k; }
+    }
+    a.linkTo = best;
+  }
   placeLabels(cv);
 }
 
@@ -1388,7 +1405,7 @@ function placeLabels(cv) {
       if (r.x < 6 || r.x + r.w > cv.width - 6 || r.y < 6 || r.y + r.h > cv.height - 6) continue;
       if (!overlaps(r)) { pick = sp; placed.push(r); break; }
     }
-    n.labelX = pick.lx; n.labelY = pick.ly; n.labelAlign = pick.align;
+    n.labelDX = pick.lx - n.hx; n.labelDY = pick.ly - n.hy; n.labelAlign = pick.align;
   });
 }
 
@@ -1401,6 +1418,12 @@ function drawSky(t) {
   const W = cv.width;
   x.clearRect(0, 0, W, W);
 
+  // drift: each star wanders its slow personal orbit
+  for (const n of spiderNodes) {
+    n.x = n.hx + Math.sin(t * n.dfx + n.dpx) * n.damp;
+    n.y = n.hy + Math.cos(t * n.dfy + n.dpy) * n.damp;
+  }
+
   // faint distant sky
   for (const b of BG_STARS) {
     const a = 0.10 + 0.10 * (0.5 + 0.5 * Math.sin(t * 0.8 + b.tw));
@@ -1408,16 +1431,10 @@ function drawSky(t) {
     x.fillStyle = rgba2("--ink", a); x.fill();
   }
 
-  // constellation lines: each star joins its nearest brighter neighbour
+  // constellation lines flex as the stars drift
   x.lineWidth = 1;
   for (let i = 1; i < spiderNodes.length; i++) {
-    const a = spiderNodes[i];
-    let best = 0, bd = Infinity;
-    for (let k = 0; k < i; k++) {
-      const d = (spiderNodes[k].x - a.x) ** 2 + (spiderNodes[k].y - a.y) ** 2;
-      if (d < bd) { bd = d; best = k; }
-    }
-    const b = spiderNodes[best];
+    const a = spiderNodes[i], b = spiderNodes[a.linkTo];
     x.beginPath(); x.moveTo(a.x, a.y); x.lineTo(b.x, b.y);
     x.strokeStyle = rgba2("--accent", 0.14); x.stroke();
   }
@@ -1456,7 +1473,7 @@ function drawSky(t) {
       x.font = "13px " + col("--fontBody");
       x.textAlign = n.labelAlign;
       x.fillStyle = rgba2("--ink", 0.75);
-      x.fillText(n.label, n.labelX, n.labelY);
+      x.fillText(n.label, n.x + n.labelDX, n.y + n.labelDY);
     }
   });
 }
