@@ -225,6 +225,44 @@
     box-shadow: 0 0 18px rgba(var(--accent-rgb),0.4);
   }
   .btn.buy:hover { background: #4CFF7A; }
+  /* the star of the site — louder than everything else on the page */
+  .print-cta {
+    display: block;
+    text-align: center;
+    padding: 20px 20px 17px;
+    border-radius: 14px;
+    margin: -8px 2px 16px;
+    background:
+      radial-gradient(500px 120px at 50% -40px, rgba(255,255,255,0.22), transparent 70%),
+      linear-gradient(160deg, var(--accent), var(--accent2));
+    border: 2px solid var(--accent);
+    color: var(--bg);
+    animation: printGlow 2.4s ease-in-out infinite;
+    transition: transform 0.12s ease;
+  }
+  .print-cta:hover { transform: translateY(-2px) scale(1.01); }
+  .print-cta .pc-title {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+    font-family: var(--fontDisplay), serif;
+    font-size: clamp(22px, 6.4vw, 34px);
+    letter-spacing: 3px;
+  }
+  .print-cta .pc-printer { display: inline-block; animation: pcBob 1.6s ease-in-out infinite; }
+  .print-cta .pc-printer:last-child { animation-delay: 0.8s; }
+  .print-cta .pc-sub {
+    display: block; margin-top: 5px;
+    font-size: clamp(11.5px, 3.1vw, 13.5px);
+    opacity: 0.85; letter-spacing: 0.4px;
+  }
+  @keyframes printGlow {
+    0%, 100% { box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.35); }
+    50% { box-shadow: 0 0 36px rgba(var(--accent-rgb), 0.75); }
+  }
+  @keyframes pcBob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-4px); }
+  }
+
   .play-cta {
     display: block;
     text-align: center;
@@ -678,6 +716,7 @@
   @media (prefers-reduced-motion: reduce) {
     .track-fill, .car, .multiplier, .race-card, .tile, .btn, .hero-icon { transition: none; }
     .car.vroom, .live-dot::before, .ticker-track, .track-fill, .skeleton::after { animation: none; }
+    .print-cta, .print-cta .pc-printer { animation: none; }
     .ticker, .hero, .section-tag, .stash, .stash .tile, .title-tag, .tagline, .skeleton, .race-card.pop { animation: none; }
     #rain { display: none; }
   }
@@ -753,9 +792,12 @@
     <div class="road-sub" id="roadSub">every wallet is another pair of hands on the bag.</div>
   </div>
 
+  <a class="print-cta" href="printshop.html" aria-label="Open the Print Shop">
+    <span class="pc-title"><span class="pc-printer">🖨️</span>THE PRINT SHOP<span class="pc-printer">🖨️</span></span>
+    <span class="pc-sub">the main attraction — AI-print Robbinghood in ANY fit · free · your print hangs on the gallery wall</span>
+  </a>
   <a class="btn play-cta" id="playLink" href="game.html">⚡ PLAY GETAWAY RUN <span class="beta-pill">BETA</span></a>
   <a class="btn lb-cta" href="leaderboard.html">🏆 weekly leaderboard — see who's getting away with the bag</a>
-  <a class="btn lb-cta" href="printshop.html">🖨️ THE PRINT SHOP — the buy button is disabled. dress Robbinghood in anything</a>
   <a class="btn lb-cta" href="wanted.html">🤠 WANTED POSTER — check any wallet's loot, print the poster</a>
 
   <div class="section-tag">WHO_IS_ROBBINGHOOD 💰</div>
