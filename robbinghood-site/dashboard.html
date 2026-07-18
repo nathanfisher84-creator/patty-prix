@@ -128,7 +128,7 @@ const CONFIG = {
   printsApi: "https://robbinghood.mom/api/printstats"
 };
 // served from the site itself (any attached domain) → same-origin APIs
-if (/(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname)) {
+if ((/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname)) {
   CONFIG.statsApi = location.origin + "/api/stats";
   CONFIG.visitsApi = location.origin + "/api/visits";
   CONFIG.lbApi = location.origin + "/api/leaderboard";

@@ -141,7 +141,7 @@
 
 <script>
 "use strict";
-const TRACKED_HOST = /(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname);
+const TRACKED_HOST = (/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname);
 const API = TRACKED_HOST ? "/api/generate" : "https://robbinghood.mom/api/generate";
 // visit + download beacons for the owner dashboard (api/track.mjs)
 if (TRACKED_HOST) fetch("/api/track?p=pfp", { method: "POST", keepalive: true }).catch(() => {});

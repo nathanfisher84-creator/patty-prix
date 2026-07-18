@@ -23,7 +23,7 @@
 <script>
   // Vercel Web Analytics + visit beacon — only on Vercel-served
   // domains (neither exists on the GitHub Pages mirror).
-  if (/(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname)) {
+  if ((/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname)) {
     var va = document.createElement("script");
     va.defer = true;
     va.src = "/_vercel/insights/script.js";
@@ -692,7 +692,7 @@
    ================================================================ */
 // on any domain wired to the Vercel project (or the mirror), API calls go
 // same-origin; anywhere else they fall back to the canonical domain
-const ON_SITE = /(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname);
+const ON_SITE = (/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname);
 const CONFIG = {
   // Your token
   challenger: "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump",

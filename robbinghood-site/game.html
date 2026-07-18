@@ -172,7 +172,7 @@ PAL.dark = mix(PAL.accent, -0.92); // near-black ink used on accent surfaces
 const MINT = "6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump";
 
 // visit + run beacons (Vercel-served domains only; localhost/mirror skip)
-const TRACKED_HOST = /(\.vercel\.app|(^|\.)robbinghood\.(mom|xyz))$/.test(location.hostname);
+const TRACKED_HOST = (/\.vercel\.app$/.test(location.hostname) || location.hostname.replace(/^www\./, "") === new URL("https://robbinghood.mom").hostname);
 if (TRACKED_HOST) fetch("/api/track?p=game", { method: "POST", keepalive: true }).catch(() => {});
 const trackRun = () => { if (TRACKED_HOST) fetch("/api/track?p=game&e=run", { method: "POST", keepalive: true }).catch(() => {}); };
 

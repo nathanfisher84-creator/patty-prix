@@ -16,6 +16,7 @@
     "airdrop": "DxQ1iNidsGap2kr14VdEzA8NheqXabfh6fRkvZQbnZVY"
   },
   "links": {
+    "siteUrl": "https://robbinghood.mom",
     "xUrl": "https://x.com/i/communities/2033592066060554438"
   },
   "theme": {
@@ -75,6 +76,8 @@
     "baseImage": "robbinghood-base.png",
     "fontDisplay": "Special Elite",
     "fontBody": "Share Tech Mono",
-    "whoTitle": "WHO_IS_ROBBINGHOOD 💰"
+    "whoTitle": "WHO_IS_ROBBINGHOOD 💰",
+    "siteUrl": "https://robbinghood.mom",
+    "siteHost": "robbinghood.mom"
   }
 }
