@@ -34,7 +34,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -62,15 +62,18 @@
 /* /brand:theme */
     --fontDisplay: 'Special Elite';
     --fontBody: 'Share Tech Mono';
+    --fontUi: 'Space Grotesk';
     --radius: 14px;
-    --glow: 0 0 14px rgba(var(--accent-rgb), 0.22);
+    --glow: 0 10px 30px rgba(0, 0, 0, 0.35);
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
 
   body {
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    font-family: var(--fontUi), 'Segoe UI', system-ui, sans-serif;
+    font-size: 15px;
+    -webkit-font-smoothing: antialiased;
     color: var(--ink);
     min-height: 100vh;
     padding: 24px 16px 70px;
@@ -98,16 +101,7 @@
   .spider-card canvas { max-width: 100%; height: auto; cursor: pointer; }
   .spider-note { color: var(--sub); font-size: 13px; padding: 6px 0 10px; }
 
-  /* CRT scanlines over the money, under the content */
-  body::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 1;
-    background: repeating-linear-gradient(0deg,
-      rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
-  }
+  /* (scanline overlay removed for a cleaner surface) */
 
   ::selection { background: var(--accent); color: #001505; }
   button:focus-visible, a:focus-visible { outline: 2px dashed var(--accent); outline-offset: 3px; }
@@ -134,7 +128,7 @@
     top: 10px;
     z-index: 40;
     background: rgba(4,12,7,0.92);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: 8px;
     box-shadow: var(--glow);
     overflow: hidden;
@@ -178,12 +172,11 @@
     flex-shrink: 0;
   }
   .hero-name {
-    font-family: 'Special Elite', monospace;
+    font-family: var(--fontDisplay), serif;
     font-weight: 400;
     font-size: clamp(38px, 9vw, 58px);
     line-height: 0.95;
-    color: var(--accent);
-    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
+    color: var(--ink);
     text-transform: uppercase;
   }
   .hero-ca {
@@ -208,7 +201,7 @@
     font-size: 14px;
     background: #06170D;
     color: var(--ink);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: 8px;
     padding: 8px 18px;
     cursor: pointer;
@@ -238,30 +231,21 @@
       linear-gradient(160deg, var(--accent), var(--accent2));
     border: 2px solid var(--accent);
     color: var(--bg);
-    animation: printGlow 2.4s ease-in-out infinite;
-    transition: transform 0.12s ease;
+    box-shadow: 0 12px 36px rgba(var(--accent-rgb), 0.25);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
   }
-  .print-cta:hover { transform: translateY(-2px) scale(1.01); }
+  .print-cta:hover { transform: translateY(-2px); box-shadow: 0 16px 44px rgba(var(--accent-rgb), 0.4); }
   .print-cta .pc-title {
     display: flex; align-items: center; justify-content: center; gap: 12px;
     font-family: var(--fontDisplay), serif;
     font-size: clamp(22px, 6.4vw, 34px);
     letter-spacing: 3px;
   }
-  .print-cta .pc-printer { display: inline-block; animation: pcBob 1.6s ease-in-out infinite; }
-  .print-cta .pc-printer:last-child { animation-delay: 0.8s; }
+  .print-cta .pc-arrow { font-family: var(--fontUi), sans-serif; font-weight: 700; }
   .print-cta .pc-sub {
     display: block; margin-top: 5px;
     font-size: clamp(11.5px, 3.1vw, 13.5px);
     opacity: 0.85; letter-spacing: 0.4px;
-  }
-  @keyframes printGlow {
-    0%, 100% { box-shadow: 0 0 16px rgba(var(--accent-rgb), 0.35); }
-    50% { box-shadow: 0 0 36px rgba(var(--accent-rgb), 0.75); }
-  }
-  @keyframes pcBob {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-4px); }
   }
 
   .play-cta {
@@ -290,7 +274,7 @@
   .lore-card {
     display: flex; gap: 18px; align-items: center;
     background: var(--card);
-    border: 2px solid var(--edge); border-radius: 12px;
+    border: 1px solid var(--edge); border-radius: 12px;
     box-shadow: var(--glow);
     padding: 20px 22px; margin-bottom: 36px;
   }
@@ -310,7 +294,7 @@
   }
   .step {
     background: var(--card);
-    border: 2px solid var(--edge); border-radius: 10px;
+    border: 1px solid var(--edge); border-radius: 10px;
     padding: 14px 16px; font-size: 13px; line-height: 1.4;
   }
   .step b { color: var(--accent); font-weight: 400; font-size: 15px; display: block; margin-bottom: 4px; }
@@ -321,7 +305,7 @@
     font-family: 'Special Elite', monospace; font-size: 22px;
     width: 32px; height: 32px; line-height: 28px; text-align: center;
     color: var(--accent);
-    border: 2px solid var(--edge); border-radius: 6px;
+    border: 1px solid var(--edge); border-radius: 6px;
   }
   @media (max-width: 520px) {
     .lore-card { flex-direction: column; text-align: center; }
@@ -340,19 +324,17 @@
 
   /* ---------- stash tiles ---------- */
   .section-tag {
-    display: inline-block;
-    background: var(--card);
-    border: 2px solid var(--edge);
-    border-left: 4px solid var(--accent);
-    border-radius: 6px;
-    padding: 8px 18px;
-    font-family: 'Special Elite', monospace;
-    font-size: 24px;
-    color: var(--accent);
-    margin-bottom: 22px;
-    letter-spacing: 1px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-weight: 700;
+    font-size: 12.5px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--sub);
+    margin-bottom: 18px;
   }
-  .section-tag::before { content: "> "; color: var(--sub); }
+  .section-tag::after { content: ""; flex: 1; height: 1px; background: var(--edge); opacity: 0.5; }
   .stash {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -360,7 +342,7 @@
     margin-bottom: 38px;
   }
   .tile {
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: 10px;
     padding: 12px 14px;
     background: var(--card);
@@ -392,7 +374,7 @@
     align-items: center;
     gap: 12px;
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-left: 4px solid var(--accent);
     border-radius: 8px;
     padding: 12px 22px;
@@ -437,7 +419,7 @@
   /* ---------- race cards ---------- */
   .race-card {
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     padding: 24px 24px 20px;
     margin-bottom: 30px;
@@ -473,7 +455,7 @@
   .track {
     position: relative;
     height: 66px;
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: 8px;
     background:
       repeating-linear-gradient(90deg,
@@ -583,7 +565,7 @@
     position: relative;
     overflow: hidden;
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     padding: 40px;
     text-align: center;
@@ -604,7 +586,7 @@
   /* road to the holder goal */
   .road-card {
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     padding: 20px 22px;
     margin-bottom: 34px;
@@ -612,12 +594,12 @@
   .road-top { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
   .road-count {
     font-family: var(--fontDisplay), serif; font-size: clamp(30px, 7vw, 44px);
-    color: var(--accent); text-shadow: 0 0 14px rgba(var(--accent-rgb),0.5);
+    color: var(--accent);
   }
   .road-goal { font-size: 14px; color: var(--sub); }
   .road-bar {
     height: 14px; margin: 14px 0 10px;
-    background: var(--bg); border: 2px solid var(--edge); border-radius: 9px;
+    background: var(--bg); border: 1px solid var(--edge); border-radius: 9px;
     overflow: hidden;
   }
   .road-fill {
@@ -633,7 +615,7 @@
   /* the heist tape */
   .tape-card {
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     padding: 16px 18px;
     margin-bottom: 34px;
@@ -661,7 +643,7 @@
   .faq { margin-bottom: 34px; }
   .faq details {
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: 10px;
     margin-bottom: 8px;
     overflow: hidden;
@@ -671,7 +653,6 @@
     padding: 13px 16px;
     font-size: 14px; color: var(--ink);
   }
-  .faq summary::before { content: "> "; color: var(--accent); }
   .faq details[open] summary { color: var(--accent); border-bottom: 1px solid var(--stripe); }
   .faq .a { padding: 12px 16px 14px; font-size: 13.5px; line-height: 1.65; color: var(--sub); }
   .faq .a a { color: var(--accent2); }
@@ -680,7 +661,7 @@
   /* canonical-mint footer */
   .mint-verify {
     background: var(--card);
-    border: 2px solid var(--edge);
+    border: 1px solid var(--edge);
     border-radius: var(--radius);
     padding: 18px 20px;
     margin-top: 8px;
@@ -717,10 +698,12 @@
   @media (prefers-reduced-motion: reduce) {
     .track-fill, .car, .multiplier, .race-card, .tile, .btn, .hero-icon { transition: none; }
     .car.vroom, .live-dot::before, .ticker-track, .track-fill, .skeleton::after { animation: none; }
-    .print-cta, .print-cta .pc-printer { animation: none; }
     .ticker, .hero, .section-tag, .stash, .stash .tile, .title-tag, .tagline, .skeleton, .race-card.pop { animation: none; }
     #rain { display: none; }
   }
+  /* data wears the mono; reading text wears the UI face */
+  .ticker, .hero-ca, .t-value, .hero-updated, .updated, .tape,
+  .mv-row code.ca, .road-goal, .spider-note, .tape-flow { font-family: var(--fontBody), ui-monospace, monospace; }
 </style>
 </head>
 <body>
@@ -738,17 +721,17 @@
       <div class="hero-ca" id="heroCa"></div>
       <div class="hero-actions">
         <a class="btn buy" href="https://jup.ag/swap/SOL-6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
-           target="_blank" rel="noopener" aria-label="Buy $ROBBINGHOOD on Jupiter">💰 BUY $ROBBINGHOOD</a>
-        <button class="btn" id="copyBtn" type="button" aria-label="Copy contract address">COPY CA 📋</button>
-        <button class="btn" id="refreshBtn" type="button" aria-label="Refresh stats">REFRESH 🔄</button>
-        <a class="btn" id="chartLink" href="https://dexscreener.com/solana/8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V" target="_blank" rel="noopener" aria-label="Open the DexScreener chart">CHART 📈</a>
+           target="_blank" rel="noopener" aria-label="Buy $ROBBINGHOOD on Jupiter">BUY $ROBBINGHOOD</a>
+        <button class="btn" id="copyBtn" type="button" aria-label="Copy contract address">COPY CA</button>
+        <button class="btn" id="refreshBtn" type="button" aria-label="Refresh stats">REFRESH</button>
+        <a class="btn" id="chartLink" href="https://dexscreener.com/solana/8y7wwhTi3Y29cgHYKnruBrm231rhq1Z2QdmHbUQEio1V" target="_blank" rel="noopener" aria-label="Open the DexScreener chart">CHART</a>
         <span class="live-dot">LIVE</span>
       </div>
       <div class="hero-updated" id="heroUpdated"></div>
     </div>
   </div>
 
-  <div class="section-tag" id="stashTag" hidden>EXTRACTED_DATA 💾</div>
+  <div class="section-tag" id="stashTag" hidden>Market data</div>
   <div class="stash" id="stash" hidden>
     <div class="tile">
       <div class="t-label">Price</div>
@@ -777,13 +760,13 @@
       <div class="t-value" id="tWhale">—</div>
     </div>
     <div class="tile t-wide tile-big" id="tileHolders" hidden>
-      <div class="t-label">Holder Count 🤝</div>
+      <div class="t-label">Holders</div>
       <div class="t-value" id="tHolders">—</div>
       <div class="t-sub up" id="tHoldersSub"></div>
     </div>
   </div>
 
-  <div class="section-tag" id="roadTag" hidden>ROAD_TO_10K_ACCOMPLICES 🚐</div>
+  <div class="section-tag" id="roadTag" hidden>Road to 10K accomplices</div>
   <div class="road-card" id="roadCard" hidden>
     <div class="road-top">
       <span class="road-count" id="roadCount">—</span>
@@ -794,14 +777,14 @@
   </div>
 
   <a class="print-cta" href="printshop.html" aria-label="Open the Print Shop">
-    <span class="pc-title"><span class="pc-printer">🖨️</span>THE PRINT SHOP<span class="pc-printer">🖨️</span></span>
-    <span class="pc-sub">the main attraction — AI-print Robbinghood in ANY fit · free · your print hangs on the gallery wall</span>
+    <span class="pc-title">THE PRINT SHOP <span class="pc-arrow">→</span></span>
+    <span class="pc-sub">Dress Robbinghood in anything. Free AI prints — yours hangs on the gallery wall.</span>
   </a>
-  <a class="btn play-cta" id="playLink" href="game.html">⚡ PLAY GETAWAY RUN <span class="beta-pill">BETA</span></a>
-  <a class="btn lb-cta" href="leaderboard.html">🏆 weekly leaderboard — see who's getting away with the bag</a>
-  <a class="btn lb-cta" href="wanted.html">🤠 WANTED POSTER — check any wallet's loot, print the poster</a>
+  <a class="btn play-cta" id="playLink" href="game.html">PLAY GETAWAY RUN <span class="beta-pill">BETA</span></a>
+  <a class="btn lb-cta" href="leaderboard.html">Weekly leaderboard — see who's getting away with the bag</a>
+  <a class="btn lb-cta" href="wanted.html">Wanted poster — check any wallet's loot, print yours</a>
 
-  <div class="section-tag">WHO_IS_ROBBINGHOOD 💰</div>
+  <div class="section-tag">Who is Robbinghood</div>
   <div class="lore-card">
     <img class="lore-icon" id="loreIcon" alt="Robbinghood" hidden />
     <div class="lore-text">
@@ -813,7 +796,7 @@
     </div>
   </div>
 
-  <div class="section-tag">HOW_TO_BUY 💰</div>
+  <div class="section-tag">How to buy</div>
   <div class="howto">
     <div class="step">
       <span class="step-n">1</span>
@@ -842,24 +825,24 @@
     </div>
   </div>
 
-  <div class="section-tag">THE_TOP_20 🕸️</div>
+  <div class="section-tag">The top 20 — crew map</div>
   <div class="spider-card">
     <canvas id="spider" width="840" height="840"></canvas>
     <div class="spider-note" id="spiderNote">casing the vault…</div>
   </div>
   <div class="fam-links" id="famLinks">
     <a class="btn" href="https://app.bubblemaps.io/sol/token/6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump"
-       target="_blank" rel="noopener">🫧 holder bubble map</a>
+       target="_blank" rel="noopener">Holder bubble map</a>
   </div>
 
-  <div class="section-tag" id="tapeTag" hidden>THE_HEIST_TAPE 🚨</div>
+  <div class="section-tag" id="tapeTag" hidden>The heist tape — live trades</div>
   <div class="tape-card" id="tapeCard" hidden>
     <div class="tape-flow" id="tapeFlow"></div>
     <table class="tape"><tbody id="tapeBody"></tbody></table>
     <div class="tape-note">every buy and sell as it lands · refreshes automatically · big buys make it rain harder</div>
   </div>
 
-  <div class="section-tag">FREQUENTLY_CASED_QUESTIONS ❓</div>
+  <div class="section-tag">Frequently cased questions</div>
   <div class="faq">
     <details>
       <summary>What is Robbinghood ($ROBBINGHOOD)?</summary>
@@ -925,7 +908,7 @@
   </div>
 
   <footer class="mint-verify">
-    <div class="mv-label">⚠ CANONICAL MINT — VERIFY BEFORE YOU BUY. FAKES EXIST.</div>
+    <div class="mv-label">CANONICAL MINT — VERIFY BEFORE YOU BUY. FAKES EXIST.</div>
     <div class="mv-row">
       <code class="ca">6fkhFEPL1KjipJkAuJg6gCQmHsnvwfhJXUyjV2Tspump</code>
       <button class="btn" id="mvCopy" type="button">copy</button>
@@ -1144,7 +1127,7 @@ document.getElementById("copyBtn").addEventListener("click", async (e) => {
   } catch {
     btn.textContent = "COPY FAILED";
   }
-  setTimeout(() => { btn.textContent = "COPY CA 📋"; }, 1500);
+  setTimeout(() => { btn.textContent = "COPY CA"; }, 1500);
 });
 document.getElementById("refreshBtn").addEventListener("click", () => refresh());
 
@@ -1283,7 +1266,7 @@ function updateRoad(count) {
   const goal = CONFIG.holderGoal;
   if (!goal) return;
   const pct = Math.min(100, count / goal * 100);
-  document.getElementById("roadTag").textContent = `ROAD_TO_${fmtGoal(goal)}_ACCOMPLICES 🚐`;
+  document.getElementById("roadTag").textContent = `Road to ${fmtGoal(goal)} accomplices`;
   document.getElementById("roadCount").textContent = count.toLocaleString();
   document.getElementById("roadGoal").textContent = `/ ${goal.toLocaleString()} holders · ${pct.toFixed(1)}% of the way`;
   document.getElementById("roadFill").style.width = pct + "%";

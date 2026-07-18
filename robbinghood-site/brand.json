@@ -31,7 +31,8 @@
     "accent2": "#3FBF4F",
     "red": "#FF4655",
     "fontDisplay": "Special Elite",
-    "fontBody": "Share Tech Mono"
+    "fontBody": "Share Tech Mono",
+    "fontUi": "Space Grotesk"
   },
   "copy": {
     "gameName": "GETAWAY RUN",
@@ -49,7 +50,7 @@
       "<p>Straight out of the <b>r/wallstreetbets</b> GME saga — the friendly free-trading app that turned off the buy button, sold the order flow and walked off with the hood's bag. Robbinghood is the getaway car, immortalized on-chain: the robbery becomes the ticker.</p>",
       "<p class=\"lore-tag\">$ROBBINGHOOD is the ticker. He's got the bag. The buy button is disabled.</p>"
     ],
-    "whoTitle": "WHO_IS_ROBBINGHOOD 💰"
+    "whoTitle": "Who is Robbinghood"
   },
   "ai": {
     "baseImage": "robbinghood-base.png",
@@ -77,8 +78,9 @@
     "baseImage": "robbinghood-base.png",
     "fontDisplay": "Special Elite",
     "fontBody": "Share Tech Mono",
-    "whoTitle": "WHO_IS_ROBBINGHOOD 💰",
+    "whoTitle": "Who is Robbinghood",
     "siteUrl": "https://robbinghood.mom",
-    "siteHost": "robbinghood.mom"
+    "siteHost": "robbinghood.mom",
+    "fontUi": "Space Grotesk"
   }
 }

@@ -6,7 +6,7 @@
 <title>The Print Shop 🖨️ — $ROBBINGHOOD</title>
 <meta name="description" content="Prompt Robbinghood into any fit — the buy button is disabled. Same robber, whole new drip." />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%96%A8%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     /* brand:theme */
@@ -14,28 +14,25 @@
     --ink: #F4F2E0; --sub: #A8AD8A; --accent: #C6E829; --accent2: #3FBF4F;
     --red: #FF4655; --accent-rgb: 198, 232, 41; --accent2-rgb: 63, 191, 79;
 /* /brand:theme */
+    --fontUi: 'Space Grotesk';
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   [hidden] { display: none !important; }
   body {
     background: radial-gradient(800px 400px at 80% -80px, rgba(var(--accent-rgb),0.07), transparent 60%), var(--bg);
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    font-family: var(--fontUi), 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
     color: var(--ink);
     min-height: 100vh;
     display: flex; flex-direction: column; align-items: center;
     padding: 24px 14px 60px;
-  }
-  body::before {
-    content: "";
-    position: fixed; inset: 0; pointer-events: none; z-index: 0;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
   }
   body > * { position: relative; z-index: 1; }
   h1 {
     font-family: 'Special Elite', monospace; font-weight: 400;
     font-size: clamp(32px, 8vw, 48px);
     color: var(--accent);
-    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
+    
     text-align: center;
     letter-spacing: 2px;
   }

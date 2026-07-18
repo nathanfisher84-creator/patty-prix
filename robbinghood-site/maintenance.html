@@ -17,7 +17,7 @@
 <meta name="twitter:description" content="Robbinghood is counting the bags — back online soon." />
 <meta name="twitter:image" content="https://robbinghood.mom/og.png" />
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='0.9em' font-size='90'%3E%F0%9F%92%B0%3C/text%3E%3C/svg%3E" />
-<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Special+Elite&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
   :root {
     /* brand:theme */
@@ -25,20 +25,17 @@
     --ink: #F4F2E0; --sub: #A8AD8A; --accent: #C6E829; --accent2: #3FBF4F;
     --red: #FF4655; --accent-rgb: 198, 232, 41; --accent2-rgb: 63, 191, 79;
 /* /brand:theme */
+    --fontUi: 'Space Grotesk';
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: radial-gradient(800px 400px at 80% -80px, rgba(var(--accent-rgb),0.07), transparent 60%), var(--bg);
-    font-family: 'Share Tech Mono', ui-monospace, monospace;
+    font-family: var(--fontUi), 'Segoe UI', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
     color: var(--ink);
     min-height: 100vh;
     display: flex; align-items: center; justify-content: center;
     padding: 20px;
-  }
-  body::before {
-    content: "";
-    position: fixed; inset: 0; pointer-events: none;
-    background: repeating-linear-gradient(0deg, rgba(0,0,0,0.22) 0 1px, transparent 1px 3px);
   }
   .card {
     background: var(--card);
@@ -55,7 +52,7 @@
     font-family: 'Special Elite', monospace; font-weight: 400;
     font-size: clamp(34px, 9vw, 48px);
     color: var(--accent);
-    text-shadow: 0 0 18px rgba(var(--accent-rgb),0.55);
+    
     margin: 10px 0 12px;
     letter-spacing: 2px;
   }
