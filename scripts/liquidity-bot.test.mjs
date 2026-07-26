@@ -1,5 +1,6 @@
 // Tests the liquidity-bot's pure logic. Run: node scripts/liquidity-bot.test.mjs
-import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry } from "./liquidity-bot.mjs";
+import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry,
+  improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -58,7 +59,7 @@ const scanStub = async () => {
 // Intercept Telegram by stubbing global fetch (sendTelegram uses it).
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, opts) => { if (String(url).includes("sendMessage")) sent.push(JSON.parse(opts.body).text); return { json: async () => ({ ok: true }) }; };
-const state = { watch: new Set([MINT]), last: new Map(), baseline: new Map(), cooldown: new Map(), muted: false };
+const state = { watch: new Set([MINT]), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false };
 const cfg = { dropPct: 15, pollSeconds: 60, file: "/tmp/does-not-matter.json", cooldownMs: 30 * 60_000, baselineMs: 30 * 60_000, volDropPct: 40, holderDropPct: 10 };
 await monitorOnce(envStub, cfg, state, scanStub);
 check("first pass only baselines (no alert)", sent.length === 0);
@@ -80,6 +81,33 @@ const bad = entryRead({ tier: "high-risk", liqQuote: 40, holders: 700, volume24h
 check("high-risk + draining + holders fleeing + vertical pump → poor", bad.rating === "poor");
 check("entry read never omits the NFA disclaimer", /NFA/.test(formatEntry({ token: MINT, symbol: "X" }, good)));
 check("vertical pump is called out as top-risk", bad.reasons.some(r => /top/i.test(r)));
+
+console.log("\n9. improvementAlerts — the positive side (still NFA)");
+check("LP just locked → green lp-locked", improvementAlerts({ lpLockedPct: 0, holders: 100, tier: "caution" }, { lpLockedPct: 100, holders: 100, tier: "caution" }, {}).some(a => a.kind === "lp-locked"));
+check("holders +30% → green holders-grow", improvementAlerts({ lpLockedPct: 0, holders: 100, tier: "caution" }, { lpLockedPct: 0, holders: 130, tier: "caution" }, {}).some(a => a.kind === "holders-grow"));
+check("tier upgrade → green tier-up", improvementAlerts({ lpLockedPct: 0, holders: 100, tier: "caution" }, { lpLockedPct: 0, holders: 100, tier: "clean" }, {}).some(a => a.kind === "tier-up"));
+check("nothing improved → no alert", improvementAlerts({ lpLockedPct: 0, holders: 100, tier: "caution" }, { lpLockedPct: 0, holders: 101, tier: "caution" }, {}).length === 0);
+
+console.log("\n10. priceMoveAlert");
+check("+25% move → green price-move", priceMoveAlert({ priceUsd: 1 }, { priceUsd: 1.25 }, 20)?.level === "green");
+check("−30% move → red price-move", priceMoveAlert({ priceUsd: 1 }, { priceUsd: 0.7 }, 20)?.level === "red");
+check("small move under threshold → null", priceMoveAlert({ priceUsd: 1 }, { priceUsd: 1.05 }, 20) === null);
+
+console.log("\n11. formatHolders — breakdown + deployer bag warning");
+const fh = formatHolders([{ pct: 30, owner: "devWallet" }, { pct: 8, owner: "x" }], { creator: "devWallet" });
+check("shows top holder percentages", /30% · 8%/.test(fh));
+check("warns when the deployer still holds a bag", /Deployer/.test(fh) && /still holds 30%/.test(fh));
+
+console.log("\n12. buildDigest");
+check("empty watchlist → null", buildDigest([]) === null);
+const dg = buildDigest([{ snap: { token: MINT, symbol: "BONK", safety: 82, tier: "clean", liqQuote: 110, holders: 5000 }, base: { liqQuote: 100 } }]);
+check("digest lists the token + liq trend + NFA", /BONK/.test(dg) && /\+10%/.test(dg) && /NFA/.test(dg));
+
+console.log("\n13. shouldDigest — once per UTC day, at/after the hour");
+const h14 = Date.UTC(2025, 5, 1, 14); // 14:00 UTC on a day
+check("new day, past the hour → true", shouldDigest("2025-4-31", h14, 13) === true);
+check("already sent today → false", shouldDigest("2025-5-1", h14, 13) === false);
+check("new day but before the hour → false", shouldDigest("2025-4-31", Date.UTC(2025, 5, 1, 9), 13) === false);
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);

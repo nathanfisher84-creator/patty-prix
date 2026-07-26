@@ -62,10 +62,19 @@ keeps it running 24/7.)*
 - **`/watch <mint>`** — start watching a token (paste its address)
 - **`/unwatch <mint>`** — stop watching
 - **`/list`** — show what you're watching
-- **`/scan <mint>`** — safety scan **+ an entry read** (NFA)
+- **`/scan <mint>`** — full scan: safety, **top-holder breakdown**, **deployer**
+  (with a warning if the deployer still holds a bag), **+ an entry read** (NFA)
 - **`/entry <mint>`** — just the entry read (NFA)
+- **`/trending`** — today's trending tokens, auto-scanned, safest first
+- **`/alert <mint> <pct>`** — ping on a ±% price move (e.g. `/alert <mint> 20`); `off` to clear
 - **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
+
+**Automatic alerts** (per watched token): liquidity draining, the cut-supply-on-
+pump pattern, **volume fading**, **holders leaving**, safety dropping, smart money
+exiting — plus the positive side: **"setup improving"** (LP just locked, holders
+growing fast, safety upgraded). Once a day you also get a **portfolio digest**.
+Everything is defensive/NFA — the bot never fires "buy now" signals.
 
 It baselines each token on the first check, then pings you whenever **liquidity
 drops** ≥`LIQ_DROP_PCT`%, a **pump drains** the pool, **volume fades**, **holders

@@ -144,6 +144,17 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
   };
 
   const result = scoreToken(raw);
+
+  // Top individual holders (non-pool, non-burn), by % of supply — so a buyer can
+  // see the actual bag distribution, not just an aggregate number.
+  const supply = mintInfo?.supply || 0;
+  const topHolders = supply > 0
+    ? holders.filter(h => (h.kind ?? "holder") === "holder")
+        .sort((a, b) => b.amount - a.amount)
+        .slice(0, 5)
+        .map(h => ({ pct: Math.round((h.amount / supply) * 1000) / 10, owner: h.owner || null }))
+    : [];
+
   return {
     token: mint,
     ...result,
@@ -152,6 +163,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     lpLockedPct: lp.lpLockedPct,
     jupVerified: jup.verified,
     holders: meteora?.holders ?? goplus?.holders ?? null, // best available holder count
+    topHolders,
     sources,
     meteora: meteora && { pools: meteora.pools, blacklisted: meteora.blacklisted, maxFeePct: meteora.maxFeePct, holders: meteora.holders, launchpad: meteora.launchpad },
     market: market && {
@@ -165,6 +177,31 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     dataComplete: !!mintInfo, // false when authorities couldn't be read
     disclaimer: "Heuristic risk estimate from public on-chain data. Not financial advice. Always DYOR.",
   };
+}
+
+// Best-effort deployer lookup: the wallet that created the mint (fee payer of the
+// mint's OLDEST transaction). For fresh memecoins — the target here — the
+// creation tx is almost always within the first page of signatures, so this is
+// reliable; for very old tokens it may be approximate (flagged). Returns null on
+// any failure — never guesses. The bot cross-references `creator` against
+// topHolders to warn if the deployer still holds a big bag (a top dump risk).
+export async function findDeployer(mint, { heliusKey, fetchFn = fetch } = {}) {
+  if (!heliusKey || !BASE58.test(mint)) return null;
+  const rpc = (method, params) => fetchFn("https://mainnet.helius-rpc.com/?api-key=" + heliusKey, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+  }).then(r => r.json());
+  try {
+    const sigs = await rpc("getSignaturesForAddress", [mint, { limit: 1000 }]).then(r => r?.result || []);
+    if (!sigs.length) return null;
+    const oldest = sigs[sigs.length - 1];
+    const tx = await rpc("getTransaction", [oldest.signature, { maxSupportedTransactionVersion: 0, encoding: "jsonParsed" }]).then(r => r?.result);
+    const keys = tx?.transaction?.message?.accountKeys || [];
+    const first = keys[0];
+    const creator = typeof first === "string" ? first : first?.pubkey;
+    if (!creator) return null;
+    return { creator, approx: sigs.length >= 1000, createdAt: oldest.blockTime || null };
+  } catch { return null; }
 }
 
 function bestMarket(pairs) {

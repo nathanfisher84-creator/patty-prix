@@ -30,7 +30,8 @@
 
 import { readFileSync, writeFileSync, existsSync } from "fs";
 import { pathToFileURL } from "url";
-import { scanToken } from "../rug-or-moon/api/scan.mjs";
+import { scanToken, findDeployer } from "../rug-or-moon/api/scan.mjs";
+import { scanTrending } from "../rug-or-moon/api/trending.mjs";
 import { diffScan } from "../rug-or-moon/watchlist.mjs";
 import { sendTelegram } from "./whale-alerts.mjs";
 
@@ -55,6 +56,7 @@ export function buildSnapshot(d, token) {
     liquidityUsd: d.market?.liquidityUsd ?? null,
     volume24h: d.market?.volume24h ?? null,
     holders: d.holders ?? null,
+    topHolders: d.topHolders || [],
     lpLockedPct: d.lpLockedPct ?? null,
     dexId: d.market?.dexId || null,
     flags: (d.flags || []).filter(f => f.level === "red").map(f => ({ level: "red", id: f.id, text: f.text })),
@@ -101,6 +103,33 @@ export function trendAlerts(baseline, curr, cfg = {}) {
     if (d >= holderDrop) out.push({ level: "red", kind: "holders-drop", text: `Holders leaving — −${Math.round(d)}% (${baseline.holders} → ${curr.holders})` });
   }
   return out;
+}
+
+// The POSITIVE side — "setup improving" alerts vs the baseline. LP getting locked,
+// holders growing fast, or the safety tier upgrading. Still NFA, never a buy call
+// (smart-money-entering is already covered by diffScan's smart-money-in).
+const TIER_RANK = { "high-risk": 0, caution: 1, clean: 2 };
+export function improvementAlerts(baseline, curr, cfg = {}) {
+  const out = [];
+  if (!baseline) return out;
+  if (baseline.lpLockedPct != null && baseline.lpLockedPct < 90 && curr.lpLockedPct != null && curr.lpLockedPct >= 90)
+    out.push({ level: "green", kind: "lp-locked", text: `Liquidity just locked/burned (${Math.round(curr.lpLockedPct)}%)` });
+  if (baseline.holders > 0 && curr.holders != null) {
+    const g = (curr.holders / baseline.holders - 1) * 100;
+    if (g >= (cfg.holderGrowPct ?? 25)) out.push({ level: "green", kind: "holders-grow", text: `Holders +${Math.round(g)}% (${baseline.holders} → ${curr.holders})` });
+  }
+  if (TIER_RANK[curr.tier] != null && TIER_RANK[baseline.tier] != null && TIER_RANK[curr.tier] > TIER_RANK[baseline.tier])
+    out.push({ level: "green", kind: "tier-up", text: `Safety upgraded ${baseline.tier} → ${curr.tier}` });
+  return out;
+}
+
+// Price-move alert for /alert thresholds — fires when price moves ±pct since the
+// previous check (cooldown keeps a fast mover from pinging every minute).
+export function priceMoveAlert(prev, curr, pct) {
+  if (!prev || !(prev.priceUsd > 0) || curr.priceUsd == null) return null;
+  const ch = (curr.priceUsd / prev.priceUsd - 1) * 100;
+  if (Math.abs(ch) >= pct) return { level: ch > 0 ? "green" : "red", kind: "price-move", text: `Price ${ch > 0 ? "+" : ""}${Math.round(ch)}% (±${pct}% alert)` };
+  return null;
 }
 
 // A hedged, structure-based read on the RISK OF ENTERING NOW — never a price
@@ -150,11 +179,59 @@ const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(
 const short = m => m ? m.slice(0, 4) + "…" + m.slice(-4) : "token";
 
 export function formatAlert(snap, alerts) {
+  const sym = esc(snap.symbol ? "$" + snap.symbol : short(snap.token));
   const emoji = { clean: "✅", caution: "⚠️", "high-risk": "🚩" }[snap.tier] || "";
-  const head = `${alerts.some(a => a.level === "red") ? "🚨" : "👀"} <b>${esc(snap.symbol ? "$" + snap.symbol : short(snap.token))}</b> ${emoji}`;
+  const hasRed = alerts.some(a => a.level === "red");
+  const allGreen = alerts.every(a => a.level === "green");
+  const head = hasRed ? `🚨 <b>${sym}</b> ${emoji}` : allGreen ? `📈 <b>${sym}</b> — setup improving ${emoji}` : `👀 <b>${sym}</b> ${emoji}`;
   const body = alerts.map(a => `• ${esc(a.text)}`);
-  return [head, ...body, `<a href="https://solscan.io/token/${snap.token}">Solscan</a> · safety ${snap.safety}/100`].join("\n");
+  const foot = `<a href="https://solscan.io/token/${snap.token}">Solscan</a> · safety ${snap.safety}/100`;
+  const lines = [head, ...body, foot];
+  if (allGreen) lines.push("⚠️ NFA — not a buy signal.");
+  return lines.join("\n");
 }
+
+// Render the top-holder breakdown + deployer note for /scan. `deployer` is
+// optional; if the creator is among the top holders we warn about their bag.
+export function formatHolders(topHolders, deployer) {
+  const lines = [];
+  if (topHolders && topHolders.length) {
+    const parts = topHolders.map(h => `${h.pct}%`);
+    lines.push("👥 Top holders: " + parts.join(" · "));
+  }
+  if (deployer && deployer.creator) {
+    const held = (topHolders || []).find(h => h.owner === deployer.creator);
+    const bag = held ? ` — still holds ${held.pct}% ⚠️` : "";
+    lines.push(`🛠️ Deployer: <a href="https://solscan.io/account/${deployer.creator}">${short(deployer.creator)}</a>${bag}${deployer.approx ? " (approx)" : ""}`);
+  }
+  return lines.join("\n");
+}
+
+// The daily digest — a portfolio snapshot of every watched token.
+export function buildDigest(entries) {
+  if (!entries || !entries.length) return null;
+  const lines = ["📊 <b>Daily watchlist digest</b>"];
+  for (const { snap, base } of entries) {
+    const emoji = { clean: "✅", caution: "⚠️", "high-risk": "🚩" }[snap.tier] || "";
+    let trend = "";
+    if (base && base.liqQuote > 0 && snap.liqQuote != null) {
+      const ch = Math.round((snap.liqQuote / base.liqQuote - 1) * 100);
+      trend = ` · liq ${ch >= 0 ? "+" : ""}${ch}%`;
+    }
+    lines.push(`${emoji} <b>${esc(snap.symbol ? "$" + snap.symbol : short(snap.token))}</b> ${snap.safety}/100${trend}${snap.holders != null ? ` · ${snap.holders} holders` : ""}`);
+  }
+  lines.push("⚠️ NFA.");
+  return lines.join("\n");
+}
+
+// New UTC day AND at/after the digest hour → time to send today's digest.
+export function shouldDigest(lastDayKey, now, hourUTC) {
+  const d = new Date(now);
+  const dayKey = `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`;
+  if (dayKey === lastDayKey) return false;
+  return d.getUTCHours() >= hourUTC;
+}
+export function dayKeyOf(now) { const d = new Date(now); return `${d.getUTCFullYear()}-${d.getUTCMonth()}-${d.getUTCDate()}`; }
 
 export function parseCommand(text) {
   const t = (text || "").trim();
@@ -166,6 +243,8 @@ export function parseCommand(text) {
   if (c === "/list") return { cmd: "list" };
   if (c === "/scan") return { cmd: "scan", arg };
   if (c === "/entry") return { cmd: "entry", arg };
+  if (c === "/trending") return { cmd: "trending" };
+  if (c === "/alert") { const [mint, pct] = rest; return { cmd: "alert", mint, pct }; }
   if (c === "/mute") return { cmd: "mute" };
   if (c === "/unmute") return { cmd: "unmute" };
   if (c === "/help" || c === "/start") return { cmd: "help" };
@@ -195,8 +274,10 @@ const HELP = [
   "<b>/watch</b> &lt;mint&gt; — start watching a token",
   "<b>/unwatch</b> &lt;mint&gt; — stop watching",
   "<b>/list</b> — show watched tokens",
-  "<b>/scan</b> &lt;mint&gt; — safety scan + entry read",
+  "<b>/scan</b> &lt;mint&gt; — full scan: safety, top holders, deployer, entry read",
   "<b>/entry</b> &lt;mint&gt; — entry read only (NFA)",
+  "<b>/trending</b> — today's trending tokens, auto-scanned (gems up top)",
+  "<b>/alert</b> &lt;mint&gt; &lt;pct&gt; — ping on a ±% price move (e.g. /alert &lt;mint&gt; 20). off to clear",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
   "<b>/help</b> — this message",
 ].join("\n");
@@ -204,12 +285,20 @@ const HELP = [
 async function tgReply(env, text) { return sendTelegram(env, text, fetch, env.TELEGRAM_CHAT_ID); }
 
 async function scanMessage(env, state, mint, withEntry) {
-  const d = await scanToken(mint, { heliusKey: env.HELIUS_API_KEY });
+  // Deployer lookup runs in parallel with the scan (it's a couple of extra RPC
+  // calls, so on-demand only — never in the fast monitor loop).
+  const [d, deployer] = await Promise.all([
+    scanToken(mint, { heliusKey: env.HELIUS_API_KEY }),
+    findDeployer(mint, { heliusKey: env.HELIUS_API_KEY }).catch(() => null),
+  ]);
   if (d.error) return `⚠️ ${esc(d.error)}`;
   const snap = buildSnapshot(d, mint);
   const v = { clean: "✅ Looks clean", caution: "⚠️ Caution", "high-risk": "🚩 High risk" }[d.tier] || d.tier;
   const top = (d.flags || []).filter(f => f.level !== "green").slice(0, 4).map(f => `• ${esc(f.text)}`).join("\n");
-  let msg = `<b>${esc(d.market?.symbol ? "$" + d.market.symbol : short(mint))}</b> — ${d.safety}/100 · ${v}\n${top || "No red/yellow flags."}\n<a href="https://solscan.io/token/${mint}">Solscan</a>`;
+  const holders = formatHolders(d.topHolders, deployer);
+  let msg = `<b>${esc(d.market?.symbol ? "$" + d.market.symbol : short(mint))}</b> — ${d.safety}/100 · ${v}\n${top || "No red/yellow flags."}`;
+  if (holders) msg += "\n" + holders;
+  msg += `\n<a href="https://solscan.io/token/${mint}">Solscan</a>`;
   if (withEntry) msg += "\n\n" + formatEntry(snap, entryRead(snap, state.baseline.get(mint)?.snap));
   return msg;
 }
@@ -241,6 +330,25 @@ async function handleCommand(env, cfg, state, text) {
     const snap = buildSnapshot(d, arg);
     return tgReply(env, formatEntry(snap, entryRead(snap, state.baseline.get(arg)?.snap)));
   }
+  if (cmd === "trending") {
+    const res = await scanTrending({ limit: 8, heliusKey: env.HELIUS_API_KEY, birdeyeKey: env.BIRDEYE_API_KEY }).catch(() => null);
+    if (!res || !res.tokens?.length) return tgReply(env, "Couldn't load trending right now — try again shortly.");
+    const rows = res.tokens.map(t => {
+      const e = { clean: "✅", caution: "⚠️", "high-risk": "🚩" }[t.tier] || "";
+      return `${e} <b>${esc(t.market?.symbol ? "$" + t.market.symbol : short(t.token))}</b> ${t.safety}/100 · <a href="https://solscan.io/token/${t.token}">scan</a>`;
+    });
+    return tgReply(env, `🔥 <b>Trending</b> (${res.source}) — safest first\n${rows.join("\n")}\n⚠️ NFA.`);
+  }
+  if (cmd === "alert") {
+    const { mint, pct } = parseCommand(text);
+    if (!BASE58.test(mint || "")) return tgReply(env, "Usage: /alert &lt;mint&gt; &lt;pct&gt;  (e.g. /alert &lt;mint&gt; 20, or /alert &lt;mint&gt; off)");
+    if ((pct || "").toLowerCase() === "off") { state.priceAlerts.delete(mint); return tgReply(env, `Price alert cleared for ${short(mint)}.`); }
+    const n = Number(pct);
+    if (!(n > 0)) return tgReply(env, "Give a positive %: /alert &lt;mint&gt; 20");
+    state.priceAlerts.set(mint, n);
+    if (!state.watch.has(mint)) { state.watch.add(mint); saveWatchlist(cfg.file, state.watch); }
+    return tgReply(env, `🔔 Will ping on a ±${n}% move for ${short(mint)}. (Now watched too.)`);
+  }
   if (cmd === "mute") { state.muted = true; return tgReply(env, "🔕 Alerts muted — /unmute to resume. (Commands still work.)"); }
   if (cmd === "unmute") { state.muted = false; return tgReply(env, "🔔 Alerts back on."); }
   return tgReply(env, "Unknown command. /help");
@@ -261,8 +369,13 @@ export async function monitorOnce(env, cfg, state, scan = scanToken, now = Date.
     const prev = state.last.get(mint);
     const base = state.baseline.get(mint);
     if (prev) {
-      let alerts = [...alertsFor(prev, snap, cfg.dropPct), ...trendAlerts(base?.snap, snap, cfg)]
-        .filter(a => !onCooldown(state, mint, a.kind, cfg.cooldownMs, now));
+      const pm = state.priceAlerts.has(mint) ? priceMoveAlert(prev, snap, state.priceAlerts.get(mint)) : null;
+      let alerts = [
+        ...alertsFor(prev, snap, cfg.dropPct),
+        ...trendAlerts(base?.snap, snap, cfg),
+        ...improvementAlerts(base?.snap, snap, cfg),
+        ...(pm ? [pm] : []),
+      ].filter(a => !onCooldown(state, mint, a.kind, cfg.cooldownMs, now));
       if (alerts.length && !state.muted) {
         await tgReply(env, formatAlert(snap, alerts));
         for (const a of alerts) state.cooldown.set(`${mint}:${a.kind}`, now);
@@ -292,6 +405,14 @@ async function commandLoop(env, cfg, state) {
 async function monitorLoop(env, cfg, state) {
   for (;;) {
     await monitorOnce(env, cfg, state).catch(e => console.error("monitor error:", e.message));
+    // Once-a-day portfolio digest at/after the configured UTC hour.
+    const now = Date.now();
+    if (!state.muted && shouldDigest(state.lastDigestDay, now, cfg.digestHour)) {
+      const entries = [...state.watch].map(m => ({ snap: state.last.get(m), base: state.baseline.get(m)?.snap })).filter(e => e.snap);
+      const digest = buildDigest(entries);
+      if (digest) await tgReply(env, digest).catch(() => {});
+      state.lastDigestDay = dayKeyOf(now);
+    }
     await sleep(cfg.pollSeconds * 1000);
   }
 }
@@ -307,8 +428,10 @@ export async function main(env = process.env) {
     holderDropPct: Number(env.HOLDER_DROP_PCT) || 10,
     baselineMs: (Number(env.BASELINE_MINUTES) || 30) * 60_000,
     cooldownMs: (Number(env.COOLDOWN_MINUTES) || 30) * 60_000,
+    holderGrowPct: Number(env.HOLDER_GROW_PCT) || 25,
+    digestHour: env.DIGEST_HOUR_UTC != null ? Number(env.DIGEST_HOUR_UTC) : 13, // ~08:00 ET
   };
-  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), muted: false };
+  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()) };
   console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%.`);
   await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
   await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state)]);
