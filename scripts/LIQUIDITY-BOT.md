@@ -49,6 +49,8 @@ Railway is the most beginner-friendly always-on host.
    | `HOLDER_DROP_PCT` | *(optional)* holders-leaving threshold %, default `10` |
    | `BASELINE_MINUTES` | *(optional)* window for slow trends, default `30` |
    | `COOLDOWN_MINUTES` | *(optional)* min gap between repeat alerts, default `30` |
+   | `SMART_MONEY_JSON` | *(optional)* inline JSON of whale wallets that survives redeploys |
+   | `DIGEST_HOUR_UTC` | *(optional)* hour (UTC) for the daily digest, default `13` |
 
 5. Railway redeploys. Within a minute your bot messages you: **"🧅 Liquidity
    watcher online."** You're live.
@@ -67,8 +69,18 @@ keeps it running 24/7.)*
 - **`/entry <mint>`** — just the entry read (NFA)
 - **`/trending`** — today's trending tokens, auto-scanned, safest first
 - **`/alert <mint> <pct>`** — ping on a ±% price move (e.g. `/alert <mint> 20`); `off` to clear
+- **`/addwhale <wallet> [label]`** — track a smart-money wallet
+- **`/whales` · `/delwhale <wallet>`** — list / remove tracked wallets
 - **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
+
+**Smart-money wallets:** once you `/addwhale` some wallets, every scan flags tokens
+those wallets hold ("🧠 tracked smart-money wallets holding …") and it feeds the
+entry read. Like the watchlist, `/addwhale` saves to a file that resets on
+redeploy — for permanent whales set the **`SMART_MONEY_JSON`** env variable to an
+inline JSON array, e.g. `[{"wallet":"…","label":"Cupsey"}]` (or just `["addr1","addr2"]`).
+You can auto-*discover* whale wallets with `node scripts/whale-tracker.mjs --json`
+and paste its output into that variable.
 
 **Automatic alerts** (per watched token): liquidity draining, the cut-supply-on-
 pump pattern, **volume fading**, **holders leaving**, safety dropping, smart money

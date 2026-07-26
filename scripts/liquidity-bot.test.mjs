@@ -1,6 +1,6 @@
 // Tests the liquidity-bot's pure logic. Run: node scripts/liquidity-bot.test.mjs
 import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry,
-  improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders } from "./liquidity-bot.mjs";
+  improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders, loadWhales } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -108,6 +108,14 @@ const h14 = Date.UTC(2025, 5, 1, 14); // 14:00 UTC on a day
 check("new day, past the hour → true", shouldDigest("2025-4-31", h14, 13) === true);
 check("already sent today → false", shouldDigest("2025-5-1", h14, 13) === false);
 check("new day but before the hour → false", shouldDigest("2025-4-31", Date.UTC(2025, 5, 1, 9), 13) === false);
+
+console.log("\n14. smart-money (whale) management");
+check("/addwhale parses wallet + label", (() => { const p = parseCommand("/addwhale " + MINT + " Cupsey"); return p.cmd === "addwhale" && p.wallet === MINT && p.label === "Cupsey"; })());
+check("/whales parses", parseCommand("/whales").cmd === "whales");
+check("/delwhale parses", parseCommand("/delwhale " + MINT).cmd === "delwhale");
+check("loadWhales dedupes across seed entries", loadWhales(null, JSON.stringify([{ wallet: MINT, label: "a" }, { wallet: MINT, label: "b" }])).length === 1);
+check("loadWhales rejects invalid addresses", loadWhales(null, JSON.stringify(["not-a-wallet", MINT])).length === 1);
+check("loadWhales accepts plain address strings", loadWhales(null, JSON.stringify([MINT]))[0].wallet === MINT);
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);
