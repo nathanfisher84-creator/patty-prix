@@ -44,7 +44,11 @@ Railway is the most beginner-friendly always-on host.
    | `HELIUS_API_KEY` | *(the same key your website uses)* |
    | `WATCH_TOKENS` | *(optional)* comma-separated mints to watch on startup |
    | `POLL_SECONDS` | *(optional)* how often to check, default `60` |
-   | `LIQ_DROP_PCT` | *(optional)* alert threshold %, default `15` |
+   | `LIQ_DROP_PCT` | *(optional)* liquidity-drop alert threshold %, default `15` |
+   | `VOL_DROP_PCT` | *(optional)* volume-fade threshold %, default `40` |
+   | `HOLDER_DROP_PCT` | *(optional)* holders-leaving threshold %, default `10` |
+   | `BASELINE_MINUTES` | *(optional)* window for slow trends, default `30` |
+   | `COOLDOWN_MINUTES` | *(optional)* min gap between repeat alerts, default `30` |
 
 5. Railway redeploys. Within a minute your bot messages you: **"🧅 Liquidity
    watcher online."** You're live.
@@ -58,11 +62,22 @@ keeps it running 24/7.)*
 - **`/watch <mint>`** — start watching a token (paste its address)
 - **`/unwatch <mint>`** — stop watching
 - **`/list`** — show what you're watching
-- **`/scan <mint>`** — a one-off safety scan, on demand
+- **`/scan <mint>`** — safety scan **+ an entry read** (NFA)
+- **`/entry <mint>`** — just the entry read (NFA)
+- **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
 
-It baselines each token on the first check, then pings you whenever liquidity
-drops ≥`LIQ_DROP_PCT`%, a pump drains the pool, safety falls, or smart money exits.
+It baselines each token on the first check, then pings you whenever **liquidity
+drops** ≥`LIQ_DROP_PCT`%, a **pump drains** the pool, **volume fades**, **holders
+leave**, safety falls, or smart money exits — with a per-token cooldown so a slow
+drain doesn't ping every minute.
+
+**The entry read** (on `/scan` and `/entry`) is a hedged, structure-based verdict
+— 🟢 constructive / 🟡 mixed / 🔴 poor — from safety, liquidity trend, holder
+trend, volume, LP-lock, smart money, and whether it's *already pumping* (top
+risk). It is **NFA** and never a buy signal — it reads the *risk of entering now*,
+not the future price. A safety scanner can't predict price; it can only tell you
+when the setup looks healthier vs. frothier.
 
 ---
 

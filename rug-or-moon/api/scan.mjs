@@ -151,6 +151,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     smartMoneyReliable,
     lpLockedPct: lp.lpLockedPct,
     jupVerified: jup.verified,
+    holders: meteora?.holders ?? goplus?.holders ?? null, // best available holder count
     sources,
     meteora: meteora && { pools: meteora.pools, blacklisted: meteora.blacklisted, maxFeePct: meteora.maxFeePct, holders: meteora.holders, launchpad: meteora.launchpad },
     market: market && {
@@ -234,7 +235,8 @@ function parseGoPlus(res, mint) {
   if (on(r.non_transferable)) flags.push("non-transferable (can't sell)");
   if (Array.isArray(r.transfer_hook) ? r.transfer_hook.length : on(r.transfer_hook)) flags.push("transfer hook");
   if (on(r.closable)) flags.push("mint can be closed");
-  return { flags, trusted: on(r.trusted_token) };
+  const holders = Number(r.holder_count);
+  return { flags, trusted: on(r.trusted_token), holders: isFinite(holders) && holders > 0 ? holders : null };
 }
 
 // Summarize a token's Meteora DLMM pools (schema per docs.meteora.ag). Only pools

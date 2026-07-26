@@ -1,5 +1,5 @@
 // Tests the liquidity-bot's pure logic. Run: node scripts/liquidity-bot.test.mjs
-import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce } from "./liquidity-bot.mjs";
+import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -58,13 +58,28 @@ const scanStub = async () => {
 // Intercept Telegram by stubbing global fetch (sendTelegram uses it).
 const realFetch = globalThis.fetch;
 globalThis.fetch = async (url, opts) => { if (String(url).includes("sendMessage")) sent.push(JSON.parse(opts.body).text); return { json: async () => ({ ok: true }) }; };
-const state = { watch: new Set([MINT]), last: new Map() };
-const cfg = { dropPct: 15, pollSeconds: 60, file: "/tmp/does-not-matter.json" };
+const state = { watch: new Set([MINT]), last: new Map(), baseline: new Map(), cooldown: new Map(), muted: false };
+const cfg = { dropPct: 15, pollSeconds: 60, file: "/tmp/does-not-matter.json", cooldownMs: 30 * 60_000, baselineMs: 30 * 60_000, volDropPct: 40, holderDropPct: 10 };
 await monitorOnce(envStub, cfg, state, scanStub);
 check("first pass only baselines (no alert)", sent.length === 0);
 await monitorOnce(envStub, cfg, state, scanStub);
 check("second pass alerts on the 40% drain", sent.length === 1 && /−40%|Liquidity/.test(sent[0]));
+check("cooldown suppresses the repeat drain alert", (await (async () => { const before = sent.length; await monitorOnce(envStub, cfg, state, scanStub); return sent.length === before; })()));
 globalThis.fetch = realFetch;
+
+console.log("\n7. trendAlerts — slow volume/holder trends vs baseline");
+const baseSnap = { volume24h: 100000, holders: 1000 };
+check("volume −50% → volume-fade (yellow)", trendAlerts(baseSnap, { volume24h: 50000, holders: 1000 }, cfg).some(a => a.kind === "volume-fade"));
+check("holders −20% → holders-drop (red)", trendAlerts(baseSnap, { volume24h: 100000, holders: 800 }, cfg).some(a => a.kind === "holders-drop" && a.level === "red"));
+check("stable volume/holders → no trend alert", trendAlerts(baseSnap, { volume24h: 98000, holders: 1000 }, cfg).length === 0);
+
+console.log("\n8. entryRead — hedged, structure-based, NFA");
+const good = entryRead({ tier: "clean", liqQuote: 100, holders: 1200, volume24h: 90000, priceChange24h: 10, lpLockedPct: 100, smartMoneyHolders: 2 }, { liqQuote: 95, holders: 1000, volume24h: 90000 });
+check("clean + stable liq + growing holders + locked LP + smart money → constructive", good.rating === "constructive");
+const bad = entryRead({ tier: "high-risk", liqQuote: 40, holders: 700, volume24h: 10000, priceChange24h: 300 }, { liqQuote: 100, holders: 1000, volume24h: 90000 });
+check("high-risk + draining + holders fleeing + vertical pump → poor", bad.rating === "poor");
+check("entry read never omits the NFA disclaimer", /NFA/.test(formatEntry({ token: MINT, symbol: "X" }, good)));
+check("vertical pump is called out as top-risk", bad.reasons.some(r => /top/i.test(r)));
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);
