@@ -1,7 +1,8 @@
 // Tests the liquidity-bot's pure logic. Run: node scripts/liquidity-bot.test.mjs
 import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry,
   improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders, loadWhales,
-  discoveryCfg, pickNewWhales, formatDiscovery } from "./liquidity-bot.mjs";
+  discoveryCfg, pickNewWhales, formatDiscovery,
+  serializeState, parseStateMessage, applyState, STATE_MARKER } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -142,6 +143,27 @@ check("flagged list reuses the validated loader", loadWhales(null, JSON.stringif
 const flagBase = { token: MINT, safety: 80, tier: "clean", dataComplete: true, smartMoneyReliable: true, flags: [] };
 const flagAlert = alertsFor({ ...flagBase }, { ...flagBase, flags: [{ level: "red", id: "flagged-wallet", text: "Flagged wallet holding this token (Known rugger)" }] }, 15);
 check("flagged wallet entering a watched token fires an alert", flagAlert.some(a => a.kind === "new-flag" && /Flagged wallet/.test(a.text)));
+
+console.log("\n17. permanent state via a pinned Telegram message");
+const W2 = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+const full = { watch: new Set([MINT, W2]), whales: [{ wallet: W1, label: "Cupsey" }], flagged: [{ wallet: W2, label: "rugger" }], priceAlerts: new Map([[MINT, 20]]) };
+const text = serializeState(full);
+check("serialized state carries the marker", text.includes(STATE_MARKER));
+const round = parseStateMessage(text);
+check("round-trips watched tokens", round.watch.length === 2 && round.watch.includes(MINT));
+check("round-trips whales with labels", round.whales[0].wallet === W1 && round.whales[0].label === "Cupsey");
+check("round-trips flagged wallets", round.flagged[0].wallet === W2);
+check("round-trips price alerts", round.alerts[0][0] === MINT && round.alerts[0][1] === 20);
+check("ignores a message that isn't ours", parseStateMessage("just a normal message") === null);
+check("survives corrupt JSON without throwing", parseStateMessage(STATE_MARKER + "\n{not json") === null);
+check("rejects invalid addresses inside saved state", parseStateMessage(`${STATE_MARKER}\n{"watch":["bad"],"whales":[],"flagged":[],"alerts":[]}`).watch.length === 0);
+// applyState merges (union) rather than clobbering env/file seeds
+const live = { watch: new Set(["So11111111111111111111111111111111111111112"]), whales: [], flagged: [], priceAlerts: new Map() };
+applyState(live, round);
+check("restore merges with existing seeds (union)", live.watch.size === 3);
+check("restore fills whales + flagged", live.whales.length === 1 && live.flagged.length === 1);
+check("restore is a no-op on null", applyState(live, null).watch.size === 3);
+check("/save parses", parseCommand("/save").cmd === "save");
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);

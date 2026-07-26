@@ -125,9 +125,16 @@ when the setup looks healthier vs. frothier.
 - **Liveness:** checks every `POLL_SECONDS` (default 60s) continuously — genuinely
   always-on, unlike a cron. Restarting the host re-baselines (no alerts on the
   first pass after a restart).
-- **Watchlist persistence:** `/watch` saves to a file in the container. On hosts
-  with an ephemeral disk, a redeploy resets it to whatever `WATCH_TOKENS` holds —
-  so put tokens you always want in `WATCH_TOKENS`, or attach a Railway/Fly volume.
+- **Persistence is automatic and permanent.** Everything you add from Telegram
+  (watched tokens, whales, flagged wallets, price alerts) is saved into a **pinned
+  message in your chat with the bot**, and restored on every startup — so it
+  survives restarts, redeploys, and even moving to a different host, with no
+  dashboard setup. **Don't unpin that message.** It auto-saves on every change;
+  `/save` forces one. The env seeds (`WATCH_TOKENS`, `SMART_MONEY_JSON`,
+  `FLAGGED_WALLETS_JSON`) still work and are merged in, so they're a belt-and-
+  braces backup rather than a requirement. Limit: one Telegram message is 4096
+  chars (~80+ addresses) and the bot warns as you approach it — if you ever outgrow
+  it, attach a Railway volume and set `WATCHLIST_FILE=/data/watchlist.json`.
 - **Verification:** the bot's logic is unit-tested (`scripts/liquidity-bot.test.mjs`),
   but the sandbox that built it can't reach Telegram or the token APIs — so the
   **first real run is also the live test.** If an alert looks wrong, tell me the

@@ -284,10 +284,68 @@ export function parseCommand(text) {
   if (c === "/flagwallet") return { cmd: "flagwallet", wallet: rest[0], label: rest.slice(1).join(" ") };
   if (c === "/flagged") return { cmd: "flagged" };
   if (c === "/unflagwallet") return { cmd: "unflagwallet", wallet: rest[0] };
+  if (c === "/save") return { cmd: "save" };
   if (c === "/mute") return { cmd: "mute" };
   if (c === "/unmute") return { cmd: "unmute" };
   if (c === "/help" || c === "/start") return { cmd: "help" };
   return { cmd: "unknown", raw: t };
+}
+
+/* ================= Telegram-native persistence =================
+   Railway wipes the container disk on every redeploy, so a file alone is not
+   permanent. Instead the bot stores its state in a PINNED MESSAGE in your chat:
+   Telegram keeps it forever, it costs nothing, and it needs no dashboard setup —
+   everything you do from Telegram survives restarts, redeploys, and host moves.
+   The local file stays as a fast cache; env vars still work as a seed.
+   Limit: a Telegram message is 4096 chars (~80+ addresses), and we warn near it.
+*/
+
+export const STATE_MARKER = "🗄️ Rug or Moon saved state — do not unpin";
+const STATE_LIMIT = 3500;
+
+// Pure: state → the text of the pinned message.
+export function serializeState(state) {
+  const payload = {
+    v: 1,
+    watch: [...(state.watch || [])],
+    whales: (state.whales || []).map(w => (w.label ? { wallet: w.wallet, label: w.label } : w.wallet)),
+    flagged: (state.flagged || []).map(w => (w.label ? { wallet: w.wallet, label: w.label } : w.wallet)),
+    alerts: [...(state.priceAlerts || new Map())].map(([m, p]) => [m, p]),
+  };
+  return `${STATE_MARKER}\n${JSON.stringify(payload)}`;
+}
+
+// Pure: the pinned message text → state, or null if it isn't ours / is corrupt.
+export function parseStateMessage(text) {
+  if (!text || !text.includes(STATE_MARKER)) return null;
+  const start = text.indexOf("{");
+  if (start < 0) return null;
+  try {
+    const o = JSON.parse(text.slice(start));
+    const norm = arr => (Array.isArray(arr) ? arr : []).map(w => (typeof w === "string" ? { wallet: w, label: "" } : w))
+      .filter(w => w && BASE58.test(w.wallet || ""));
+    return {
+      watch: (Array.isArray(o.watch) ? o.watch : []).filter(m => BASE58.test(m)),
+      whales: norm(o.whales),
+      flagged: norm(o.flagged),
+      alerts: (Array.isArray(o.alerts) ? o.alerts : []).filter(a => Array.isArray(a) && BASE58.test(a[0]) && Number(a[1]) > 0),
+    };
+  } catch { return null; }
+}
+
+// Merge restored state into the live state (union with whatever env/file seeded).
+export function applyState(state, loaded) {
+  if (!loaded) return state;
+  for (const m of loaded.watch) state.watch.add(m);
+  const mergeList = (cur, add) => {
+    const by = new Map(cur.map(w => [w.wallet, w]));
+    for (const w of add) if (!by.has(w.wallet)) by.set(w.wallet, w);
+    return [...by.values()];
+  };
+  state.whales = mergeList(state.whales || [], loaded.whales);
+  state.flagged = mergeList(state.flagged || [], loaded.flagged);
+  for (const [m, p] of loaded.alerts) state.priceAlerts.set(m, Number(p));
+  return state;
 }
 
 /* ================= watchlist persistence ================= */
@@ -340,11 +398,54 @@ const HELP = [
   "<b>/whales</b> · <b>/delwhale</b> &lt;wallet&gt; — list / remove tracked wallets",
   "<b>/flagwallet</b> &lt;wallet&gt; [label] — warn me if this wallet holds a token I scan",
   "<b>/flagged</b> · <b>/unflagwallet</b> &lt;wallet&gt; — list / remove flagged wallets",
+  "<b>/save</b> — force-save your setup (it auto-saves on every change)",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
   "<b>/help</b> — this message",
+  "",
+  "💾 Everything you add is saved in a pinned message in this chat, so it survives restarts and redeploys. Don't unpin it.",
 ].join("\n");
 
 async function tgReply(env, text) { return sendTelegram(env, text, fetch, env.TELEGRAM_CHAT_ID); }
+
+const tgApi = (env, method, body) => fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/${method}`, {
+  method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body),
+}).then(r => r.json());
+
+// Read the pinned message and restore state from it (permanent across redeploys).
+async function restoreState(env, state) {
+  try {
+    const chat = await tgApi(env, "getChat", { chat_id: env.TELEGRAM_CHAT_ID });
+    const pinned = chat?.result?.pinned_message;
+    const loaded = parseStateMessage(pinned?.text || "");
+    if (loaded) {
+      applyState(state, loaded);
+      state.stateMsgId = pinned.message_id;
+      return loaded;
+    }
+  } catch (e) { console.error("restoreState failed:", e.message); }
+  return null;
+}
+
+// Write state into the pinned message (edit in place if we already have one).
+// Called after every mutation, so "saved" always means "survives a redeploy".
+async function persistState(env, state) {
+  const text = serializeState(state);
+  if (text.length > STATE_LIMIT) {
+    await tgReply(env, "⚠️ Saved state is getting close to Telegram's message limit — consider removing some watched tokens or wallets.").catch(() => {});
+  }
+  try {
+    if (state.stateMsgId) {
+      const r = await tgApi(env, "editMessageText", { chat_id: env.TELEGRAM_CHAT_ID, message_id: state.stateMsgId, text, disable_web_page_preview: true });
+      if (r?.ok || /message is not modified/i.test(r?.description || "")) return true;
+      state.stateMsgId = null; // stale id (message deleted) → fall through and re-create
+    }
+    const sent = await tgApi(env, "sendMessage", { chat_id: env.TELEGRAM_CHAT_ID, text, disable_web_page_preview: true, disable_notification: true });
+    if (!sent?.ok) return false;
+    state.stateMsgId = sent.result.message_id;
+    await tgApi(env, "pinChatMessage", { chat_id: env.TELEGRAM_CHAT_ID, message_id: state.stateMsgId, disable_notification: true });
+    return true;
+  } catch (e) { console.error("persistState failed:", e.message); return false; }
+}
 
 async function scanMessage(env, state, mint, withEntry) {
   // Deployer lookup runs in parallel with the scan (it's a couple of extra RPC
@@ -475,6 +576,12 @@ async function handleCommand(env, cfg, state, text) {
       return tgReply(env, `Discovery failed: ${esc(e.message || String(e))}`);
     } finally { state.discovering = false; }
   }
+  if (cmd === "save") {
+    const ok = await persistState(env, state);
+    return tgReply(env, ok
+      ? `💾 Saved — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged. This survives restarts and redeploys.`
+      : "Couldn't save. Make sure I'm allowed to pin messages in this chat.");
+  }
   if (cmd === "mute") { state.muted = true; return tgReply(env, "🔕 Alerts muted — /unmute to resume. (Commands still work.)"); }
   if (cmd === "unmute") { state.muted = false; return tgReply(env, "🔔 Alerts back on."); }
   return tgReply(env, "Unknown command. /help");
@@ -522,7 +629,12 @@ async function commandLoop(env, cfg, state) {
         offset = u.update_id + 1;
         const msg = u.message;
         if (!msg || String(msg.chat?.id) !== String(env.TELEGRAM_CHAT_ID)) continue; // only obey the owner
+        // Persist whenever a command actually changed the saved state. Diffing the
+        // serialized form covers every mutation (watch/whales/flagged/alerts/
+        // discovery) without each handler having to remember to save.
+        const before = serializeState(state);
         await handleCommand(env, cfg, state, msg.text || "").catch(e => console.error("cmd error:", e.message));
+        if (serializeState(state) !== before) await persistState(env, state);
       }
     } catch (e) { console.error("getUpdates error:", e.message); await sleep(3000); }
   }
@@ -563,8 +675,13 @@ export async function main(env = process.env) {
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
   const flagged = loadWhales(cfg.flaggedFile, env.FLAGGED_WALLETS_JSON);
   const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), flagged, flaggedSet: parseSmartMoney(flagged), discovering: false, lastDiscover: 0 };
-  console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%. ${state.whales.length} whale(s), ${state.flagged.length} flagged.`);
-  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), checking every ${cfg.pollSeconds}s.${state.flagged.length ? ` 🚩 ${state.flagged.length} flagged wallet(s).` : ""} /help for commands.`).catch(() => {});
+  // Restore everything saved in the pinned message — this is what makes state
+  // permanent across redeploys without any dashboard setup.
+  const restored = await restoreState(env, state);
+  await persistState(env, state).catch(() => {}); // ensure a pinned state exists (merges env/file seeds)
+
+  console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%. ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " (restored from pinned state)" : ""}`);
+  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " ♻️ Restored your saved setup." : ""} Checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
   await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state)]);
 }
 
