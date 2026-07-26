@@ -133,5 +133,15 @@ check("discovery summary reports how many were added", /Added 1 new wallet/.test
 check("discovery summary carries NFA", /NFA/.test(disc));
 check("no results → honest 'none cleared the bar' message", /no wallets cleared/i.test(formatDiscovery([], 0, 5)));
 
+console.log("\n16. flagged wallets (warn-me-if-this-wallet-holds)");
+check("/flagwallet parses wallet + label", (() => { const p = parseCommand("/flagwallet " + MINT + " Known rugger"); return p.cmd === "flagwallet" && p.wallet === MINT && p.label === "Known rugger"; })());
+check("/flagged parses", parseCommand("/flagged").cmd === "flagged");
+check("/unflagwallet parses", parseCommand("/unflagwallet " + MINT).cmd === "unflagwallet");
+check("flagged list reuses the validated loader", loadWhales(null, JSON.stringify([{ wallet: MINT, label: "x" }, "not-a-wallet"])).length === 1);
+// A flagged wallet appearing = a new red flag with a stable id → diffScan alerts.
+const flagBase = { token: MINT, safety: 80, tier: "clean", dataComplete: true, smartMoneyReliable: true, flags: [] };
+const flagAlert = alertsFor({ ...flagBase }, { ...flagBase, flags: [{ level: "red", id: "flagged-wallet", text: "Flagged wallet holding this token (Known rugger)" }] }, 15);
+check("flagged wallet entering a watched token fires an alert", flagAlert.some(a => a.kind === "new-flag" && /Flagged wallet/.test(a.text)));
+
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);

@@ -73,6 +73,8 @@ keeps it running 24/7.)*
 - **`/discoverwhales`** — auto-find profitable wallets (scans trending tokens →
   their top holders → scores each wallet's PnL) and start tracking them
 - **`/whales` · `/delwhale <wallet>`** — list / remove tracked wallets
+- **`/flagwallet <wallet> [label]`** — warn me if this wallet holds a token I scan
+- **`/flagged` · `/unflagwallet <wallet>`** — list / remove flagged wallets
 - **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
 
@@ -81,6 +83,15 @@ those wallets hold ("🧠 tracked smart-money wallets holding …") and it feeds
 entry read. Like the watchlist, `/addwhale` saves to a file that resets on
 redeploy — for permanent whales set the **`SMART_MONEY_JSON`** env variable to an
 inline JSON array, e.g. `[{"wallet":"…","label":"Cupsey"}]` (or just `["addr1","addr2"]`).
+
+**Flagged wallets (the inverse list):** `/flagwallet <wallet> [label]` marks a
+wallet you want to be *warned* about — a known rugger, an insider, a dev wallet.
+Any token you scan that it holds shows a **red "Flagged wallet holding this
+token"** line, and if it *buys into* a token you're already watching you get an
+alert. Set **`FLAGGED_WALLETS_JSON`** (same inline-JSON format) to keep flagged
+wallets across redeploys. Note: flagged wallets warn you but deliberately do
+**not** change the safety score — the score stays a statement about on-chain
+facts, not about who happens to hold.
 
 **Auto-discovery:** `/discoverwhales` finds them for you — it scans trending
 tokens, takes their top holders, reconstructs each wallet's PnL from swap history,

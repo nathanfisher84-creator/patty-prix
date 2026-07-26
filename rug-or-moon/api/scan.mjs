@@ -40,7 +40,7 @@ const BURN_OWNERS = new Set([
 ]);
 
 // Core, testable: gather → score. `fetchFn` and `smartMoney` injectable for tests.
-export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney } = {}) {
+export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney, flagged } = {}) {
   if (!BASE58.test(mint)) return { error: "invalid token address" };
   const smSet = smartMoney || loadSmartMoney();
 
@@ -120,12 +120,19 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     smartMoneyReliable = true;
   }
 
+  // Flagged wallets — the INVERSE of smart money. Wallets you want to be warned
+  // about (known insiders/ruggers/dev wallets): if one of them holds this token,
+  // surface it loudly. Same owner-matching machinery as smart money.
+  const fl = (flagged && flagged.set?.size && ownersReliable) ? matchSmartMoney(owners, flagged) : { count: 0, labels: [] };
+
   const raw = {
     mint: mintInfo, // null → authorities UNKNOWN (scoring says so, never "revoked")
     holders,
     market,
     smartMoneyHolders: sm.count,
     smartMoneyLabels: sm.labels,
+    flaggedHolders: fl.count,
+    flaggedLabels: fl.labels,
     lpLockedPct: lp.lpLockedPct, // null when unknown
     rugged: lp.rugged,
     jupVerified: jup.verified,
@@ -160,6 +167,8 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     ...result,
     smartMoneyHolders: sm.count,
     smartMoneyReliable,
+    flaggedHolders: fl.count,
+    flaggedLabels: fl.labels,
     lpLockedPct: lp.lpLockedPct,
     jupVerified: jup.verified,
     holders: meteora?.holders ?? goplus?.holders ?? null, // best available holder count

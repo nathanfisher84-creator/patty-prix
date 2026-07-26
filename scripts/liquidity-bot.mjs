@@ -281,6 +281,9 @@ export function parseCommand(text) {
   if (c === "/addwhale") return { cmd: "addwhale", wallet: rest[0], label: rest.slice(1).join(" ") };
   if (c === "/delwhale") return { cmd: "delwhale", wallet: rest[0] };
   if (c === "/discoverwhales" || c === "/discover") return { cmd: "discoverwhales" };
+  if (c === "/flagwallet") return { cmd: "flagwallet", wallet: rest[0], label: rest.slice(1).join(" ") };
+  if (c === "/flagged") return { cmd: "flagged" };
+  if (c === "/unflagwallet") return { cmd: "unflagwallet", wallet: rest[0] };
   if (c === "/mute") return { cmd: "mute" };
   if (c === "/unmute") return { cmd: "unmute" };
   if (c === "/help" || c === "/start") return { cmd: "help" };
@@ -314,6 +317,11 @@ function saveWhales(file, list) {
   try { writeFileSync(file, JSON.stringify(list, null, 2)); } catch (e) { console.error("whale save failed:", e.message); }
 }
 
+// Flagged wallets — the inverse list: warn me if one of these holds a token I
+// scan. Same storage shape as whales (file + inline-JSON env that survives
+// redeploys), so loadWhales/saveWhales are reused.
+const saveFlagged = saveWhales;
+
 /* ================= runtime (needs network + a real bot token) ================= */
 
 const HELP = [
@@ -330,6 +338,8 @@ const HELP = [
   "<b>/addwhale</b> &lt;wallet&gt; [label] — track a smart-money wallet",
   "<b>/discoverwhales</b> — auto-find profitable wallets and track them",
   "<b>/whales</b> · <b>/delwhale</b> &lt;wallet&gt; — list / remove tracked wallets",
+  "<b>/flagwallet</b> &lt;wallet&gt; [label] — warn me if this wallet holds a token I scan",
+  "<b>/flagged</b> · <b>/unflagwallet</b> &lt;wallet&gt; — list / remove flagged wallets",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
   "<b>/help</b> — this message",
 ].join("\n");
@@ -340,7 +350,7 @@ async function scanMessage(env, state, mint, withEntry) {
   // Deployer lookup runs in parallel with the scan (it's a couple of extra RPC
   // calls, so on-demand only — never in the fast monitor loop).
   const [d, deployer] = await Promise.all([
-    scanToken(mint, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney }),
+    scanToken(mint, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney, flagged: state.flaggedSet }),
     findDeployer(mint, { heliusKey: env.HELIUS_API_KEY }).catch(() => null),
   ]);
   if (d.error) return `⚠️ ${esc(d.error)}`;
@@ -377,7 +387,7 @@ async function handleCommand(env, cfg, state, text) {
   }
   if (cmd === "entry") {
     if (!BASE58.test(arg)) return tgReply(env, "Give me a valid mint: /entry &lt;mint&gt;");
-    const d = await scanToken(arg, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney });
+    const d = await scanToken(arg, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney, flagged: state.flaggedSet });
     if (d.error) return tgReply(env, `⚠️ ${esc(d.error)}`);
     const snap = buildSnapshot(d, arg);
     return tgReply(env, formatEntry(snap, entryRead(snap, state.baseline.get(arg)?.snap)));
@@ -422,6 +432,27 @@ async function handleCommand(env, cfg, state, text) {
     state.smartMoney = parseSmartMoney(state.whales);
     return tgReply(env, `Removed ${short(wallet || "")}.`);
   }
+  if (cmd === "flagged") {
+    return tgReply(env, state.flagged.length
+      ? "🚩 Flagged wallets (I'll warn you if these hold a token you scan):\n" + state.flagged.map(w => `• <a href="https://solscan.io/account/${w.wallet}">${esc(w.label || short(w.wallet))}</a>`).join("\n")
+      : "No flagged wallets. Add one: /flagwallet &lt;wallet&gt; [label]");
+  }
+  if (cmd === "flagwallet") {
+    const { wallet, label } = parseCommand(text);
+    if (!BASE58.test(wallet || "")) return tgReply(env, "Usage: /flagwallet &lt;wallet&gt; [label]");
+    if (state.flagged.some(w => w.wallet === wallet)) return tgReply(env, "Already flagged that wallet.");
+    state.flagged.push({ wallet, label: label || "" });
+    saveFlagged(cfg.flaggedFile, state.flagged);
+    state.flaggedSet = parseSmartMoney(state.flagged);
+    return tgReply(env, `🚩 Flagged ${label ? esc(label) + " " : ""}${short(wallet)}. Any token you scan that it holds will show a red warning — and I'll alert you if it buys into a token you're watching.`);
+  }
+  if (cmd === "unflagwallet") {
+    const { wallet } = parseCommand(text);
+    state.flagged = state.flagged.filter(w => w.wallet !== wallet);
+    saveFlagged(cfg.flaggedFile, state.flagged);
+    state.flaggedSet = parseSmartMoney(state.flagged);
+    return tgReply(env, `Unflagged ${short(wallet || "")}.`);
+  }
   if (cmd === "discoverwhales") {
     if (!env.HELIUS_API_KEY) return tgReply(env, "Discovery needs HELIUS_API_KEY set in the host's variables.");
     if (state.discovering) return tgReply(env, "Already running a discovery — hang on.");
@@ -458,7 +489,7 @@ const onCooldown = (state, mint, kind, ms, now) => { const t = state.cooldown.ge
 export async function monitorOnce(env, cfg, state, scan = scanToken, now = Date.now()) {
   for (const mint of state.watch) {
     let d;
-    try { d = await scan(mint, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney }); } catch { continue; }
+    try { d = await scan(mint, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney, flagged: state.flaggedSet }); } catch { continue; }
     if (!d || d.error) continue;
     const snap = buildSnapshot(d, mint);
     const prev = state.last.get(mint);
@@ -526,12 +557,14 @@ export async function main(env = process.env) {
     holderGrowPct: Number(env.HOLDER_GROW_PCT) || 25,
     digestHour: env.DIGEST_HOUR_UTC != null ? Number(env.DIGEST_HOUR_UTC) : 13, // ~08:00 ET
     whaleFile: env.SMART_MONEY_FILE || "smart-money.json",
+    flaggedFile: env.FLAGGED_WALLETS_FILE || "flagged-wallets.json",
     discoverCooldownMs: (Number(env.DISCOVER_COOLDOWN_MINUTES) || 60) * 60_000,
   };
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
-  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), discovering: false, lastDiscover: 0 };
-  console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%.`);
-  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
+  const flagged = loadWhales(cfg.flaggedFile, env.FLAGGED_WALLETS_JSON);
+  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), flagged, flaggedSet: parseSmartMoney(flagged), discovering: false, lastDiscover: 0 };
+  console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%. ${state.whales.length} whale(s), ${state.flagged.length} flagged.`);
+  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), checking every ${cfg.pollSeconds}s.${state.flagged.length ? ` 🚩 ${state.flagged.length} flagged wallet(s).` : ""} /help for commands.`).catch(() => {});
   await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state)]);
 }
 

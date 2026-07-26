@@ -100,6 +100,16 @@ export function scoreToken(raw = {}) {
     add("green", "goplus", "GoPlus lists this as a trusted token");
   }
 
+  // 2d-ii) Flagged wallets — user-defined wallets to be warned about (known
+  // insiders/ruggers/dev wallets). A red flag with a stable id, so the watchlist
+  // also alerts when one of them newly ENTERS a token you're watching. It does
+  // not cap the tier: this list is user-defined, and the safety tier stays a
+  // statement about on-chain facts, not about who happens to hold.
+  if ((raw.flaggedHolders ?? 0) > 0) {
+    const who = raw.flaggedLabels?.length ? ` (${raw.flaggedLabels.slice(0, 3).join(", ")})` : "";
+    add("red", "flagged-wallet", `Flagged wallet${raw.flaggedHolders > 1 ? "s" : ""} holding this token${who} — you asked to be warned about ${raw.flaggedHolders > 1 ? "these" : "this one"}`);
+  }
+
   // 2e) Meteora pool signals (native DLMM data) — the venue the tweet is about.
   const mt = raw.meteora;
   if (mt && mt.pools > 0) {

@@ -165,6 +165,16 @@ check("surfaces meteora quote reserve for pump detection", mtFrag.market.meteora
 const mtFew = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, meteora: [mtPool({ token_x: { address: MINT, holders: 8, is_verified: false } })] }) });
 check("very few holders → caution", mtFew.flags.some(f => f.id === "few-holders"));
 
+console.log("\n5g. Flagged wallets — warn when a watched-for wallet holds the token");
+const flagged = parseSmartMoney([{ wallet: "owner-acct-1", label: "Known rugger" }]);
+const flHit = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM } }), flagged });
+check("red flag when a flagged wallet holds", flHit.flags.some(f => f.level === "red" && f.id === "flagged-wallet"));
+check("names the flagged wallet's label", /Known rugger/.test((flHit.flags.find(f => f.id === "flagged-wallet") || {}).text || ""));
+check("surfaces flaggedHolders count", flHit.flaggedHolders === 1);
+const flMiss = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM } }), flagged: parseSmartMoney([{ wallet: "SomeOtherWalletNotHolding111111111111111111" }]) });
+check("no flag when the flagged wallet isn't a holder", !flMiss.flags.some(f => f.id === "flagged-wallet") && flMiss.flaggedHolders === 0);
+check("no flagged list → no flag, no crash", !clean.flags.some(f => f.id === "flagged-wallet"));
+
 console.log("\n6. Honeypot trading shape — many buys, ~0 sells → not bullish alpha");
 const hp = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
