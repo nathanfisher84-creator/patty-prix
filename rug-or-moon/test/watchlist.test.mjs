@@ -53,6 +53,15 @@ const sameFlag = diffScan(
 );
 check("same flag with drifting $ value does NOT re-alert (H5)", !sameFlag.some(a => a.kind === "new-flag"));
 
+console.log("\n5c. 'Cut supply on the pump' — liquidity pulled while price rips");
+const pull = diffScan(scan({ priceUsd: 1, liqQuote: 100 }), scan({ priceUsd: 1.5, liqQuote: 70, dexId: "meteora" }));
+check("price +50% while pool SOL −30% → red alert", pull.some(a => a.kind === "liq-pull-on-pump" && a.level === "red"));
+check("names Meteora when that's the pool", /Meteora/.test(pull.find(a => a.kind === "liq-pull-on-pump").text));
+const organic = diffScan(scan({ priceUsd: 1, liqQuote: 100 }), scan({ priceUsd: 1.5, liqQuote: 108 }));
+check("organic pump (SOL reserve rises) → no alert", !organic.some(a => a.kind === "liq-pull-on-pump"));
+const drainNoPump = diffScan(scan({ priceUsd: 1, liqQuote: 100 }), scan({ priceUsd: 1.02, liqQuote: 60 }));
+check("liquidity drop without a pump → no alert", !drainNoPump.some(a => a.kind === "liq-pull-on-pump"));
+
 console.log("\n5b. Incomplete / unreliable data suppresses false alarms");
 const incomplete = diffScan(scan({ safety: 82 }), scan({ safety: 50, tier: "high-risk", dataComplete: false }));
 check("incomplete scan → no false safety-drop (M1)", !incomplete.some(a => a.kind === "safety-drop"));

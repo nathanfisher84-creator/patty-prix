@@ -150,6 +150,15 @@ export function scoreToken(raw = {}) {
     if (b >= 30 && s <= b * 0.03) { add("red", "honeypot-nosell", "Almost no sell transactions despite active buying — possible honeypot (can't sell)"); cap("high-risk"); }
   }
 
+  // 8) Pumping on thin liquidity — the SETUP for the "cut liquidity into the pump"
+  // rug (single-scan proxy; the watchlist watches the reserve actually drain over
+  // time). If price is ripping but liquidity is tiny vs market cap, one small pull
+  // craters it. Informational (no tier cap) to avoid false-flagging real momentum.
+  if (market && market.priceChange24h != null && market.priceChange24h >= 40 && liq > 0 && market.mcap > 0 && liq < market.mcap * 0.02) {
+    const where = /meteora/i.test(market.dexId || "") ? " (Meteora pool)" : "";
+    add("yellow", "pump-thin-liq", `Pumping +${Math.round(market.priceChange24h)}% on thin liquidity${where} — a small liquidity pull could crater it`);
+  }
+
   let safety = Math.round((points / max) * 100);
   const scoreRank = safety >= 75 ? RANK.clean : safety >= 45 ? RANK.caution : RANK["high-risk"];
   const finalRank = Math.min(scoreRank, capRank);

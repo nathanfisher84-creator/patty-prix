@@ -148,6 +148,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
       priceUsd: market.priceUsd, liquidityUsd: market.liquidityUsd, volume24h: market.volume24h,
       mcap: market.mcap, dexId: market.dexId, symbol: market.symbol, name: market.name, icon: market.icon,
       websites: market.websites, socials: market.socials,
+      liqQuote: market.liqQuote, priceChange1h: market.priceChange1h, priceChange24h: market.priceChange24h,
     },
     dataComplete: !!mintInfo, // false when authorities couldn't be read
     disclaimer: "Heuristic risk estimate from public on-chain data. Not financial advice. Always DYOR.",
@@ -162,8 +163,12 @@ function bestMarket(pairs) {
   const p = pairs.reduce((a, b) => (score(b) > score(a) ? b : a));
   return {
     liquidityUsd: p.liquidity?.usd || 0,
+    liqQuote: p.liquidity?.quote ?? null, // SOL/stable side of the pool — real depth, immune to price moves
+    liqBase: p.liquidity?.base ?? null,   // token side of the pool
     volume24h: p.volume?.h24 ?? 0,
     priceUsd: parseFloat(p.priceUsd) || null,
+    priceChange1h: p.priceChange?.h1 ?? null,
+    priceChange24h: p.priceChange?.h24 ?? null,
     mcap: p.marketCap ?? p.fdv ?? null,
     ageMs: p.pairCreatedAt ? Date.now() - p.pairCreatedAt : null,
     buys24h: p.txns?.h24?.buys ?? null,

@@ -22,9 +22,11 @@ signals** (smart money holding, buy/sell momentum) — the "should I ape?" check
 - **🔥 Trending** — opens to today's trending tokens, auto-scanned and sorted
   gems-up / rugs-down, so you get a ready-made board instead of a blank box.
 - **👀 Watchlist + alerts** — save tokens; the app re-scans them and flags when
-  **safety drops** (≥20 pts), a **tier downgrades**, **smart money exits**, or a
-  **new red flag** appears — firing a local notification. Free plan watches up to
-  5 tokens; the Seeker dApp Store edition unlocks unlimited.
+  **safety drops** (≥20 pts), a **tier downgrades**, **smart money exits**, a
+  **new red flag** appears, or **liquidity is pulled during a pump** (price rips
+  while the pool's SOL reserve shrinks — the "cut supply on the pump" / Meteora
+  single-sided-LP dump pattern) — firing a local notification. Free plan watches
+  up to 5 tokens; the Seeker dApp Store edition unlocks unlimited.
 - **↗ Share verdict** — every result makes a pasteable PNG verdict card + a link
   that **unfurls** the verdict in Telegram / X / Discord (`/api/share`), so scans
   spread themselves.

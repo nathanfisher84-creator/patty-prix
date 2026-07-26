@@ -15,7 +15,7 @@ const RAYDIUM = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j"; // recognized poo
 // A mocked backend: DexScreener pairs + Helius getAccountInfo / getTokenLargestAccounts
 // / getMultipleAccounts (owner resolution). `owners` maps token-account → owner.
 // `ext` injects Token-2022 extensions.
-const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus, programs } = {}) => async (url, opts) => {
+const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus, programs, pump = 0, dexId = "raydium", mcap = 2_100_000 } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) {
     return j({ rugged: !!rugged, markets: lpLockedPct != null ? [{ lp: { lpLockedPct } }] : [] });
@@ -24,9 +24,10 @@ const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, o
   if (url.includes("gopluslabs.io")) return j({ result: { [MINT]: goplus || {} } });
   if (url.includes("dexscreener.com")) {
     return j([{
-      dexId: "raydium", priceUsd: "0.0000021", marketCap: 2_100_000,
+      dexId, priceUsd: "0.0000021", marketCap: mcap,
       pairCreatedAt: Date.now() - 40 * 86_400_000,
-      liquidity: { usd: liq }, volume: { h24: 300_000 }, txns: { h24: { buys: 800, sells: 500 } },
+      liquidity: { usd: liq, quote: liq / 200 }, volume: { h24: 300_000 }, txns: { h24: { buys: 800, sells: 500 } },
+      priceChange: { h1: 0, h24: pump },
       baseToken: { symbol: "BONK", name: "Bonk" },
       info: { imageUrl: "http://img", websites: [{ url: "http://x" }], socials: [{ type: "twitter" }] },
     }]);
@@ -142,6 +143,13 @@ check("GoPlus danger caps tier (not clean)", gp.tier !== "clean", `tier ${gp.tie
 check("sources mark goplus as flag", gp.sources.goplus === "flag");
 const gpTrust = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, goplus: { trusted_token: "1" } }) });
 check("GoPlus trusted → green flag, stays clean", gpTrust.flags.some(f => f.level === "green" && /trusted token/.test(f.text)) && gpTrust.tier === "clean");
+
+console.log("\n5e. Pumping on thin liquidity (setup for 'cut supply on pump')");
+const pumpThin = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, pump: 120, liq: 20_000, mcap: 3_000_000, dexId: "meteora" }) });
+check("pumping + thin liquidity → yellow caution", pumpThin.flags.some(f => f.level === "yellow" && f.id === "pump-thin-liq"));
+check("names the Meteora pool", /Meteora/.test((pumpThin.flags.find(f => f.id === "pump-thin-liq") || {}).text || ""));
+const deepPump = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, pump: 120, liq: 250_000 }) });
+check("pump on DEEP liquidity → no thin-liq flag", !deepPump.flags.some(f => f.id === "pump-thin-liq"));
 
 console.log("\n6. Honeypot trading shape — many buys, ~0 sells → not bullish alpha");
 const hp = async (url, opts) => {

@@ -14,6 +14,12 @@ export const FREE_WATCH_LIMIT = 5;
 // even if it stays in the same tier.
 export const SAFETY_DROP_ALERT = 20;
 
+// "Cut supply on the pump" detection: price up at least this much while the
+// pool's SOL/quote reserve falls at least this much between re-scans → insiders
+// draining liquidity into the rise (the Meteora single-sided-LP dump pattern).
+export const PUMP_ALERT_PCT = 25;
+export const LIQ_PULL_PCT = 15;
+
 // Can this user add another token? Premium removes the ceiling.
 export function canWatch(currentCount, isPremium = false) {
   if (isPremium) return { ok: true, limit: Infinity, remaining: Infinity };
@@ -83,6 +89,22 @@ export function diffScan(prev, curr) {
       });
     } else if (cs > ps) {
       alerts.push({ level: "green", kind: "smart-money-in", text: `Smart money moved in — now ${cs} tracked wallet${cs > 1 ? "s" : ""} holding` });
+    }
+  }
+
+  // Liquidity pulled INTO a pump — the tweet's pattern. Uses the pool's SOL/quote
+  // reserve (not USD liquidity, which moves with price on its own): in an organic
+  // pump buyers ADD SOL, so the quote reserve holds or rises; if it SHRINKS while
+  // price rips, someone is draining liquidity / distributing on the way up.
+  if (prev.priceUsd > 0 && curr.priceUsd > 0 && prev.liqQuote > 0 && curr.liqQuote > 0) {
+    const priceUp = (curr.priceUsd / prev.priceUsd - 1) * 100;
+    const quoteDrop = (1 - curr.liqQuote / prev.liqQuote) * 100;
+    if (priceUp >= PUMP_ALERT_PCT && quoteDrop >= LIQ_PULL_PCT) {
+      const where = /meteora/i.test(curr.dexId || "") ? " (Meteora pool)" : "";
+      alerts.push({
+        level: "red", kind: "liq-pull-on-pump",
+        text: `Liquidity pulled during a pump${where} — pool SOL −${Math.round(quoteDrop)}% while price +${Math.round(priceUp)}%. Insiders may be draining liquidity / dumping on the way up.`,
+      });
     }
   }
 
