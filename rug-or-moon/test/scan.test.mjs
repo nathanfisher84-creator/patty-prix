@@ -15,13 +15,14 @@ const RAYDIUM = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j"; // recognized poo
 // A mocked backend: DexScreener pairs + Helius getAccountInfo / getTokenLargestAccounts
 // / getMultipleAccounts (owner resolution). `owners` maps token-account → owner.
 // `ext` injects Token-2022 extensions.
-const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus, programs, pump = 0, dexId = "raydium", mcap = 2_100_000 } = {}) => async (url, opts) => {
+const backend = ({ liq = 250_000, mintAuth = null, freezeAuth = null, holders, owners, ext, lpLockedPct, rugged, jupVerified, goplus, programs, pump = 0, dexId = "raydium", mcap = 2_100_000, meteora } = {}) => async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) {
     return j({ rugged: !!rugged, markets: lpLockedPct != null ? [{ lp: { lpLockedPct } }] : [] });
   }
   if (url.includes("tokens.jup.ag")) return j({ tags: jupVerified ? ["verified"] : [] });
   if (url.includes("gopluslabs.io")) return j({ result: { [MINT]: goplus || {} } });
+  if (url.includes("meteora.ag")) return j({ data: meteora || [] });
   if (url.includes("dexscreener.com")) {
     return j([{
       dexId, priceUsd: "0.0000021", marketCap: mcap,
@@ -151,12 +152,26 @@ check("names the Meteora pool", /Meteora/.test((pumpThin.flags.find(f => f.id ==
 const deepPump = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, pump: 120, liq: 250_000 }) });
 check("pump on DEEP liquidity → no thin-liq flag", !deepPump.flags.some(f => f.id === "pump-thin-liq"));
 
+console.log("\n5f. Meteora DLMM signals — blacklist, fee, fragmentation, holders");
+const mtPool = (over = {}) => ({ token_x: { address: MINT, holders: 5000, is_verified: true }, token_y: { address: "So11111111111111111111111111111111111111112" }, token_x_amount: 1e9, token_y_amount: 500, tvl: 100_000, is_blacklisted: false, pool_config: { max_fee_pct: 2 }, ...over });
+const mtBlack = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, meteora: [mtPool({ is_blacklisted: true })] }) });
+check("Meteora blacklist → red + high-risk", mtBlack.tier === "high-risk" && mtBlack.flags.some(f => f.id === "meteora-blacklist"));
+check("sources mark meteora as flag", mtBlack.sources.meteora === "flag");
+const mtFee = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, meteora: [mtPool({ pool_config: { max_fee_pct: 80 } })] }) });
+check("extractive Meteora fee → red", mtFee.flags.some(f => f.id === "meteora-fee" && f.level === "red"));
+const mtFrag = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, meteora: [mtPool(), mtPool(), mtPool()] }) });
+check("3+ Meteora pools → fragmentation caution", mtFrag.flags.some(f => f.id === "meteora-fragmented"));
+check("surfaces meteora quote reserve for pump detection", mtFrag.market.meteoraQuote === 1500);
+const mtFew = await scanToken(MINT, { heliusKey: "k", fetchFn: backend({ owners: { "acct-pool": RAYDIUM }, meteora: [mtPool({ token_x: { address: MINT, holders: 8, is_verified: false } })] }) });
+check("very few holders → caution", mtFew.flags.some(f => f.id === "few-holders"));
+
 console.log("\n6. Honeypot trading shape — many buys, ~0 sells → not bullish alpha");
 const hp = async (url, opts) => {
   const j = o => ({ ok: true, json: async () => o });
   if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [] });
   if (url.includes("tokens.jup.ag")) return j({ tags: [] });
   if (url.includes("gopluslabs.io")) return j({ result: {} });
+  if (url.includes("meteora.ag")) return j({ data: [] });
   if (url.includes("dexscreener.com")) return j([{
     dexId: "raydium", priceUsd: "0.1", marketCap: 1e6, pairCreatedAt: Date.now() - 40 * 86_400_000,
     liquidity: { usd: 60_000 }, volume: { h24: 80_000 }, txns: { h24: { buys: 500, sells: 2 } },

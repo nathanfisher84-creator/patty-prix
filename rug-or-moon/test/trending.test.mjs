@@ -23,6 +23,7 @@ const backend = ({ useBirdeye = false, geckoEmpty = false, profiles = {} } = {})
   if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [] });
   if (url.includes("tokens.jup.ag")) return j({ tags: [] });
   if (url.includes("gopluslabs.io")) return j({ result: {} });
+  if (url.includes("meteora.ag")) return j({ data: [] });
 
   if (url.includes("token_trending")) {
     return j({ data: { tokens: [

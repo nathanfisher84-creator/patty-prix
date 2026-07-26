@@ -35,6 +35,7 @@ const backend = async (url, opts) => {
   if (url.includes("rugcheck.xyz")) return j({ rugged: false, markets: [{ lp: { lpLockedPct: 100 } }] });
   if (url.includes("tokens.jup.ag")) return j({ tags: ["verified"] });
   if (url.includes("gopluslabs.io")) return j({ result: {} });
+  if (url.includes("meteora.ag")) return j({ data: [] });
   if (url.includes("token-boosts")) return j([
     { chainId: "solana", tokenAddress: MINT }, { chainId: "solana", tokenAddress: MINT2 },
   ]);

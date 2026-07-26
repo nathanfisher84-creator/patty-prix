@@ -100,6 +100,16 @@ export function scoreToken(raw = {}) {
     add("green", "goplus", "GoPlus lists this as a trusted token");
   }
 
+  // 2e) Meteora pool signals (native DLMM data) — the venue the tweet is about.
+  const mt = raw.meteora;
+  if (mt && mt.pools > 0) {
+    if (mt.blacklisted) { add("red", "meteora-blacklist", "Blacklisted on Meteora — flagged as a scam/abusive pool"); cap("high-risk"); }
+    if (mt.maxFeePct != null && mt.maxFeePct >= 50) { add("red", "meteora-fee", `Meteora pool fee can reach ${Math.round(mt.maxFeePct)}% — extractive / sell-tax risk`); cap("caution"); }
+    else if (mt.maxFeePct != null && mt.maxFeePct >= 10) { add("yellow", "meteora-fee", `High Meteora pool fee (up to ${Math.round(mt.maxFeePct)}%)`); }
+    if (mt.pools >= 3) add("yellow", "meteora-fragmented", `Liquidity split across ${mt.pools} Meteora pools — a known setup for draining liquidity into pumps`);
+    if (mt.holders != null && mt.holders < 25) add("yellow", "few-holders", `Very few holders (${mt.holders}) — early/concentrated`);
+  }
+
   // 3) Holder concentration — how much do non-pool, non-burn OWNERS control?
   const conc = concentration(raw);
   if (conc != null) {

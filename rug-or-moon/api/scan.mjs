@@ -54,7 +54,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
       }
     : null;
 
-  const [pairsRes, info, largest, lpReport, jupTok, goplusRes] = await Promise.all([
+  const [pairsRes, info, largest, lpReport, jupTok, goplusRes, meteoraRes] = await Promise.all([
     fetchFn("https://api.dexscreener.com/token-pairs/v1/solana/" + mint)
       .then(r => (r && r.ok === false ? [] : r.json())).catch(() => []),
     rpc ? rpc("getAccountInfo", [mint, { encoding: "jsonParsed" }]).catch(() => null) : null,
@@ -69,10 +69,16 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     // GoPlus (keyless) — an independent second security opinion (cross-check).
     fetchFn("https://api.gopluslabs.io/api/v1/solana/token_security?contract_addresses=" + mint)
       .then(r => (r && r.ok === false ? null : r.json())).catch(() => null),
+    // Meteora DLMM API (keyless) — native pool data: real reserves, is_blacklisted
+    // (Meteora's own scam flag), fee config, holder count. Powers the "cut supply
+    // on the pump" detection with Meteora's actual quote reserve.
+    fetchFn("https://dlmm.datapi.meteora.ag/pools?query=" + mint + "&page_size=50")
+      .then(r => (r && r.ok === false ? null : r.json())).catch(() => null),
   ]);
 
   const market = bestMarket(pairsRes);
   const mintInfo = parseMintInfo(info);
+  const meteora = parseMeteora(meteoraRes, mint);
   const lp = parseLpLock(lpReport);
   const jup = parseJupiter(jupTok);
   const goplus = parseGoPlus(goplusRes, mint);
@@ -125,6 +131,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     jupVerified: jup.verified,
     goplusFlags: goplus?.flags || null,
     goplusTrusted: goplus?.trusted || false,
+    meteora,
   };
 
   // Which independent scanners we could reach + what they said (for the UI's
@@ -133,6 +140,7 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     rugcheck: lpReport ? "ok" : "na",
     goplus: goplus ? (goplus.flags.length ? "flag" : "ok") : "na",
     jupiter: jup.verified ? "verified" : (jupTok ? "listed" : "na"),
+    meteora: meteora ? (meteora.blacklisted ? "flag" : "ok") : "na",
   };
 
   const result = scoreToken(raw);
@@ -144,11 +152,14 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney }
     lpLockedPct: lp.lpLockedPct,
     jupVerified: jup.verified,
     sources,
+    meteora: meteora && { pools: meteora.pools, blacklisted: meteora.blacklisted, maxFeePct: meteora.maxFeePct, holders: meteora.holders, launchpad: meteora.launchpad },
     market: market && {
       priceUsd: market.priceUsd, liquidityUsd: market.liquidityUsd, volume24h: market.volume24h,
       mcap: market.mcap, dexId: market.dexId, symbol: market.symbol, name: market.name, icon: market.icon,
       websites: market.websites, socials: market.socials,
       liqQuote: market.liqQuote, priceChange1h: market.priceChange1h, priceChange24h: market.priceChange24h,
+      // Prefer Meteora's native quote reserve for the "cut supply on pump" signal.
+      meteoraQuote: meteora?.quoteReserve ?? null,
     },
     dataComplete: !!mintInfo, // false when authorities couldn't be read
     disclaimer: "Heuristic risk estimate from public on-chain data. Not financial advice. Always DYOR.",
@@ -224,6 +235,34 @@ function parseGoPlus(res, mint) {
   if (Array.isArray(r.transfer_hook) ? r.transfer_hook.length : on(r.transfer_hook)) flags.push("transfer hook");
   if (on(r.closable)) flags.push("mint can be closed");
   return { flags, trusted: on(r.trusted_token) };
+}
+
+// Summarize a token's Meteora DLMM pools (schema per docs.meteora.ag). Only pools
+// where our mint is one side count. The QUOTE reserve (the other side's amount,
+// summed) is the precise "cut supply on the pump" signal. Also surfaces Meteora's
+// own is_blacklisted flag, the pool fee ceiling, and holder count. Degrades to
+// null if unavailable — never invents a signal. Coded to the documented schema;
+// sanity-check against a real token after deploy (no live access in the sandbox).
+function parseMeteora(res, mint) {
+  const data = Array.isArray(res?.data) ? res.data : null;
+  if (!data) return null;
+  const pools = data.filter(p => p?.token_x?.address === mint || p?.token_y?.address === mint);
+  if (!pools.length) return { pools: 0, blacklisted: false, quoteReserve: null, tvl: 0, maxFeePct: null, holders: null };
+
+  let quoteReserve = 0, tvl = 0, maxFeePct = 0, blacklisted = false, holders = null, isVerified = null, launchpad = null;
+  for (const p of pools) {
+    const mintIsX = p.token_x?.address === mint;
+    const quoteAmt = mintIsX ? p.token_y_amount : p.token_x_amount; // the SOL/stable side
+    if (typeof quoteAmt === "number" && isFinite(quoteAmt)) quoteReserve += quoteAmt;
+    if (typeof p.tvl === "number") tvl += p.tvl;
+    const fee = p.pool_config?.max_fee_pct;
+    if (typeof fee === "number" && fee > maxFeePct) maxFeePct = fee;
+    if (p.is_blacklisted === true) blacklisted = true;
+    const tk = mintIsX ? p.token_x : p.token_y;
+    if (tk) { holders = holders == null ? tk.holders : Math.max(holders, tk.holders); isVerified = isVerified || tk.is_verified; }
+    if (!launchpad && p.launchpad) launchpad = p.launchpad;
+  }
+  return { pools: pools.length, blacklisted, quoteReserve: quoteReserve || null, tvl, maxFeePct: maxFeePct || null, holders, isVerified, launchpad };
 }
 
 function parseMintInfo(info) {

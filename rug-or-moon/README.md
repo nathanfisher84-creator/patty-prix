@@ -56,7 +56,11 @@ signals** (smart money holding, buy/sell momentum) — the "should I ape?" check
   silently) to independent public APIs so the verdict is harder to fool:
   **RugCheck** (`api.rugcheck.xyz`) for LP locked/burned % + rugged status;
   **GoPlus** (`api.gopluslabs.io`) as a second security opinion; **Jupiter**
-  (`tokens.jup.ag`) for a verified-list legitimacy flag. External signals can
+  (`tokens.jup.ag`) for a verified-list legitimacy flag; **Meteora DLMM**
+  (`dlmm.datapi.meteora.ag`) for native pool data — `is_blacklisted` (Meteora's
+  own scam flag), pool fee ceiling, holder count, liquidity fragmentation, and
+  the real quote reserve that powers "cut supply on the pump" detection.
+  External signals can
   only ADD caution or reassurance, never certify safety. The UI shows a
   "Cross-checked: …" line. Coded to each API's documented schema; **sanity-check
   `lpLockedPct` and the GoPlus fields against one real token after deploy** (they

@@ -39,6 +39,7 @@ const backend = async (url, opts) => {
   }
   if (url.includes("tokens.jup.ag")) return j({ tags: url.includes(CLEAN) ? ["verified"] : [] });
   if (url.includes("gopluslabs.io")) return j({ result: {} });
+  if (url.includes("meteora.ag")) return j({ data: [] });
   if (url.includes("token-boosts")) return j([
     { chainId: "solana", tokenAddress: CLEAN }, { chainId: "solana", tokenAddress: "So11111111111111111111111111111111111111112" },
     { chainId: "solana", tokenAddress: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },

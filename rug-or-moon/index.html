@@ -240,7 +240,7 @@ function snapshot(d, token){
     smartMoneyReliable: !!d.smartMoneyReliable,
     dataComplete: d.dataComplete !== false,
     priceUsd: d.market?.priceUsd ?? null,
-    liqQuote: d.market?.liqQuote ?? null,
+    liqQuote: d.market?.meteoraQuote ?? d.market?.liqQuote ?? null, // Meteora native reserve preferred
     dexId: d.market?.dexId || null,
     flags: (d.flags||[]).filter(f=>f.level==="red").map(f=>({level:"red",id:f.id,text:f.text})),
     ts: Date.now(),
@@ -334,7 +334,7 @@ function renderScan(d, token){
   // Cross-checked against independent scanners — a trust signal.
   const src = d.sources||{};
   const chip = (name,st)=> !st||st==="na" ? "" : `${name} ${st==="flag"?"⚠":st==="verified"?"✓verified":"✓"}`;
-  const srcLine = [chip("RugCheck",src.rugcheck),chip("GoPlus",src.goplus),chip("Jupiter",src.jupiter)].filter(Boolean).join(" · ");
+  const srcLine = [chip("RugCheck",src.rugcheck),chip("GoPlus",src.goplus),chip("Jupiter",src.jupiter),chip("Meteora",src.meteora)].filter(Boolean).join(" · ");
   const xcheck = srcLine ? `<p class="links">Cross-checked: ${srcLine}</p>` : "";
   out.innerHTML = `
     <div class="card">
