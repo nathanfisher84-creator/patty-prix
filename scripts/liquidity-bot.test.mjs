@@ -1,6 +1,7 @@
 // Tests the liquidity-bot's pure logic. Run: node scripts/liquidity-bot.test.mjs
 import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry,
-  improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders, loadWhales } from "./liquidity-bot.mjs";
+  improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders, loadWhales,
+  discoveryCfg, pickNewWhales, formatDiscovery } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -116,6 +117,21 @@ check("/delwhale parses", parseCommand("/delwhale " + MINT).cmd === "delwhale");
 check("loadWhales dedupes across seed entries", loadWhales(null, JSON.stringify([{ wallet: MINT, label: "a" }, { wallet: MINT, label: "b" }])).length === 1);
 check("loadWhales rejects invalid addresses", loadWhales(null, JSON.stringify(["not-a-wallet", MINT])).length === 1);
 check("loadWhales accepts plain address strings", loadWhales(null, JSON.stringify([MINT]))[0].wallet === MINT);
+
+console.log("\n15. whale auto-discovery");
+check("/discoverwhales parses", parseCommand("/discoverwhales").cmd === "discoverwhales");
+check("/discover alias parses", parseCommand("/discover").cmd === "discoverwhales");
+const dcfg = discoveryCfg();
+check("bot discovery config is lighter than CLI defaults", dcfg.trending <= 5 && dcfg.perToken <= 10 && dcfg.swapPages <= 1);
+check("discovery config keeps the smart-money bar", dcfg.minPnlUsd >= 5000 && dcfg.minTrades >= 5);
+const W1 = "So11111111111111111111111111111111111111112";
+check("pickNewWhales filters out already-tracked", pickNewWhales([{ wallet: MINT }, { wallet: W1 }], [{ wallet: MINT }]).length === 1);
+check("pickNewWhales on empty existing keeps all", pickNewWhales([{ wallet: MINT }, { wallet: W1 }], []).length === 2);
+const disc = formatDiscovery([{ wallet: MINT, realizedUsd: 42000, winRatePct: 68 }], 1, 5);
+check("discovery summary shows PnL + win rate", /\+\$42,000/.test(disc) && /68% win/.test(disc));
+check("discovery summary reports how many were added", /Added 1 new wallet/.test(disc));
+check("discovery summary carries NFA", /NFA/.test(disc));
+check("no results → honest 'none cleared the bar' message", /no wallets cleared/i.test(formatDiscovery([], 0, 5)));
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);

@@ -35,6 +35,7 @@ import { scanTrending } from "../rug-or-moon/api/trending.mjs";
 import { diffScan } from "../rug-or-moon/watchlist.mjs";
 import { parseSmartMoney } from "../rug-or-moon/smart-money.mjs";
 import { sendTelegram } from "./whale-alerts.mjs";
+import { discoverSmartMoney, makeClient } from "./whale-tracker.mjs";
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -208,6 +209,36 @@ export function formatHolders(topHolders, deployer) {
   return lines.join("\n");
 }
 
+// Discovery config for the bot — deliberately LIGHTER than the CLI defaults,
+// because this fans out to a lot of RPC calls and we're on a free Helius tier.
+// (CLI: 10 trending × 20 holders × 2 swap pages; here: 5 × 10, 1 page.)
+export function discoveryCfg(over = {}) {
+  return {
+    trending: 5, holderPages: 1, perToken: 10, maxCandidates: 25, swapPages: 1,
+    minPnlUsd: 5000, minWinRatePct: 50, minTrades: 5, limit: 8, solPriceUsd: 0,
+    ...over,
+  };
+}
+
+// Which discovered wallets are new to our list, and a Telegram summary.
+export function pickNewWhales(smart, existing) {
+  const have = new Set((existing || []).map(w => w.wallet));
+  return (smart || []).filter(s => s.wallet && !have.has(s.wallet));
+}
+
+export function formatDiscovery(smart, added, scanned) {
+  if (!smart || !smart.length) return `🔍 Scanned ${scanned ?? 0} trending tokens — no wallets cleared the smart-money bar this time. Try again later.`;
+  const lines = [`🧠 <b>Discovered ${smart.length} smart-money wallet(s)</b>`];
+  for (const s of smart) {
+    const pnl = typeof s.realizedUsd === "number" ? ` · ${s.realizedUsd >= 0 ? "+" : "-"}$${Math.abs(Math.round(s.realizedUsd)).toLocaleString("en-US")}` : "";
+    const wr = typeof s.winRatePct === "number" ? ` · ${Math.round(s.winRatePct)}% win` : "";
+    lines.push(`• <a href="https://solscan.io/account/${s.wallet}">${short(s.wallet)}</a>${pnl}${wr}`);
+  }
+  lines.push(added > 0 ? `\n✅ Added ${added} new wallet(s) to tracking. /whales to review · /delwhale to remove.` : `\nAll already tracked.`);
+  lines.push("⚠️ NFA — past PnL is not a guarantee of future performance.");
+  return lines.join("\n");
+}
+
 // The daily digest — a portfolio snapshot of every watched token.
 export function buildDigest(entries) {
   if (!entries || !entries.length) return null;
@@ -249,6 +280,7 @@ export function parseCommand(text) {
   if (c === "/whales") return { cmd: "whales" };
   if (c === "/addwhale") return { cmd: "addwhale", wallet: rest[0], label: rest.slice(1).join(" ") };
   if (c === "/delwhale") return { cmd: "delwhale", wallet: rest[0] };
+  if (c === "/discoverwhales" || c === "/discover") return { cmd: "discoverwhales" };
   if (c === "/mute") return { cmd: "mute" };
   if (c === "/unmute") return { cmd: "unmute" };
   if (c === "/help" || c === "/start") return { cmd: "help" };
@@ -296,6 +328,7 @@ const HELP = [
   "<b>/trending</b> — today's trending tokens, auto-scanned (gems up top)",
   "<b>/alert</b> &lt;mint&gt; &lt;pct&gt; — ping on a ±% price move (e.g. /alert &lt;mint&gt; 20). off to clear",
   "<b>/addwhale</b> &lt;wallet&gt; [label] — track a smart-money wallet",
+  "<b>/discoverwhales</b> — auto-find profitable wallets and track them",
   "<b>/whales</b> · <b>/delwhale</b> &lt;wallet&gt; — list / remove tracked wallets",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
   "<b>/help</b> — this message",
@@ -389,6 +422,28 @@ async function handleCommand(env, cfg, state, text) {
     state.smartMoney = parseSmartMoney(state.whales);
     return tgReply(env, `Removed ${short(wallet || "")}.`);
   }
+  if (cmd === "discoverwhales") {
+    if (!env.HELIUS_API_KEY) return tgReply(env, "Discovery needs HELIUS_API_KEY set in the host's variables.");
+    if (state.discovering) return tgReply(env, "Already running a discovery — hang on.");
+    const now = Date.now();
+    if (state.lastDiscover && now - state.lastDiscover < cfg.discoverCooldownMs) {
+      const mins = Math.ceil((cfg.discoverCooldownMs - (now - state.lastDiscover)) / 60_000);
+      return tgReply(env, `Discovery is rate-limited (it makes a lot of RPC calls) — try again in ~${mins} min.`);
+    }
+    state.discovering = true;
+    await tgReply(env, "🔍 Scanning trending tokens → their top holders → scoring each wallet's PnL. This takes a minute…").catch(() => {});
+    try {
+      const client = makeClient(env, fetch);
+      const res = await discoverSmartMoney(discoveryCfg(), client, m => console.log("[discover]", m));
+      const fresh = pickNewWhales(res.smart, state.whales);
+      for (const s of fresh) state.whales.push({ wallet: s.wallet, label: "" });
+      if (fresh.length) { saveWhales(cfg.whaleFile, state.whales); state.smartMoney = parseSmartMoney(state.whales); }
+      state.lastDiscover = Date.now();
+      return tgReply(env, formatDiscovery(res.smart, fresh.length, res.scannedTokens));
+    } catch (e) {
+      return tgReply(env, `Discovery failed: ${esc(e.message || String(e))}`);
+    } finally { state.discovering = false; }
+  }
   if (cmd === "mute") { state.muted = true; return tgReply(env, "🔕 Alerts muted — /unmute to resume. (Commands still work.)"); }
   if (cmd === "unmute") { state.muted = false; return tgReply(env, "🔔 Alerts back on."); }
   return tgReply(env, "Unknown command. /help");
@@ -471,9 +526,10 @@ export async function main(env = process.env) {
     holderGrowPct: Number(env.HOLDER_GROW_PCT) || 25,
     digestHour: env.DIGEST_HOUR_UTC != null ? Number(env.DIGEST_HOUR_UTC) : 13, // ~08:00 ET
     whaleFile: env.SMART_MONEY_FILE || "smart-money.json",
+    discoverCooldownMs: (Number(env.DISCOVER_COOLDOWN_MINUTES) || 60) * 60_000,
   };
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
-  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales) };
+  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), discovering: false, lastDiscover: 0 };
   console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%.`);
   await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
   await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state)]);

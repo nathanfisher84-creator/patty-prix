@@ -70,6 +70,8 @@ keeps it running 24/7.)*
 - **`/trending`** — today's trending tokens, auto-scanned, safest first
 - **`/alert <mint> <pct>`** — ping on a ±% price move (e.g. `/alert <mint> 20`); `off` to clear
 - **`/addwhale <wallet> [label]`** — track a smart-money wallet
+- **`/discoverwhales`** — auto-find profitable wallets (scans trending tokens →
+  their top holders → scores each wallet's PnL) and start tracking them
 - **`/whales` · `/delwhale <wallet>`** — list / remove tracked wallets
 - **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
@@ -79,8 +81,13 @@ those wallets hold ("🧠 tracked smart-money wallets holding …") and it feeds
 entry read. Like the watchlist, `/addwhale` saves to a file that resets on
 redeploy — for permanent whales set the **`SMART_MONEY_JSON`** env variable to an
 inline JSON array, e.g. `[{"wallet":"…","label":"Cupsey"}]` (or just `["addr1","addr2"]`).
-You can auto-*discover* whale wallets with `node scripts/whale-tracker.mjs --json`
-and paste its output into that variable.
+
+**Auto-discovery:** `/discoverwhales` finds them for you — it scans trending
+tokens, takes their top holders, reconstructs each wallet's PnL from swap history,
+and tracks the ones that clear the bar (≥$5k realized, ≥50% win rate, ≥5 trades).
+It's RPC-heavy, so it's rate-limited to once an hour (`DISCOVER_COOLDOWN_MINUTES`)
+and runs a lighter scan than the CLI. To keep discovered wallets permanently, run
+`/whales` and copy them into `SMART_MONEY_JSON`. Past PnL ≠ future results (NFA).
 
 **Automatic alerts** (per watched token): liquidity draining, the cut-supply-on-
 pump pattern, **volume fading**, **holders leaving**, safety dropping, smart money
