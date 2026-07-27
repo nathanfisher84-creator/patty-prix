@@ -35,7 +35,7 @@ import { scanTrending } from "../rug-or-moon/api/trending.mjs";
 import { diffScan } from "../rug-or-moon/watchlist.mjs";
 import { parseSmartMoney } from "../rug-or-moon/smart-money.mjs";
 import { sendTelegram } from "./whale-alerts.mjs";
-import { discoverSmartMoney, makeClient } from "./whale-tracker.mjs";
+import { discoverSmartMoney, makeClient, parseSwap } from "./whale-tracker.mjs";
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -209,6 +209,59 @@ export function formatHolders(topHolders, deployer) {
   return lines.join("\n");
 }
 
+/* ================= copy-trade: first-time buy signals =================
+   Watch tracked wallets and fire the moment one opens a NEW position — a token
+   it has never bought before (within our visible history). That's the alpha
+   signal; we pair it with an instant safety scan so you see the rug check in the
+   same message.
+
+   "First time" is judged against the mints already seen in that wallet's swap
+   history, which we baseline on the first poll. Honest limit: history is a
+   couple of pages deep, so it means "first buy we can see" — a position opened
+   long ago and re-bought could read as new. We say so in the message.
+*/
+
+// Every mint that appears anywhere in a wallet's trade history (buys or sells) —
+// the baseline of "already known positions", so we never alert on an old bag.
+export function seedSeenMints(trades) {
+  const s = new Set();
+  for (const t of trades || []) if (t?.mint) s.add(t.mint);
+  return s;
+}
+
+// Pure: which trades are fresh, big-enough, FIRST-TIME buys? Does not mutate.
+export function detectFirstBuys(trades, seen, { sinceTs = 0, minUsd = 0 } = {}) {
+  const out = [];
+  const byMint = new Set();
+  for (const t of [...(trades || [])].sort((a, b) => b.timestamp - a.timestamp)) {
+    if (!t || t.side !== "buy" || !t.mint) continue;
+    if (t.timestamp < sinceTs) continue;
+    if ((t.quoteUsd || 0) < minUsd) continue;
+    if (seen?.has(t.mint) || byMint.has(t.mint)) continue; // already held, or dupe in this batch
+    byMint.add(t.mint);
+    out.push(t);
+  }
+  return out;
+}
+
+// The signal message: who bought what, how much — plus our safety read, which is
+// the whole point of pairing copy-trade alpha with the scanner.
+export function formatFirstBuy(who, buy, scan) {
+  const usdAmt = buy.quoteUsd >= 1000 ? `$${(buy.quoteUsd / 1000).toFixed(1)}K` : `$${Math.round(buy.quoteUsd)}`;
+  const sym = scan?.market?.symbol ? "$" + scan.market.symbol : short(buy.mint);
+  const lines = [`🎯 <b>FIRST BUY</b> — ${esc(who)} just opened a new position`, `• ${esc(sym)} · ${usdAmt}`];
+  if (scan && !scan.error) {
+    const v = { clean: "✅ looks clean", caution: "⚠️ caution", "high-risk": "🚩 HIGH RISK" }[scan.tier] || scan.tier;
+    lines.push(`• Safety: <b>${scan.safety}/100</b> · ${v}`);
+    const worst = (scan.flags || []).find(f => f.level === "red");
+    if (worst) lines.push(`• ${esc(worst.text)}`);
+    if ((scan.smartMoneyHolders ?? 0) > 1) lines.push(`• 🧠 ${scan.smartMoneyHolders} tracked wallets hold this`);
+  }
+  lines.push(`<a href="https://solscan.io/token/${buy.mint}">token</a>${buy.signature ? ` · <a href="https://solscan.io/tx/${buy.signature}">tx</a>` : ""} · <code>${buy.mint}</code>`);
+  lines.push("⚠️ NFA — first buy we can see in this wallet's history.");
+  return lines.join("\n");
+}
+
 // Discovery config for the bot — deliberately LIGHTER than the CLI defaults,
 // because this fans out to a lot of RPC calls and we're on a free Helius tier.
 // (CLI: 10 trending × 20 holders × 2 swap pages; here: 5 × 10, 1 page.)
@@ -284,6 +337,7 @@ export function parseCommand(text) {
   if (c === "/flagwallet") return { cmd: "flagwallet", wallet: rest[0], label: rest.slice(1).join(" ") };
   if (c === "/flagged") return { cmd: "flagged" };
   if (c === "/unflagwallet") return { cmd: "unflagwallet", wallet: rest[0] };
+  if (c === "/signals") return { cmd: "signals", arg };
   if (c === "/save") return { cmd: "save" };
   if (c === "/mute") return { cmd: "mute" };
   if (c === "/unmute") return { cmd: "unmute" };
@@ -398,6 +452,7 @@ const HELP = [
   "<b>/whales</b> · <b>/delwhale</b> &lt;wallet&gt; — list / remove tracked wallets",
   "<b>/flagwallet</b> &lt;wallet&gt; [label] — warn me if this wallet holds a token I scan",
   "<b>/flagged</b> · <b>/unflagwallet</b> &lt;wallet&gt; — list / remove flagged wallets",
+  "<b>/signals</b> [on|off] — ping me when a tracked wallet makes a FIRST buy of a new token",
   "<b>/save</b> — force-save your setup (it auto-saves on every change)",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
   "<b>/help</b> — this message",
@@ -576,6 +631,17 @@ async function handleCommand(env, cfg, state, text) {
       return tgReply(env, `Discovery failed: ${esc(e.message || String(e))}`);
     } finally { state.discovering = false; }
   }
+  if (cmd === "signals") {
+    const a = (arg || "").toLowerCase();
+    if (a === "on" || a === "off") {
+      state.signalsOn = a === "on";
+      if (state.signalsOn) state.walletSeen.clear(); // re-baseline so we don't fire on old bags
+      return tgReply(env, state.signalsOn
+        ? `🎯 First-buy signals ON — I'll ping you when any of your ${state.whales.length} tracked wallet(s) opens a NEW position (min $${cfg.signalMinUsd}). Baselining now, so alerts start from the next check.`
+        : "First-buy signals OFF.");
+    }
+    return tgReply(env, `🎯 First-buy signals: <b>${state.signalsOn ? "ON" : "OFF"}</b> · ${state.whales.length} tracked wallet(s) · min $${cfg.signalMinUsd} · checked every ${cfg.walletPollSeconds}s.\nUse /signals on or /signals off.`);
+  }
   if (cmd === "save") {
     const ok = await persistState(env, state);
     return tgReply(env, ok
@@ -640,6 +706,50 @@ async function commandLoop(env, cfg, state) {
   }
 }
 
+// One pass over the tracked wallets: fetch recent swaps, baseline on first sight,
+// then alert on any first-time buy. Separate from the token loop so copy-trade
+// alpha (which decays fastest) isn't stuck behind slower token scans.
+export async function walletPassOnce(env, cfg, state, client, now = Math.floor(Date.now() / 1000), scan = scanToken) {
+  if (!state.signalsOn || !state.whales.length) return [];
+  const solPriceUsd = state.solPriceUsd || 150;
+  const sinceTs = now - cfg.signalLookbackMin * 60;
+  const fired = [];
+  for (const w of state.whales) {
+    let raw;
+    try { raw = await client.walletSwaps(w.wallet, cfg.signalSwapPages); } catch { continue; }
+    const trades = (raw || []).map(tx => {
+      const t = parseSwap(tx, solPriceUsd);
+      return t ? { ...t, signature: tx.signature || "" } : null;
+    }).filter(Boolean);
+    if (!trades.length) continue;
+
+    const seen = state.walletSeen.get(w.wallet);
+    if (!seen) { state.walletSeen.set(w.wallet, seedSeenMints(trades)); continue; } // baseline, no alerts
+
+    const firsts = detectFirstBuys(trades, seen, { sinceTs, minUsd: cfg.signalMinUsd });
+    for (const t of trades) seen.add(t.mint); // update history regardless
+    for (const b of firsts) {
+      const who = w.label || short(w.wallet);
+      let sc = null;
+      try { sc = await scan(b.mint, { heliusKey: env.HELIUS_API_KEY, smartMoney: state.smartMoney, flagged: state.flaggedSet }); } catch { /* signal still worth sending */ }
+      if (!state.muted) await tgReply(env, formatFirstBuy(who, b, sc)).catch(() => {});
+      fired.push({ wallet: w.wallet, mint: b.mint });
+    }
+  }
+  return fired;
+}
+
+async function walletLoop(env, cfg, state) {
+  const client = makeClient(env, fetch);
+  try { state.solPriceUsd = (await client.solPrice()) || 150; } catch { state.solPriceUsd = 150; }
+  for (;;) {
+    if (env.HELIUS_API_KEY) {
+      await walletPassOnce(env, cfg, state, client).catch(e => console.error("wallet pass error:", e.message));
+    }
+    await sleep(cfg.walletPollSeconds * 1000);
+  }
+}
+
 async function monitorLoop(env, cfg, state) {
   for (;;) {
     await monitorOnce(env, cfg, state).catch(e => console.error("monitor error:", e.message));
@@ -671,18 +781,23 @@ export async function main(env = process.env) {
     whaleFile: env.SMART_MONEY_FILE || "smart-money.json",
     flaggedFile: env.FLAGGED_WALLETS_FILE || "flagged-wallets.json",
     discoverCooldownMs: (Number(env.DISCOVER_COOLDOWN_MINUTES) || 60) * 60_000,
+    walletPollSeconds: Number(env.WALLET_POLL_SECONDS) || 45,
+    signalMinUsd: Number(env.SIGNAL_MIN_USD) || 200,
+    signalLookbackMin: Number(env.SIGNAL_LOOKBACK_MINUTES) || 30,
+    signalSwapPages: Number(env.SIGNAL_SWAP_PAGES) || 1,
   };
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
   const flagged = loadWhales(cfg.flaggedFile, env.FLAGGED_WALLETS_JSON);
-  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), flagged, flaggedSet: parseSmartMoney(flagged), discovering: false, lastDiscover: 0 };
+  const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), flagged, flaggedSet: parseSmartMoney(flagged), discovering: false, lastDiscover: 0,
+    walletSeen: new Map(), signalsOn: env.SIGNALS_OFF !== "1", solPriceUsd: 0 };
   // Restore everything saved in the pinned message — this is what makes state
   // permanent across redeploys without any dashboard setup.
   const restored = await restoreState(env, state);
   await persistState(env, state).catch(() => {}); // ensure a pinned state exists (merges env/file seeds)
 
   console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%. ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " (restored from pinned state)" : ""}`);
-  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " ♻️ Restored your saved setup." : ""} Checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
-  await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state)]);
+  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " ♻️ Restored your saved setup." : ""}${state.signalsOn && state.whales.length ? " 🎯 First-buy signals ON." : ""} Checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
+  await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state), walletLoop(env, cfg, state)]);
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

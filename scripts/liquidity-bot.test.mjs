@@ -2,7 +2,8 @@
 import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, monitorOnce, trendAlerts, entryRead, formatEntry,
   improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders, loadWhales,
   discoveryCfg, pickNewWhales, formatDiscovery,
-  serializeState, parseStateMessage, applyState, STATE_MARKER } from "./liquidity-bot.mjs";
+  serializeState, parseStateMessage, applyState, STATE_MARKER,
+  seedSeenMints, detectFirstBuys, formatFirstBuy, walletPassOnce } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -164,6 +165,56 @@ check("restore merges with existing seeds (union)", live.watch.size === 3);
 check("restore fills whales + flagged", live.whales.length === 1 && live.flagged.length === 1);
 check("restore is a no-op on null", applyState(live, null).watch.size === 3);
 check("/save parses", parseCommand("/save").cmd === "save");
+
+console.log("\n18. copy-trade: first-time buy signals");
+const NEWTOK = "9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM";
+const t = (side, mint, ts, usd, sig) => ({ side, mint, timestamp: ts, quoteUsd: usd, signature: sig || "" });
+check("seedSeenMints collects every mint (buys AND sells)", seedSeenMints([t("buy", MINT, 1, 500), t("sell", W1, 2, 900)]).size === 2);
+const seen0 = new Set([MINT]);
+const firsts = detectFirstBuys([t("buy", MINT, 100, 500), t("buy", NEWTOK, 100, 500)], seen0, { sinceTs: 0, minUsd: 0 });
+check("only the unseen token counts as a first buy", firsts.length === 1 && firsts[0].mint === NEWTOK);
+check("a sell is never a first buy", detectFirstBuys([t("sell", NEWTOK, 100, 900)], seen0, {}).length === 0);
+check("stale buys outside the lookback are ignored", detectFirstBuys([t("buy", NEWTOK, 50, 500)], seen0, { sinceTs: 100 }).length === 0);
+check("dust buys under minUsd are ignored", detectFirstBuys([t("buy", NEWTOK, 100, 5)], seen0, { minUsd: 200 }).length === 0);
+check("two buys of the same new token fire once", detectFirstBuys([t("buy", NEWTOK, 100, 500), t("buy", NEWTOK, 101, 600)], seen0, {}).length === 1);
+const fbMsg = formatFirstBuy("Cupsey", { mint: NEWTOK, quoteUsd: 4200, signature: "sig" }, { safety: 22, tier: "high-risk", market: { symbol: "TRAP" }, flags: [{ level: "red", text: "Mint authority is ACTIVE" }] });
+check("signal names who bought + the size", /FIRST BUY/.test(fbMsg) && /Cupsey/.test(fbMsg) && /\$4\.2K/.test(fbMsg));
+check("signal pairs in the safety verdict", /22\/100/.test(fbMsg) && /HIGH RISK/.test(fbMsg));
+check("signal surfaces the worst red flag", /Mint authority is ACTIVE/.test(fbMsg));
+check("signal carries NFA + history caveat", /NFA/.test(fbMsg) && /first buy we can see/i.test(fbMsg));
+
+// End-to-end with REAL Helius-shaped swap events: baseline pass is silent, then a
+// genuinely new buy fires exactly one signal, and a repeat of it stays quiet.
+const WSOL = "So11111111111111111111111111111111111111112";
+const buyTx = (mint, ts, sol, sig) => ({
+  signature: sig, timestamp: ts,
+  events: { swap: {
+    nativeInput: { amount: String(sol * 1e9) },                                  // paid SOL
+    tokenOutputs: [{ mint, rawTokenAmount: { tokenAmount: "1000000", decimals: 6 } }], // got token
+  } },
+});
+const sentSignals = [];
+const realFetch2 = globalThis.fetch;
+globalThis.fetch = async (url, opts) => { if (String(url).includes("sendMessage")) sentSignals.push(JSON.parse(opts.body).text); return { json: async () => ({ ok: true }) }; };
+let pass = 0;
+const clientStub = { walletSwaps: async () => {
+  pass++;
+  const held = buyTx(MINT, 2900, 5, "old");                 // an existing position
+  return pass === 1 ? [held] : [held, buyTx(NEWTOK, 2950, 5, "new")]; // then a NEW token
+} };
+const wState = { signalsOn: true, whales: [{ wallet: W1, label: "Cupsey" }], walletSeen: new Map(), smartMoney: null, flaggedSet: null, muted: false, solPriceUsd: 150 };
+const wCfg = { signalLookbackMin: 30, signalMinUsd: 200, signalSwapPages: 1 };
+const scanStub2 = async () => ({ safety: 50, tier: "caution", market: { symbol: "NEW" }, flags: [] });
+const p1 = await walletPassOnce({ HELIUS_API_KEY: "k" }, wCfg, wState, clientStub, 3000, scanStub2);
+check("first wallet pass baselines silently (no alert on an existing bag)", p1.length === 0 && sentSignals.length === 0);
+const p2 = await walletPassOnce({ HELIUS_API_KEY: "k" }, wCfg, wState, clientStub, 3000, scanStub2);
+check("a genuinely NEW token fires exactly one signal", p2.length === 1 && p2[0].mint === NEWTOK, `fired ${p2.length}`);
+check("the signal message is the FIRST BUY card", sentSignals.length === 1 && /FIRST BUY/.test(sentSignals[0]));
+const p3 = await walletPassOnce({ HELIUS_API_KEY: "k" }, wCfg, wState, clientStub, 3000, scanStub2);
+check("the same position does not re-fire on the next pass", p3.length === 0 && sentSignals.length === 1);
+check("signals off → no work done", (await walletPassOnce({}, wCfg, { ...wState, signalsOn: false }, clientStub, 3000)).length === 0);
+globalThis.fetch = realFetch2;
+check("/signals parses on/off", parseCommand("/signals on").cmd === "signals" && parseCommand("/signals on").arg === "on");
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);

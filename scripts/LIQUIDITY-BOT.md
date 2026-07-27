@@ -75,6 +75,26 @@ keeps it running 24/7.)*
 - **`/whales` · `/delwhale <wallet>`** — list / remove tracked wallets
 - **`/flagwallet <wallet> [label]`** — warn me if this wallet holds a token I scan
 - **`/flagged` · `/unflagwallet <wallet>`** — list / remove flagged wallets
+- **`/signals [on|off]`** — 🎯 ping me the moment a tracked wallet makes a
+  **first-time buy** of a token it's never held before
+
+**🎯 First-buy signals (copy-trade alpha).** Every tracked wallet (the ones from
+`/addwhale` and `/discoverwhales`) is polled every `WALLET_POLL_SECONDS` (default
+45s). When one opens a **brand-new position**, you get a signal that pairs the
+alpha with the rug check in one message:
+
+> 🎯 **FIRST BUY** — Cupsey just opened a new position
+> • $TRAP · $4.2K
+> • Safety: **22/100** · 🚩 HIGH RISK
+> • Mint authority is ACTIVE
+> ⚠️ NFA — first buy we can see in this wallet's history.
+
+Tuning: `SIGNAL_MIN_USD` (default 200) ignores dust, `SIGNAL_LOOKBACK_MINUTES`
+(30) bounds how far back a buy counts as fresh. On startup (and whenever you turn
+signals on) each wallet is **baselined** from its recent history, so you're never
+spammed about bags it already held. Honest limit: history is a page deep, so
+"first buy" means *first we can see* — a position opened long ago and re-bought
+could read as new. The message says so.
 - **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
 
