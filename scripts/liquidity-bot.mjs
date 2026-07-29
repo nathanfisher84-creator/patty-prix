@@ -35,7 +35,7 @@ import { scanTrending } from "../rug-or-moon/api/trending.mjs";
 import { diffScan } from "../rug-or-moon/watchlist.mjs";
 import { parseSmartMoney } from "../rug-or-moon/smart-money.mjs";
 import { sendTelegram } from "./whale-alerts.mjs";
-import { discoverSmartMoney, makeClient, parseSwap } from "./whale-tracker.mjs";
+import { discoverSmartMoney, makeClient, parseSwap, ownersFromTokenAccounts } from "./whale-tracker.mjs";
 
 const BASE58 = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -209,6 +209,88 @@ export function formatHolders(topHolders, deployer) {
   return lines.join("\n");
 }
 
+/* ================= top-holder average entry price =================
+   "What did the top holders actually pay?" — if they're sitting on 10x, you're
+   exit liquidity; if they bought near spot, they're aligned with you.
+
+   Method: take the top N holders by balance, pull each wallet's swap history,
+   and reconstruct an average-cost basis for THIS mint (buys add tokens+cost,
+   sells reduce both proportionally). Honest limits, surfaced in the output:
+     • holders who received tokens by transfer/airdrop have NO on-chain buy —
+       we count them separately, and a high count is itself an insider signal
+     • buys older than the fetched history window can't be priced
+     • pool/burn/CEX owners are excluded from "holders"
+   Cost: one Helius call per holder, so this is ON-DEMAND only, never in a loop.
+*/
+
+// Pure: a wallet's average USD cost basis for one mint (average-cost method).
+export function avgEntryForMint(trades, mint) {
+  let tokens = 0, cost = 0, buys = 0;
+  for (const t of [...(trades || [])].sort((a, b) => a.timestamp - b.timestamp)) {
+    if (!t || t.mint !== mint) continue;
+    if (t.side === "buy") {
+      tokens += Number(t.tokenAmount) || 0;
+      cost += Number(t.quoteUsd) || 0;
+      buys++;
+    } else if (t.side === "sell" && tokens > 0) {
+      const sold = Math.min(Number(t.tokenAmount) || 0, tokens);
+      cost -= (cost / tokens) * sold; // average-cost reduction
+      tokens -= sold;
+    }
+  }
+  if (!buys || tokens <= 0 || cost <= 0) return null;
+  return { avgPrice: cost / tokens, tokens, costUsd: cost, buys };
+}
+
+// Pure: roll per-holder entries into the numbers that drive a decision.
+// rows = [{ owner, share, entry|null }] where share = fraction of the top-N bag.
+export function summarizeEntries(rows, currentPrice) {
+  const priced = (rows || []).filter(r => r.entry && r.entry.avgPrice > 0);
+  const unpriced = (rows || []).length - priced.length;
+  if (!priced.length) return { priced: 0, unpriced, avgEntry: null, multiple: null, inProfit: 0, weighted: null };
+  // Weight by tokens still held: a whale's entry matters more than a small bag's.
+  const totalTokens = priced.reduce((s, r) => s + r.entry.tokens, 0);
+  const weighted = totalTokens > 0
+    ? priced.reduce((s, r) => s + r.entry.avgPrice * (r.entry.tokens / totalTokens), 0)
+    : null;
+  const avgEntry = priced.reduce((s, r) => s + r.entry.avgPrice, 0) / priced.length;
+  const inProfit = currentPrice > 0 ? priced.filter(r => currentPrice > r.entry.avgPrice).length : 0;
+  const multiple = currentPrice > 0 && weighted > 0 ? currentPrice / weighted : null;
+  return { priced: priced.length, unpriced, avgEntry, weighted, multiple, inProfit };
+}
+
+const price = n => {
+  if (n == null) return "—";
+  if (n >= 1) return "$" + n.toFixed(4);
+  if (n >= 0.0001) return "$" + n.toFixed(6);
+  return "$" + n.toExponential(2);
+};
+
+export function formatEntries(mint, symbol, topN, rows, sum, currentPrice) {
+  const lines = [`💰 <b>Top ${topN} holder entries</b> — ${esc(symbol ? "$" + symbol : short(mint))}`];
+  if (!sum.priced) {
+    lines.push(`Couldn't price any of the top ${topN} holders' entries.`);
+    lines.push(`• ${sum.unpriced} holder(s) have <b>no on-chain buy</b> in visible history — airdropped/transferred, or bought earlier than we can see.`);
+    lines.push("⚠️ NFA.");
+    return lines.join("\n");
+  }
+  lines.push(`• Current price: <b>${price(currentPrice)}</b>`);
+  lines.push(`• Avg entry (size-weighted): <b>${price(sum.weighted)}</b>`);
+  lines.push(`• Avg entry (per wallet): ${price(sum.avgEntry)}`);
+  if (sum.multiple != null) {
+    const m = sum.multiple;
+    const verdict = m >= 5 ? "🚨 they're deep in profit — high dump risk"
+      : m >= 2 ? "⚠️ they're up meaningfully"
+      : m >= 0.95 ? "🟢 roughly aligned with your entry"
+      : "🔻 they're underwater";
+    lines.push(`• Top holders are <b>${m >= 1 ? m.toFixed(1) + "× up" : (1 / m).toFixed(1) + "× down"}</b> — ${verdict}`);
+  }
+  lines.push(`• ${sum.inProfit}/${sum.priced} priced holders in profit`);
+  if (sum.unpriced) lines.push(`• ⚠️ ${sum.unpriced} holder(s) have <b>no on-chain buy</b> (airdropped/transferred, or older than visible history) — common with insider allocations`);
+  lines.push("⚠️ NFA — cost basis is reconstructed from visible swap history and may be incomplete.");
+  return lines.join("\n");
+}
+
 /* ================= copy-trade: first-time buy signals =================
    Watch tracked wallets and fire the moment one opens a NEW position — a token
    it has never bought before (within our visible history). That's the alpha
@@ -337,6 +419,7 @@ export function parseCommand(text) {
   if (c === "/flagwallet") return { cmd: "flagwallet", wallet: rest[0], label: rest.slice(1).join(" ") };
   if (c === "/flagged") return { cmd: "flagged" };
   if (c === "/unflagwallet") return { cmd: "unflagwallet", wallet: rest[0] };
+  if (c === "/entries") { const [mint, n] = rest; return { cmd: "entries", mint, topN: n }; }
   if (c === "/signals") return { cmd: "signals", arg };
   if (c === "/save") return { cmd: "save" };
   if (c === "/mute") return { cmd: "mute" };
@@ -452,6 +535,7 @@ const HELP = [
   "<b>/whales</b> · <b>/delwhale</b> &lt;wallet&gt; — list / remove tracked wallets",
   "<b>/flagwallet</b> &lt;wallet&gt; [label] — warn me if this wallet holds a token I scan",
   "<b>/flagged</b> · <b>/unflagwallet</b> &lt;wallet&gt; — list / remove flagged wallets",
+  "<b>/entries</b> &lt;mint&gt; [10|20|50] — what the top holders actually paid (avg entry vs now)",
   "<b>/signals</b> [on|off] — ping me when a tracked wallet makes a FIRST buy of a new token",
   "<b>/save</b> — force-save your setup (it auto-saves on every change)",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
@@ -631,6 +715,40 @@ async function handleCommand(env, cfg, state, text) {
       return tgReply(env, `Discovery failed: ${esc(e.message || String(e))}`);
     } finally { state.discovering = false; }
   }
+  if (cmd === "entries") {
+    const { mint, topN } = parseCommand(text);
+    if (!BASE58.test(mint || "")) return tgReply(env, "Usage: /entries &lt;mint&gt; [10|20|50] — what the top holders paid");
+    if (!env.HELIUS_API_KEY) return tgReply(env, "This needs HELIUS_API_KEY set in the host's variables.");
+    const n = Math.min(50, Math.max(5, Number(topN) || 20));
+    const now = Date.now();
+    if (state.lastEntries && now - state.lastEntries < cfg.entriesCooldownMs) {
+      const mins = Math.ceil((cfg.entriesCooldownMs - (now - state.lastEntries)) / 60_000);
+      return tgReply(env, `That's one RPC call per holder, so it's rate-limited — try again in ~${mins} min.`);
+    }
+    state.lastEntries = now;
+    await tgReply(env, `💰 Pricing the top ${n} holders' entries — one lookup each, give me a moment…`).catch(() => {});
+    try {
+      const helius = env.HELIUS_API_KEY;
+      const rpc = (method, params) => fetch("https://mainnet.helius-rpc.com/?api-key=" + helius, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
+      }).then(r => r.json());
+      const client = makeClient(env, fetch);
+      const [scan, report] = await Promise.all([
+        scanToken(mint, { heliusKey: helius, smartMoney: state.smartMoney, flagged: state.flaggedSet }),
+        holderEntryReport(mint, {
+          getTokenAccounts: m => rpc("getTokenAccounts", { mint: m, limit: 1000, page: 1 }),
+          getWalletSwaps: (w, p) => client.walletSwaps(w, p),
+          topN: n, pages: cfg.entriesSwapPages, solPriceUsd: state.solPriceUsd || 150,
+        }),
+      ]);
+      const cur = scan?.market?.priceUsd || 0;
+      const sum = summarizeEntries(report.rows, cur);
+      return tgReply(env, formatEntries(mint, scan?.market?.symbol, report.ranked || n, report.rows, sum, cur));
+    } catch (e) {
+      return tgReply(env, `Couldn't build the entry report: ${esc(e.message || String(e))}`);
+    }
+  }
   if (cmd === "signals") {
     const a = (arg || "").toLowerCase();
     if (a === "on" || a === "off") {
@@ -704,6 +822,30 @@ async function commandLoop(env, cfg, state) {
       }
     } catch (e) { console.error("getUpdates error:", e.message); await sleep(3000); }
   }
+}
+
+// Build the top-holder entry report. `client` supplies topHolders + walletSwaps;
+// `excluded` is a set of owners to skip (pools/burn/CEX). One RPC call per holder,
+// so callers must gate this behind a cooldown.
+export async function holderEntryReport(mint, { getTokenAccounts, getWalletSwaps, topN = 20, pages = 1, solPriceUsd = 150, excluded = new Set() } = {}) {
+  const ownerMap = ownersFromTokenAccounts([await getTokenAccounts(mint)]);
+  const ranked = [...ownerMap.entries()]
+    .filter(([o]) => !excluded.has(o))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN);
+  if (!ranked.length) return { rows: [], ranked: 0 };
+
+  const total = ranked.reduce((s, [, amt]) => s + amt, 0) || 1;
+  const rows = [];
+  for (const [owner, amt] of ranked) {
+    let trades = [];
+    try {
+      const raw = await getWalletSwaps(owner, pages);
+      trades = (raw || []).map(tx => parseSwap(tx, solPriceUsd)).filter(Boolean);
+    } catch { /* leaves this holder unpriced */ }
+    rows.push({ owner, share: amt / total, entry: avgEntryForMint(trades, mint) });
+  }
+  return { rows, ranked: ranked.length };
 }
 
 // One pass over the tracked wallets: fetch recent swaps, baseline on first sight,
@@ -785,11 +927,13 @@ export async function main(env = process.env) {
     signalMinUsd: Number(env.SIGNAL_MIN_USD) || 200,
     signalLookbackMin: Number(env.SIGNAL_LOOKBACK_MINUTES) || 30,
     signalSwapPages: Number(env.SIGNAL_SWAP_PAGES) || 1,
+    entriesCooldownMs: (Number(env.ENTRIES_COOLDOWN_MINUTES) || 5) * 60_000,
+    entriesSwapPages: Number(env.ENTRIES_SWAP_PAGES) || 1,
   };
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
   const flagged = loadWhales(cfg.flaggedFile, env.FLAGGED_WALLETS_JSON);
   const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), flagged, flaggedSet: parseSmartMoney(flagged), discovering: false, lastDiscover: 0,
-    walletSeen: new Map(), signalsOn: env.SIGNALS_OFF !== "1", solPriceUsd: 0 };
+    walletSeen: new Map(), signalsOn: env.SIGNALS_OFF !== "1", solPriceUsd: 0, lastEntries: 0 };
   // Restore everything saved in the pinned message — this is what makes state
   // permanent across redeploys without any dashboard setup.
   const restored = await restoreState(env, state);

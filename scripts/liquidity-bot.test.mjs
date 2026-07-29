@@ -3,7 +3,8 @@ import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, mon
   improvementAlerts, priceMoveAlert, buildDigest, shouldDigest, formatHolders, loadWhales,
   discoveryCfg, pickNewWhales, formatDiscovery,
   serializeState, parseStateMessage, applyState, STATE_MARKER,
-  seedSeenMints, detectFirstBuys, formatFirstBuy, walletPassOnce } from "./liquidity-bot.mjs";
+  seedSeenMints, detectFirstBuys, formatFirstBuy, walletPassOnce,
+  avgEntryForMint, summarizeEntries, formatEntries, holderEntryReport } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -215,6 +216,52 @@ check("the same position does not re-fire on the next pass", p3.length === 0 && 
 check("signals off → no work done", (await walletPassOnce({}, wCfg, { ...wState, signalsOn: false }, clientStub, 3000)).length === 0);
 globalThis.fetch = realFetch2;
 check("/signals parses on/off", parseCommand("/signals on").cmd === "signals" && parseCommand("/signals on").arg === "on");
+
+console.log("\n19. top-holder average entry price");
+const tr = (side, mint, ts, tokenAmount, quoteUsd) => ({ side, mint, timestamp: ts, tokenAmount, quoteUsd });
+// Bought 1000 tokens for $100 → avg $0.10
+check("average cost basis from a single buy", avgEntryForMint([tr("buy", MINT, 1, 1000, 100)], MINT).avgPrice === 0.1);
+// Two buys: 1000@$100 + 1000@$300 → 2000 tokens, $400 → $0.20
+check("averages across multiple buys", avgEntryForMint([tr("buy", MINT, 1, 1000, 100), tr("buy", MINT, 2, 1000, 300)], MINT).avgPrice === 0.2);
+// Buy 1000@$100 then sell half → cost basis per token unchanged at $0.10
+const afterSell = avgEntryForMint([tr("buy", MINT, 1, 1000, 100), tr("sell", MINT, 2, 500, 250)], MINT);
+check("selling reduces position but not avg price", Math.abs(afterSell.avgPrice - 0.1) < 1e-9 && afterSell.tokens === 500);
+check("ignores trades of other tokens", avgEntryForMint([tr("buy", W1, 1, 1000, 999)], MINT) === null);
+check("fully exited wallet → null (no current basis)", avgEntryForMint([tr("buy", MINT, 1, 1000, 100), tr("sell", MINT, 2, 1000, 500)], MINT) === null);
+check("no history → null (airdropped/transferred)", avgEntryForMint([], MINT) === null);
+
+const rows = [
+  { owner: "a", share: 0.5, entry: { avgPrice: 0.01, tokens: 1000, costUsd: 10, buys: 1 } },
+  { owner: "b", share: 0.3, entry: { avgPrice: 0.05, tokens: 200, costUsd: 10, buys: 1 } },
+  { owner: "c", share: 0.2, entry: null }, // airdropped / unpriceable
+];
+const sum19 = summarizeEntries(rows, 0.10);
+check("counts priced vs unpriced holders", sum19.priced === 2 && sum19.unpriced === 1);
+check("size-weights the average entry", sum19.weighted > 0.01 && sum19.weighted < 0.05, `w=${sum19.weighted}`);
+check("computes the profit multiple vs current price", sum19.multiple > 1);
+check("counts how many are in profit", sum19.inProfit === 2);
+const msg19 = formatEntries(MINT, "BONK", 20, rows, sum19, 0.10);
+check("report shows current + avg entry", /Current price/.test(msg19) && /Avg entry \(size-weighted\)/.test(msg19));
+check("report warns about unpriced (airdropped) holders", /no on-chain buy/.test(msg19));
+check("report carries NFA + incompleteness caveat", /NFA/.test(msg19) && /may be incomplete/i.test(msg19));
+const deep = summarizeEntries([{ owner: "a", share: 1, entry: { avgPrice: 0.01, tokens: 100, costUsd: 1, buys: 1 } }], 0.10);
+check("10x profit flags high dump risk", /high dump risk/.test(formatEntries(MINT, "X", 10, [], deep, 0.10)));
+check("no priceable holders → honest message", /Couldn't price any/.test(formatEntries(MINT, "X", 10, [], summarizeEntries([{ owner: "a", entry: null }], 1), 1)));
+
+// Orchestrator with stubbed RPC: excludes pools, ranks by balance, prices each.
+const rep = await holderEntryReport(MINT, {
+  getTokenAccounts: async () => ({ result: { token_accounts: [
+    { owner: "poolOwner", amount: 9999 }, { owner: "whaleA", amount: 500 }, { owner: "whaleB", amount: 300 },
+  ] } }),
+  getWalletSwaps: async (w) => (w === "whaleA"
+    ? [{ events: { swap: { nativeInput: { amount: String(1e9) }, tokenOutputs: [{ mint: MINT, rawTokenAmount: { tokenAmount: "1000000", decimals: 6 } }] } }, timestamp: 1 }]
+    : []),
+  topN: 10, excluded: new Set(["poolOwner"]), solPriceUsd: 150,
+});
+check("excludes pool owners from holders", rep.rows.every(r => r.owner !== "poolOwner") && rep.ranked === 2);
+check("prices the holder with swap history", rep.rows.find(r => r.owner === "whaleA").entry?.avgPrice > 0);
+check("leaves the no-history holder unpriced", rep.rows.find(r => r.owner === "whaleB").entry === null);
+check("/entries parses mint + N", (() => { const p = parseCommand("/entries " + MINT + " 50"); return p.cmd === "entries" && p.mint === MINT && p.topN === "50"; })());
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);

@@ -75,8 +75,25 @@ keeps it running 24/7.)*
 - **`/whales` · `/delwhale <wallet>`** — list / remove tracked wallets
 - **`/flagwallet <wallet> [label]`** — warn me if this wallet holds a token I scan
 - **`/flagged` · `/unflagwallet <wallet>`** — list / remove flagged wallets
+- **`/entries <mint> [10|20|50]`** — 💰 what the **top holders actually paid**
 - **`/signals [on|off]`** — 🎯 ping me the moment a tracked wallet makes a
   **first-time buy** of a token it's never held before
+
+**💰 Top-holder entry prices.** `/entries <mint> 20` reconstructs each top
+holder's average cost basis for that token from their swap history, then reports
+the size-weighted average entry against the current price:
+
+> 💰 **Top 20 holder entries** — $BONK
+> • Current price: **$0.000021**
+> • Avg entry (size-weighted): **$0.0000021**
+> • Top holders are **10.0× up** — 🚨 they're deep in profit, high dump risk
+> • 17/18 priced holders in profit
+> • ⚠️ 2 holder(s) have **no on-chain buy** (airdropped/transferred) — common with insider allocations
+
+That last line matters: holders with **no purchase at all** were usually given
+their bag. Limits: cost basis comes from visible swap history (`ENTRIES_SWAP_PAGES`),
+so very old buys can't be priced, and pool/burn owners are excluded. It's one RPC
+call per holder, so it's rate-limited (`ENTRIES_COOLDOWN_MINUTES`, default 5).
 
 **🎯 First-buy signals (copy-trade alpha).** Every tracked wallet (the ones from
 `/addwhale` and `/discoverwhales`) is polled every `WALLET_POLL_SECONDS` (default
