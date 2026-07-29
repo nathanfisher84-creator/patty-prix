@@ -266,6 +266,21 @@ const price = n => {
   return "$" + n.toExponential(2);
 };
 
+// A one/two-line version for /scan, where the full block would bury the verdict.
+export function formatEntriesCompact(topN, sum, currentPrice) {
+  if (!sum || (!sum.priced && !sum.unpriced)) return "";
+  if (!sum.priced) return `💰 Top ${topN} entries: none priceable — ${sum.unpriced} holder(s) have <b>no on-chain buy</b> (airdropped/transferred) ⚠️`;
+  const bits = [`avg ${price(sum.weighted)}`];
+  if (sum.multiple != null) {
+    const m = sum.multiple;
+    const tag = m >= 5 ? "🚨 deep in profit" : m >= 2 ? "⚠️ up meaningfully" : m >= 0.95 ? "🟢 near your entry" : "🔻 underwater";
+    bits.push(`${m >= 1 ? m.toFixed(1) + "× up" : (1 / m).toFixed(1) + "× down"} · ${tag}`);
+  }
+  let line = `💰 Top ${topN} entries: ${bits.join(" · ")}`;
+  if (sum.unpriced) line += `\n   ⚠️ ${sum.unpriced} holder(s) with no on-chain buy (airdropped/insider?)`;
+  return line;
+}
+
 export function formatEntries(mint, symbol, topN, rows, sum, currentPrice) {
   const lines = [`💰 <b>Top ${topN} holder entries</b> — ${esc(symbol ? "$" + symbol : short(mint))}`];
   if (!sum.priced) {
@@ -586,7 +601,30 @@ async function persistState(env, state) {
   } catch (e) { console.error("persistState failed:", e.message); return false; }
 }
 
-async function scanMessage(env, state, mint, withEntry) {
+// Top-holder entry prices for /scan. Deliberately shallow (SCAN_ENTRIES_TOP,
+// default 10) because it costs one RPC call per holder — /entries goes deeper.
+// Any failure returns "" so the scan itself is never broken by this extra.
+async function entriesLineFor(env, cfg, state, mint, scan) {
+  const topN = cfg.scanEntriesTop;
+  if (!topN || !env.HELIUS_API_KEY) return "";
+  try {
+    const helius = env.HELIUS_API_KEY;
+    const client = makeClient(env, fetch);
+    const rep = await holderEntryReport(mint, {
+      getTokenAccounts: m => fetch("https://mainnet.helius-rpc.com/?api-key=" + helius, {
+        method: "POST", headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTokenAccounts", params: { mint: m, limit: 1000, page: 1 } }),
+      }).then(r => r.json()),
+      getWalletSwaps: (w, p) => client.walletSwaps(w, p),
+      topN, pages: cfg.entriesSwapPages,
+      solPriceUsd: state.solPriceUsd || 150,
+      excluded: new Set(scan?.excludedOwners || []),
+    });
+    return formatEntriesCompact(rep.ranked || topN, summarizeEntries(rep.rows, scan?.market?.priceUsd || 0), scan?.market?.priceUsd || 0);
+  } catch { return ""; }
+}
+
+async function scanMessage(env, cfg, state, mint, withEntry) {
   // Deployer lookup runs in parallel with the scan (it's a couple of extra RPC
   // calls, so on-demand only — never in the fast monitor loop).
   const [d, deployer] = await Promise.all([
@@ -594,12 +632,14 @@ async function scanMessage(env, state, mint, withEntry) {
     findDeployer(mint, { heliusKey: env.HELIUS_API_KEY }).catch(() => null),
   ]);
   if (d.error) return `⚠️ ${esc(d.error)}`;
+  const entriesLine = await entriesLineFor(env, cfg, state, mint, d); // "" if disabled/failed
   const snap = buildSnapshot(d, mint);
   const v = { clean: "✅ Looks clean", caution: "⚠️ Caution", "high-risk": "🚩 High risk" }[d.tier] || d.tier;
   const top = (d.flags || []).filter(f => f.level !== "green").slice(0, 4).map(f => `• ${esc(f.text)}`).join("\n");
   const holders = formatHolders(d.topHolders, deployer);
   let msg = `<b>${esc(d.market?.symbol ? "$" + d.market.symbol : short(mint))}</b> — ${d.safety}/100 · ${v}\n${top || "No red/yellow flags."}`;
   if (holders) msg += "\n" + holders;
+  if (entriesLine) msg += "\n" + entriesLine;
   msg += `\n<a href="https://solscan.io/token/${mint}">Solscan</a>`;
   if (withEntry) msg += "\n\n" + formatEntry(snap, entryRead(snap, state.baseline.get(mint)?.snap));
   return msg;
@@ -623,7 +663,7 @@ async function handleCommand(env, cfg, state, text) {
   }
   if (cmd === "scan") {
     if (!BASE58.test(arg)) return tgReply(env, "Give me a valid mint: /scan &lt;mint&gt;");
-    return tgReply(env, await scanMessage(env, state, arg, true));
+    return tgReply(env, await scanMessage(env, cfg, state, arg, true));
   }
   if (cmd === "entry") {
     if (!BASE58.test(arg)) return tgReply(env, "Give me a valid mint: /entry &lt;mint&gt;");
@@ -929,6 +969,7 @@ export async function main(env = process.env) {
     signalSwapPages: Number(env.SIGNAL_SWAP_PAGES) || 1,
     entriesCooldownMs: (Number(env.ENTRIES_COOLDOWN_MINUTES) || 5) * 60_000,
     entriesSwapPages: Number(env.ENTRIES_SWAP_PAGES) || 1,
+    scanEntriesTop: env.SCAN_ENTRIES_TOP != null ? Number(env.SCAN_ENTRIES_TOP) : 10,
   };
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
   const flagged = loadWhales(cfg.flaggedFile, env.FLAGGED_WALLETS_JSON);

@@ -173,6 +173,9 @@ export async function scanToken(mint, { heliusKey, fetchFn = fetch, smartMoney, 
     jupVerified: jup.verified,
     holders: meteora?.holders ?? goplus?.holders ?? null, // best available holder count
     topHolders,
+    // Owners that are NOT real holders (LP vaults, burn) — so callers doing
+    // deeper holder analysis can exclude them instead of re-deriving the rules.
+    excludedOwners: [...new Set(holders.filter(h => h.kind !== "holder" && h.owner).map(h => h.owner))],
     sources,
     meteora: meteora && { pools: meteora.pools, blacklisted: meteora.blacklisted, maxFeePct: meteora.maxFeePct, holders: meteora.holders, launchpad: meteora.launchpad },
     market: market && {

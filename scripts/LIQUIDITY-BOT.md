@@ -75,11 +75,16 @@ keeps it running 24/7.)*
 - **`/whales` · `/delwhale <wallet>`** — list / remove tracked wallets
 - **`/flagwallet <wallet> [label]`** — warn me if this wallet holds a token I scan
 - **`/flagged` · `/unflagwallet <wallet>`** — list / remove flagged wallets
-- **`/entries <mint> [10|20|50]`** — 💰 what the **top holders actually paid**
+- **`/entries <mint> [10|20|50]`** — 💰 the **full** top-holder entry report
+  (`/scan` already includes a compact top-10 version)
 - **`/signals [on|off]`** — 🎯 ping me the moment a tracked wallet makes a
   **first-time buy** of a token it's never held before
 
-**💰 Top-holder entry prices.** `/entries <mint> 20` reconstructs each top
+**💰 Top-holder entry prices.** `/scan` now includes a compact one-liner —
+`💰 Top 10 entries: avg $0.0000021 · 10.0× up · 🚨 deep in profit` — so you get it
+without a second command. It's capped at the top 10 there because it costs one RPC
+call per holder; set `SCAN_ENTRIES_TOP` (0 disables it, e.g. 20 for more depth).
+`/entries <mint> 20` reconstructs each top
 holder's average cost basis for that token from their swap history, then reports
 the size-weighted average entry against the current price:
 

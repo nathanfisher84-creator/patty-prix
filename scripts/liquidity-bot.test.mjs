@@ -4,7 +4,7 @@ import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, mon
   discoveryCfg, pickNewWhales, formatDiscovery,
   serializeState, parseStateMessage, applyState, STATE_MARKER,
   seedSeenMints, detectFirstBuys, formatFirstBuy, walletPassOnce,
-  avgEntryForMint, summarizeEntries, formatEntries, holderEntryReport } from "./liquidity-bot.mjs";
+  avgEntryForMint, summarizeEntries, formatEntries, holderEntryReport, formatEntriesCompact } from "./liquidity-bot.mjs";
 
 let failures = 0;
 const check = (name, cond, extra = "") => {
@@ -262,6 +262,19 @@ check("excludes pool owners from holders", rep.rows.every(r => r.owner !== "pool
 check("prices the holder with swap history", rep.rows.find(r => r.owner === "whaleA").entry?.avgPrice > 0);
 check("leaves the no-history holder unpriced", rep.rows.find(r => r.owner === "whaleB").entry === null);
 check("/entries parses mint + N", (() => { const p = parseCommand("/entries " + MINT + " 50"); return p.cmd === "entries" && p.mint === MINT && p.topN === "50"; })());
+
+console.log("\n19b. compact entries line (folded into /scan)");
+const compact = formatEntriesCompact(10, sum19, 0.10);
+check("compact line is short and shows avg + multiple", /Top 10 entries/.test(compact) && /avg /.test(compact) && /× up/.test(compact));
+check("compact line flags airdropped holders", /no on-chain buy/.test(compact));
+const compactDeep = formatEntriesCompact(10, deep, 0.10);
+check("deep profit shows the dump-risk tag", /deep in profit/.test(compactDeep));
+const aligned = summarizeEntries([{ owner: "a", share: 1, entry: { avgPrice: 0.1, tokens: 100, costUsd: 10, buys: 1 } }], 0.10);
+check("entry near spot reads as aligned", /near your entry/.test(formatEntriesCompact(10, aligned, 0.10)));
+const under = summarizeEntries([{ owner: "a", share: 1, entry: { avgPrice: 0.5, tokens: 100, costUsd: 50, buys: 1 } }], 0.10);
+check("holders underwater are described as such", /underwater/.test(formatEntriesCompact(10, under, 0.10)) && /× down/.test(formatEntriesCompact(10, under, 0.10)));
+check("nothing priceable → compact 'no on-chain buy' note", /no on-chain buy/.test(formatEntriesCompact(10, summarizeEntries([{ owner: "a", entry: null }], 1), 1)));
+check("empty summary → empty string (nothing appended to /scan)", formatEntriesCompact(10, summarizeEntries([], 1), 1) === "");
 
 console.log(failures ? `\n${failures} FAILURES` : "\nAll checks passed.");
 process.exit(failures ? 1 : 0);
