@@ -4,6 +4,7 @@ import { buildSnapshot, liquidityDrop, alertsFor, formatAlert, parseCommand, mon
   discoveryCfg, pickNewWhales, formatDiscovery,
   serializeState, parseStateMessage, applyState, STATE_MARKER,
   seedSeenMints, detectFirstBuys, formatFirstBuy, walletPassOnce,
+  detectNewTrades, formatTrade, followPassOnce,
   avgEntryForMint, summarizeEntries, formatEntries, holderEntryReport, formatEntriesCompact } from "./liquidity-bot.mjs";
 
 let failures = 0;
@@ -216,6 +217,55 @@ check("the same position does not re-fire on the next pass", p3.length === 0 && 
 check("signals off → no work done", (await walletPassOnce({}, wCfg, { ...wState, signalsOn: false }, clientStub, 3000)).length === 0);
 globalThis.fetch = realFetch2;
 check("/signals parses on/off", parseCommand("/signals on").cmd === "signals" && parseCommand("/signals on").arg === "on");
+
+console.log("\n18b. follow: every-trade alerts for a specific wallet");
+const seenSigs = new Set(["a", "b"]);
+const nt = detectNewTrades([t("buy", MINT, 100, 500, "a"), t("sell", NEWTOK, 101, 700, "c")], seenSigs, { sinceTs: 0, minUsd: 0 });
+check("only unseen signatures count as new trades", nt.length === 1 && nt[0].signature === "c");
+check("a SELL is a valid new trade (unlike first-buy signals)", nt[0].side === "sell");
+check("already-seen signatures never re-fire", detectNewTrades([t("buy", MINT, 100, 500, "a")], seenSigs, {}).length === 0);
+check("stale trades outside lookback are ignored", detectNewTrades([t("buy", NEWTOK, 50, 500, "z")], seenSigs, { sinceTs: 100 }).length === 0);
+check("trades under followMinUsd are ignored", detectNewTrades([t("buy", NEWTOK, 100, 5, "z")], seenSigs, { minUsd: 200 }).length === 0);
+check("trades with no signature are skipped", detectNewTrades([t("buy", NEWTOK, 100, 500, "")], seenSigs, {}).length === 0);
+const buyMsg = formatTrade("Degen", { side: "buy", mint: NEWTOK, quoteUsd: 4200, signature: "sig" });
+check("BUY card shows side + who + size", /🟢/.test(buyMsg) && /BUY/.test(buyMsg) && /Degen/.test(buyMsg) && /\$4\.2K/.test(buyMsg));
+const sellMsg = formatTrade("Degen", { side: "sell", mint: NEWTOK, quoteUsd: 300, signature: "sig" });
+check("SELL card shows the sell side + $ amount", /🔴/.test(sellMsg) && /SELL/.test(sellMsg) && /\$300/.test(sellMsg));
+check("trade card links to /scan for the rug check", /\/scan /.test(buyMsg));
+
+// End-to-end: baseline pass is silent, then a NEW signature (buy OR sell) fires
+// exactly one alert per trade, and the same signature never re-fires.
+const sentFollows = [];
+const realFetch3 = globalThis.fetch;
+globalThis.fetch = async (url, opts) => { if (String(url).includes("sendMessage")) sentFollows.push(JSON.parse(opts.body).text); return { json: async () => ({ ok: true }) }; };
+let fpass = 0;
+const followClient = { walletSwaps: async () => {
+  fpass++;
+  const old = buyTx(MINT, 2900, 5, "old");
+  if (fpass === 1) return [old];
+  if (fpass === 2) return [old, { ...buyTx(NEWTOK, 2950, 5, "fresh") }]; // a new buy appears
+  return [old, buyTx(NEWTOK, 2950, 5, "fresh")]; // same set again → no re-fire
+} };
+const fState = { followed: [{ wallet: W1, label: "Degen" }], followSeen: new Map(), muted: false, solPriceUsd: 150 };
+const fCfg = { followLookbackMin: 30, followMinUsd: 0, followSwapPages: 1 };
+const f1 = await followPassOnce({ HELIUS_API_KEY: "k" }, fCfg, fState, followClient, 3000);
+check("first follow pass baselines silently", f1.length === 0 && sentFollows.length === 0);
+const f2 = await followPassOnce({ HELIUS_API_KEY: "k" }, fCfg, fState, followClient, 3000);
+check("a new trade fires exactly one alert", f2.length === 1 && f2[0].signature === "fresh", `fired ${f2.length}`);
+check("the alert is a trade card", sentFollows.length === 1 && /(BUY|SELL)/.test(sentFollows[0]));
+const f3 = await followPassOnce({ HELIUS_API_KEY: "k" }, fCfg, fState, followClient, 3000);
+check("the same signature does not re-fire", f3.length === 0 && sentFollows.length === 1);
+check("no followed wallets → no work", (await followPassOnce({}, fCfg, { followed: [], followSeen: new Map() }, followClient, 3000)).length === 0);
+globalThis.fetch = realFetch3;
+check("/follow parses wallet + label", (() => { const p = parseCommand("/follow " + W1 + " Degen"); return p.cmd === "follow" && p.wallet === W1 && p.label === "Degen"; })());
+check("/following and /unfollow parse", parseCommand("/following").cmd === "following" && parseCommand("/unfollow " + W1).wallet === W1);
+
+// followed survives the pinned-message round-trip
+const fRound = parseStateMessage(serializeState({ watch: new Set(), whales: [], flagged: [], followed: [{ wallet: W1, label: "Degen" }], priceAlerts: new Map() }));
+check("followed list is serialized + restored", fRound.followed.length === 1 && fRound.followed[0].wallet === W1);
+const fLive = { watch: new Set(), whales: [], flagged: [], followed: [], priceAlerts: new Map() };
+applyState(fLive, fRound);
+check("applyState merges followed wallets", fLive.followed.length === 1);
 
 console.log("\n19. top-holder average entry price");
 const tr = (side, mint, ts, tokenAmount, quoteUsd) => ({ side, mint, timestamp: ts, tokenAmount, quoteUsd });
