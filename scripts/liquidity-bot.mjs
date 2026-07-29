@@ -306,7 +306,39 @@ export function formatEntries(mint, symbol, topN, rows, sum, currentPrice) {
   return lines.join("\n");
 }
 
-/* ================= copy-trade: first-time buy signals =================
+/* ================= follow: every-trade alerts for specific wallets =========
+   /follow <wallet> — ping on EVERY trade (buy AND sell) that wallet makes, not
+   just first-time buys. Dedup is per transaction signature, baselined from the
+   wallet's recent history on first sight so old trades never fire.
+   Latency honesty: this polls every WALLET_POLL_SECONDS (default 45s), so
+   "immediately" means within ~a minute, not the same block.
+*/
+
+// Pure: which trades are new (unseen signature), fresh, and big enough?
+export function detectNewTrades(trades, seenSigs, { sinceTs = 0, minUsd = 0 } = {}) {
+  const out = [];
+  for (const t of [...(trades || [])].sort((a, b) => b.timestamp - a.timestamp)) {
+    if (!t || !t.mint || !t.signature) continue;
+    if (t.timestamp < sinceTs) continue;
+    if ((t.quoteUsd || 0) < minUsd) continue;
+    if (seenSigs?.has(t.signature)) continue;
+    out.push(t);
+  }
+  return out;
+}
+
+export function formatTrade(who, t) {
+  const side = t.side === "buy" ? "🟢 <b>BUY</b>" : "🔴 <b>SELL</b>";
+  const usdAmt = t.quoteUsd >= 1000 ? `$${(t.quoteUsd / 1000).toFixed(1)}K` : `$${Math.round(t.quoteUsd)}`;
+  return [
+    `${side} — ${esc(who)}`,
+    `• ${short(t.mint)} · ${usdAmt}`,
+    `<a href="https://solscan.io/token/${t.mint}">token</a>${t.signature ? ` · <a href="https://solscan.io/tx/${t.signature}">tx</a>` : ""} · <code>${t.mint}</code>`,
+    `↳ /scan ${t.mint} for the rug check`,
+  ].join("\n");
+}
+
+/* ================= signals: first-time-buy copy-trade alerts =================
    Watch tracked wallets and fire the moment one opens a NEW position — a token
    it has never bought before (within our visible history). That's the alpha
    signal; we pair it with an instant safety scan so you see the rug check in the
@@ -436,6 +468,9 @@ export function parseCommand(text) {
   if (c === "/unflagwallet") return { cmd: "unflagwallet", wallet: rest[0] };
   if (c === "/entries") { const [mint, n] = rest; return { cmd: "entries", mint, topN: n }; }
   if (c === "/signals") return { cmd: "signals", arg };
+  if (c === "/follow") return { cmd: "follow", wallet: rest[0], label: rest.slice(1).join(" ") };
+  if (c === "/following") return { cmd: "following" };
+  if (c === "/unfollow") return { cmd: "unfollow", wallet: rest[0] };
   if (c === "/save") return { cmd: "save" };
   if (c === "/mute") return { cmd: "mute" };
   if (c === "/unmute") return { cmd: "unmute" };
@@ -462,6 +497,7 @@ export function serializeState(state) {
     watch: [...(state.watch || [])],
     whales: (state.whales || []).map(w => (w.label ? { wallet: w.wallet, label: w.label } : w.wallet)),
     flagged: (state.flagged || []).map(w => (w.label ? { wallet: w.wallet, label: w.label } : w.wallet)),
+    followed: (state.followed || []).map(w => (w.label ? { wallet: w.wallet, label: w.label } : w.wallet)),
     alerts: [...(state.priceAlerts || new Map())].map(([m, p]) => [m, p]),
   };
   return `${STATE_MARKER}\n${JSON.stringify(payload)}`;
@@ -480,6 +516,7 @@ export function parseStateMessage(text) {
       watch: (Array.isArray(o.watch) ? o.watch : []).filter(m => BASE58.test(m)),
       whales: norm(o.whales),
       flagged: norm(o.flagged),
+      followed: norm(o.followed),
       alerts: (Array.isArray(o.alerts) ? o.alerts : []).filter(a => Array.isArray(a) && BASE58.test(a[0]) && Number(a[1]) > 0),
     };
   } catch { return null; }
@@ -496,6 +533,7 @@ export function applyState(state, loaded) {
   };
   state.whales = mergeList(state.whales || [], loaded.whales);
   state.flagged = mergeList(state.flagged || [], loaded.flagged);
+  state.followed = mergeList(state.followed || [], loaded.followed || []);
   for (const [m, p] of loaded.alerts) state.priceAlerts.set(m, Number(p));
   return state;
 }
@@ -552,6 +590,8 @@ const HELP = [
   "<b>/flagged</b> · <b>/unflagwallet</b> &lt;wallet&gt; — list / remove flagged wallets",
   "<b>/entries</b> &lt;mint&gt; [10|20|50] — what the top holders actually paid (avg entry vs now)",
   "<b>/signals</b> [on|off] — ping me when a tracked wallet makes a FIRST buy of a new token",
+  "<b>/follow</b> &lt;wallet&gt; [label] — ping me on EVERY trade (buy AND sell) this wallet makes",
+  "<b>/following</b> · <b>/unfollow</b> &lt;wallet&gt; — list / remove followed wallets",
   "<b>/save</b> — force-save your setup (it auto-saves on every change)",
   "<b>/mute</b> · <b>/unmute</b> — pause/resume alerts",
   "<b>/help</b> — this message",
@@ -800,10 +840,30 @@ async function handleCommand(env, cfg, state, text) {
     }
     return tgReply(env, `🎯 First-buy signals: <b>${state.signalsOn ? "ON" : "OFF"}</b> · ${state.whales.length} tracked wallet(s) · min $${cfg.signalMinUsd} · checked every ${cfg.walletPollSeconds}s.\nUse /signals on or /signals off.`);
   }
+  if (cmd === "follow") {
+    const { wallet, label } = parseCommand(text);
+    if (!BASE58.test(wallet || "")) return tgReply(env, "Usage: /follow &lt;wallet&gt; [label] — ping me on EVERY trade this wallet makes");
+    if (!env.HELIUS_API_KEY) return tgReply(env, "Following needs HELIUS_API_KEY set in the host's variables.");
+    if (state.followed.some(w => w.wallet === wallet)) return tgReply(env, "Already following that wallet.");
+    state.followed.push({ wallet, label: label || "" });
+    state.followSeen.delete(wallet); // force a fresh baseline so we don't fire on its backlog
+    return tgReply(env, `👁️ Following ${label ? esc(label) + " " : ""}${short(wallet)} — I'll ping you on every buy AND sell it makes (checked every ${cfg.walletPollSeconds}s). Baselining now, so alerts start from its next trade.`);
+  }
+  if (cmd === "following") {
+    return tgReply(env, state.followed.length
+      ? "👁️ Following (every trade):\n" + state.followed.map(w => `• <a href="https://solscan.io/account/${w.wallet}">${esc(w.label || short(w.wallet))}</a>`).join("\n")
+      : "Not following any wallets. Add one: /follow &lt;wallet&gt; [label]");
+  }
+  if (cmd === "unfollow") {
+    const { wallet } = parseCommand(text);
+    state.followed = state.followed.filter(w => w.wallet !== wallet);
+    state.followSeen.delete(wallet || "");
+    return tgReply(env, `Unfollowed ${short(wallet || "")}.`);
+  }
   if (cmd === "save") {
     const ok = await persistState(env, state);
     return tgReply(env, ok
-      ? `💾 Saved — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged. This survives restarts and redeploys.`
+      ? `💾 Saved — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged, ${state.followed.length} followed. This survives restarts and redeploys.`
       : "Couldn't save. Make sure I'm allowed to pin messages in this chat.");
   }
   if (cmd === "mute") { state.muted = true; return tgReply(env, "🔕 Alerts muted — /unmute to resume. (Commands still work.)"); }
@@ -921,12 +981,49 @@ export async function walletPassOnce(env, cfg, state, client, now = Math.floor(D
   return fired;
 }
 
+// One pass over the FOLLOWED wallets: fetch recent swaps, baseline the seen
+// signatures on first sight, then fire on every new trade — buys AND sells.
+// Dedup is per transaction signature (not per mint like /signals), so each trade
+// pings exactly once. followSeen is runtime-only and re-baselined on restart, so
+// a redeploy never replays a wallet's backlog.
+export async function followPassOnce(env, cfg, state, client, now = Math.floor(Date.now() / 1000)) {
+  if (!state.followed?.length) return [];
+  const solPriceUsd = state.solPriceUsd || 150;
+  const sinceTs = now - cfg.followLookbackMin * 60;
+  const fired = [];
+  for (const w of state.followed) {
+    let raw;
+    try { raw = await client.walletSwaps(w.wallet, cfg.followSwapPages); } catch { continue; }
+    const trades = (raw || []).map(tx => {
+      const t = parseSwap(tx, solPriceUsd);
+      return t ? { ...t, signature: tx.signature || "" } : null;
+    }).filter(Boolean);
+    if (!trades.length) continue;
+
+    let seen = state.followSeen.get(w.wallet);
+    if (!seen) { // baseline: record current signatures, no alerts
+      state.followSeen.set(w.wallet, new Set(trades.map(t => t.signature).filter(Boolean)));
+      continue;
+    }
+    const fresh = detectNewTrades(trades, seen, { sinceTs, minUsd: cfg.followMinUsd });
+    for (const t of trades) if (t.signature) seen.add(t.signature); // update dedup regardless
+    if (seen.size > 2000) state.followSeen.set(w.wallet, new Set(trades.map(t => t.signature).filter(Boolean))); // bound memory
+    for (const t of fresh) {
+      const who = w.label || short(w.wallet);
+      if (!state.muted) await tgReply(env, formatTrade(who, t)).catch(() => {});
+      fired.push({ wallet: w.wallet, signature: t.signature, side: t.side, mint: t.mint });
+    }
+  }
+  return fired;
+}
+
 async function walletLoop(env, cfg, state) {
   const client = makeClient(env, fetch);
   try { state.solPriceUsd = (await client.solPrice()) || 150; } catch { state.solPriceUsd = 150; }
   for (;;) {
     if (env.HELIUS_API_KEY) {
       await walletPassOnce(env, cfg, state, client).catch(e => console.error("wallet pass error:", e.message));
+      await followPassOnce(env, cfg, state, client).catch(e => console.error("follow pass error:", e.message));
     }
     await sleep(cfg.walletPollSeconds * 1000);
   }
@@ -967,6 +1064,9 @@ export async function main(env = process.env) {
     signalMinUsd: Number(env.SIGNAL_MIN_USD) || 200,
     signalLookbackMin: Number(env.SIGNAL_LOOKBACK_MINUTES) || 30,
     signalSwapPages: Number(env.SIGNAL_SWAP_PAGES) || 1,
+    followMinUsd: env.FOLLOW_MIN_USD != null ? Number(env.FOLLOW_MIN_USD) : 0, // 0 = every trade
+    followLookbackMin: Number(env.FOLLOW_LOOKBACK_MINUTES) || 30,
+    followSwapPages: Number(env.FOLLOW_SWAP_PAGES) || 1,
     entriesCooldownMs: (Number(env.ENTRIES_COOLDOWN_MINUTES) || 5) * 60_000,
     entriesSwapPages: Number(env.ENTRIES_SWAP_PAGES) || 1,
     scanEntriesTop: env.SCAN_ENTRIES_TOP != null ? Number(env.SCAN_ENTRIES_TOP) : 10,
@@ -974,6 +1074,7 @@ export async function main(env = process.env) {
   const whales = loadWhales(cfg.whaleFile, env.SMART_MONEY_JSON);
   const flagged = loadWhales(cfg.flaggedFile, env.FLAGGED_WALLETS_JSON);
   const state = { watch: loadWatchlist(cfg.file, env.WATCH_TOKENS), last: new Map(), baseline: new Map(), cooldown: new Map(), priceAlerts: new Map(), muted: false, lastDigestDay: dayKeyOf(Date.now()), whales, smartMoney: parseSmartMoney(whales), flagged, flaggedSet: parseSmartMoney(flagged), discovering: false, lastDiscover: 0,
+    followed: [], followSeen: new Map(),
     walletSeen: new Map(), signalsOn: env.SIGNALS_OFF !== "1", solPriceUsd: 0, lastEntries: 0 };
   // Restore everything saved in the pinned message — this is what makes state
   // permanent across redeploys without any dashboard setup.
@@ -981,7 +1082,7 @@ export async function main(env = process.env) {
   await persistState(env, state).catch(() => {}); // ensure a pinned state exists (merges env/file seeds)
 
   console.log(`Liquidity bot up. Watching ${state.watch.size} token(s), every ${cfg.pollSeconds}s, drop alert ≥${cfg.dropPct}%. ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " (restored from pinned state)" : ""}`);
-  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged.${restored ? " ♻️ Restored your saved setup." : ""}${state.signalsOn && state.whales.length ? " 🎯 First-buy signals ON." : ""} Checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
+  await tgReply(env, `🧅 Liquidity watcher online — ${state.watch.size} token(s), ${state.whales.length} whale(s), ${state.flagged.length} flagged${state.followed.length ? `, 👁️ ${state.followed.length} followed` : ""}.${restored ? " ♻️ Restored your saved setup." : ""}${state.signalsOn && state.whales.length ? " 🎯 First-buy signals ON." : ""} Checking every ${cfg.pollSeconds}s. /help for commands.`).catch(() => {});
   await Promise.all([monitorLoop(env, cfg, state), commandLoop(env, cfg, state), walletLoop(env, cfg, state)]);
 }
 

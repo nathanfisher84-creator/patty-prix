@@ -79,6 +79,9 @@ keeps it running 24/7.)*
   (`/scan` already includes a compact top-10 version)
 - **`/signals [on|off]`** — 🎯 ping me the moment a tracked wallet makes a
   **first-time buy** of a token it's never held before
+- **`/follow <wallet> [label]`** — 👁️ ping me on **every trade** (buy AND sell)
+  a specific wallet makes — not just first buys
+- **`/following` · `/unfollow <wallet>`** — list / remove followed wallets
 
 **💰 Top-holder entry prices.** `/scan` now includes a compact one-liner —
 `💰 Top 10 entries: avg $0.0000021 · 10.0× up · 🚨 deep in profit` — so you get it
@@ -119,6 +122,24 @@ spammed about bags it already held. Honest limit: history is a page deep, so
 could read as new. The message says so.
 - **`/mute` · `/unmute`** — pause / resume automatic alerts
 - **`/help`** — the command list
+
+**👁️ Follow a wallet (every trade).** `/signals` only fires on a wallet's
+*first* buy of a brand-new token. `/follow <wallet>` is different: it pings you
+on **every trade that wallet makes — buys and sells** — so you can shadow one
+specific wallet move-for-move:
+
+> 🔴 **SELL** — Degen
+> • BONK · $12.4K
+> token · tx · /scan …
+
+Each trade fires **exactly once** (dedup is per transaction signature). On the
+first sight of a wallet — and after every restart — the bot **baselines** its
+recent history silently, so you're never spammed with its backlog; alerts start
+from its *next* trade. Tuning: `FOLLOW_MIN_USD` (default `0` = every trade — set
+e.g. `50` to hide dust), `FOLLOW_LOOKBACK_MINUTES` (30), `FOLLOW_SWAP_PAGES` (1).
+Followed wallets are saved in the pinned message, so they survive redeploys.
+Honest limit: it polls every `WALLET_POLL_SECONDS` (default 45s), so
+"immediately" means within about a minute, not the same block.
 
 **Smart-money wallets:** once you `/addwhale` some wallets, every scan flags tokens
 those wallets hold ("🧠 tracked smart-money wallets holding …") and it feeds the
